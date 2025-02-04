@@ -1,38 +1,51 @@
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from django.contrib.auth import login
-
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
+from django.views.decorators.http import require_GET
+
+User = get_user_model()
+
+#TODO:
+# - clean urls.py imports
+# - check hashing function
+# - track cookies tail and check for conflicts
 
 
+@require_GET  # Ensure only GET requests are allowed
+def logout_view(request):
+    logout(request)
+    request.session.flush()  # Clear session data
+    return redirect('/auth/login/')
 
-def login_page(request):
-    error_message = None  # Initialize the error message
 
-    # Check if the request is a POST or GET
+def login_page(request): # Already logged in check
+    if request.user.is_authenticated:
+        return redirect('/') 
+
+    error_message = None
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        next_url = request.POST.get('next', '/')  # Default to home page if not provided
+        next_url = request.POST.get('next', '/')  # Default to gome page
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return redirect(next_url)  # Redirect if login is successful
         else:
-            error_message = "Invalid username or password. Please try again."  # Set the error message
+            error_message = "Invalid username or password. Please try again."
 
     else:
-        next_url = request.GET.get('next', '/')  # For GET requests, initialize next_url with the query parameter
+        next_url = request.GET.get('next', '/')  # For GET requests
 
     return render(request, 'authapp/login.html', {'next': next_url, 'error_message': error_message})
 
 
-User = get_user_model()  # Use the custom user model
-
 def signup_page(request):
+    if request.user.is_authenticated:
+        return redirect('/')  # Redirect if already logged in
+
     error_message = None
 
     if request.method == 'POST':
@@ -58,4 +71,3 @@ def signup_page(request):
             return redirect('/')  # Redirect to main page after registration
 
     return render(request, 'authapp/signup.html', {'error_message': error_message})
-
