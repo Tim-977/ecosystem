@@ -1,14 +1,12 @@
-from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render, redirect
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET
 
-User = get_user_model()
+from .forms import PersonalDataForm
+from .models import PersonalData
 
-#TODO:
-# - clean urls.py imports
-# - check hashing function
-# - track cookies tail and check for conflicts
+User = get_user_model()
 
 
 @require_GET  # Ensure only GET requests are allowed
@@ -61,13 +59,41 @@ def signup_page(request):
         elif User.objects.filter(email=email).exists():
             error_message = "An account with this email already exists."
         else:
-            # Create the user using create_user() to handle password hashing
             user = User.objects.create_user(
                 username=username,
                 email=email,
                 password=password
             )
             login(request, user)
-            return redirect('/')  # Redirect to main page after registration
+            return redirect('personal_data')
+
+            # # Create the user using create_user() to handle password hashing
+            # user = User.objects.create_user(
+            #     username=username,
+            #     email=email,
+            #     password=password
+            # )
+            # login(request, user)
+            # return redirect('/')
 
     return render(request, 'authapp/signup.html', {'error_message': error_message})
+
+
+@login_required
+def personal_data_view(request):
+    try:
+        personal_data = PersonalData.objects.get(user=request.user)
+    except PersonalData.DoesNotExist:
+        personal_data = None
+
+    if request.method == 'POST':
+        form = PersonalDataForm(request.POST, instance=personal_data)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.user = request.user
+            obj.save()
+            return redirect('/')  # or redirect to main page
+    else:
+        form = PersonalDataForm(instance=personal_data)
+    
+    return render(request, 'authapp/personal_data.html', {'form': form})

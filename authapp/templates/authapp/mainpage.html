@@ -1,12 +1,15 @@
+<!-- authapp/templates/authapp/mainpage.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Page</title>
 </head>
 <body>
     <h1>Welcome, {{ username }}!</h1>
+
+    <!-- Add this link to go to personal_data page -->
+    <p><a href="{% url 'personal_data' %}">Edit Personal Info</a></p>
 
     <!-- Log Out Link -->
     <p><a href="{% url 'logout' %}">Log Out</a></p>

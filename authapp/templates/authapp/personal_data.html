@@ -1,0 +1,16 @@
+<!-- authapp/templates/authapp/personal_data.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Personal Data</title>
+</head>
+<body>
+    <h2>Personal Data</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+</body>
+</html>
