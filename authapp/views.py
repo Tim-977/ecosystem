@@ -67,15 +67,6 @@ def signup_page(request):
             login(request, user)
             return redirect('personal_data')
 
-            # # Create the user using create_user() to handle password hashing
-            # user = User.objects.create_user(
-            #     username=username,
-            #     email=email,
-            #     password=password
-            # )
-            # login(request, user)
-            # return redirect('/')
-
     return render(request, 'authapp/signup.html', {'error_message': error_message})
 
 
