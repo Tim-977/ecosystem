@@ -1,0 +1,52 @@
+<!-- mainpage/templates/mainpage/day.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily Data for {{ date }}</title>
+</head>
+<body>
+  <h1>Daily Data for {{ date }}</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <label for="mood_rating">Mood Rating (1-10):</label>
+    <input type="number" name="mood_rating" id="mood_rating"
+           value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
+    <br/><br/>
+
+    <label for="productivity_score">Productivity Score (1-10):</label>
+    <input type="number" name="productivity_score" id="productivity_score"
+           value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
+    <br/><br/>
+
+    <label for="sleep">Sleep:</label><br/>
+    <textarea name="sleep" id="sleep" rows="2" cols="40">{{ daily_obj.sleep|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="habits_completed">Habits Completed:</label><br/>
+    <textarea name="habits_completed" id="habits_completed" rows="2" cols="40">{{ daily_obj.habits_completed|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="thoughts">Thoughts:</label><br/>
+    <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="goal_progress">Goal Progress:</label><br/>
+    <textarea name="goal_progress" id="goal_progress" rows="2" cols="40">{{ daily_obj.goal_progress|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="hourly_activity_logging">Hourly Activity Logging:</label><br/>
+    <textarea name="hourly_activity_logging" id="hourly_activity_logging" rows="2" cols="40">{{ daily_obj.hourly_activity_logging|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="todo">TODO:</label><br/>
+    <textarea name="todo" id="todo" rows="2" cols="40">{{ daily_obj.todo|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <button type="submit">Save</button>
+  </form>
+
+  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+</body>
+</html>
