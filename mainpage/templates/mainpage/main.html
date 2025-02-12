@@ -1,10 +1,16 @@
 <!-- mainpage/templates/mainpage/main.html -->
 {% extends "authapp/mainpage.html" %}
-
 {% block title %}Daily Logs{% endblock %}
 
 {% block content %}
 <h2>All Daily Data</h2>
+
+<!-- Button to add/log today's data -->
+<p>
+  <a href="{% url 'day_view' year=today.year month=today.month day=today.day %}">
+    Add / Log Today
+  </a>
+</p>
 
 <table border="1">
     <tr>
@@ -12,10 +18,12 @@
         <th>Date</th>
         <th>Mood</th>
         <th>Productivity</th>
-        <th>Habits</th>
-        <th>Hourly Activity</th>
-        <th>Sleep Info</th>
+        <th>Sleep</th>
+        <th>Habits Completed</th>
         <th>Thoughts</th>
+        <th>Goal Progress</th>
+        <th>Hourly Activity</th>
+        <th>TODO</th>
     </tr>
     {% for row in all_data %}
     <tr>
@@ -27,13 +35,17 @@
         </td>
         <td>{{ row.mood_rating }}</td>
         <td>{{ row.productivity_score }}</td>
-        <td>{{ row.habits }}</td>
-        <td>{{ row.hourly_activity }}</td>
-        <td>{{ row.sleep_info }}</td>
+        <td>{{ row.sleep }}</td>
+        <td>{{ row.habits_completed }}</td>
         <td>{{ row.thoughts }}</td>
+        <td>{{ row.goal_progress }}</td>
+        <td>{{ row.hourly_activity_logging }}</td>
+        <td>{{ row.todo }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="8">No records found.</td></tr>
+    <tr>
+      <td colspan="10">No records found.</td>
+    </tr>
     {% endfor %}
 </table>
 {% endblock %}

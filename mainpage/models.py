@@ -146,15 +146,16 @@ class DailyData(models.Model):
     mood_rating = models.IntegerField(null=True, blank=True)
     productivity_score = models.IntegerField(null=True, blank=True)
 
-    # You can store longer text in these fields
-    habits = models.TextField(null=True, blank=True)
-    hourly_activity = models.TextField(null=True, blank=True)
-    sleep_info = models.TextField(null=True, blank=True)
-    thoughts = models.TextField(null=True, blank=True)
+    # NEW FIELDS (Replacing old ones)
+    sleep = models.TextField(null=True, blank=True)               # Was sleep_info
+    habits_completed = models.TextField(null=True, blank=True)    # Was habits
+    thoughts = models.TextField(null=True, blank=True)            # Unchanged
+    goal_progress = models.TextField(null=True, blank=True)       # New field
+    hourly_activity_logging = models.TextField(null=True, blank=True)  # Was hourly_activity
+    todo = models.TextField(null=True, blank=True)                # New field
 
     def __str__(self):
         return f"DailyData(user={self.user_id}, date={self.date})"
 
     class Meta:
-        # If you want to ensure only one (user_id, date) row, use a unique constraint:
-        unique_together = ("user_id", "date")
+        unique_together = ("user_id", "date")  # Ensure only one record per user per date

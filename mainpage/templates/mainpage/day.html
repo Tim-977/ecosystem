@@ -20,23 +20,31 @@
            value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
     <br/><br/>
 
-    <label for="habits">Habits:</label><br/>
-    <textarea name="habits" id="habits" rows="3" cols="40">{{ daily_obj.habits }}</textarea>
+    <label for="sleep">Sleep:</label><br/>
+    <textarea name="sleep" id="sleep" rows="2" cols="40">{{ daily_obj.sleep|default_if_none:'' }}</textarea>
     <br/><br/>
 
-    <label for="hourly_activity">Hourly Activity:</label><br/>
-    <textarea name="hourly_activity" id="hourly_activity" rows="3" cols="40">{{ daily_obj.hourly_activity }}</textarea>
-    <br/><br/>
-
-    <label for="sleep_info">Sleep Info:</label><br/>
-    <textarea name="sleep_info" id="sleep_info" rows="3" cols="40">{{ daily_obj.sleep_info }}</textarea>
+    <label for="habits_completed">Habits Completed:</label><br/>
+    <textarea name="habits_completed" id="habits_completed" rows="2" cols="40">{{ daily_obj.habits_completed|default_if_none:'' }}</textarea>
     <br/><br/>
 
     <label for="thoughts">Thoughts:</label><br/>
-    <textarea name="thoughts" id="thoughts" rows="3" cols="40">{{ daily_obj.thoughts }}</textarea>
+    <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
     <br/><br/>
 
-    <button type="submit">Save Changes</button>
+    <label for="goal_progress">Goal Progress:</label><br/>
+    <textarea name="goal_progress" id="goal_progress" rows="2" cols="40">{{ daily_obj.goal_progress|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="hourly_activity_logging">Hourly Activity Logging:</label><br/>
+    <textarea name="hourly_activity_logging" id="hourly_activity_logging" rows="2" cols="40">{{ daily_obj.hourly_activity_logging|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <label for="todo">TODO:</label><br/>
+    <textarea name="todo" id="todo" rows="2" cols="40">{{ daily_obj.todo|default_if_none:'' }}</textarea>
+    <br/><br/>
+
+    <button type="submit">Save</button>
   </form>
 
   <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
