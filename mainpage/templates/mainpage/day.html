@@ -1,0 +1,44 @@
+<!-- mainpage/templates/mainpage/day.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily Data for {{ date }}</title>
+</head>
+<body>
+  <h1>Daily Data for {{ date }}</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <label for="mood_rating">Mood Rating (1-10):</label>
+    <input type="number" name="mood_rating" id="mood_rating"
+           value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
+    <br/><br/>
+
+    <label for="productivity_score">Productivity Score (1-10):</label>
+    <input type="number" name="productivity_score" id="productivity_score"
+           value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
+    <br/><br/>
+
+    <label for="habits">Habits:</label><br/>
+    <textarea name="habits" id="habits" rows="3" cols="40">{{ daily_obj.habits }}</textarea>
+    <br/><br/>
+
+    <label for="hourly_activity">Hourly Activity:</label><br/>
+    <textarea name="hourly_activity" id="hourly_activity" rows="3" cols="40">{{ daily_obj.hourly_activity }}</textarea>
+    <br/><br/>
+
+    <label for="sleep_info">Sleep Info:</label><br/>
+    <textarea name="sleep_info" id="sleep_info" rows="3" cols="40">{{ daily_obj.sleep_info }}</textarea>
+    <br/><br/>
+
+    <label for="thoughts">Thoughts:</label><br/>
+    <textarea name="thoughts" id="thoughts" rows="3" cols="40">{{ daily_obj.thoughts }}</textarea>
+    <br/><br/>
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+</body>
+</html>
