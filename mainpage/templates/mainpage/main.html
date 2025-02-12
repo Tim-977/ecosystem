@@ -1,37 +1,39 @@
 <!-- mainpage/templates/mainpage/main.html -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Main Page</title>
-</head>
-<body>
-  <h1>All Daily Data</h1>
-  <table border="1">
+{% extends "authapp/mainpage.html" %}
+
+{% block title %}Daily Logs{% endblock %}
+
+{% block content %}
+<h2>All Daily Data</h2>
+
+<table border="1">
     <tr>
-      <th>User</th>
-      <th>Date</th>
-      <th>Mood</th>
-      <th>Productivity</th>
-      <th>Habits</th>
-      <th>Hourly Activity</th>
-      <th>Sleep Info</th>
-      <th>Thoughts</th>
+        <th>User</th>
+        <th>Date</th>
+        <th>Mood</th>
+        <th>Productivity</th>
+        <th>Habits</th>
+        <th>Hourly Activity</th>
+        <th>Sleep Info</th>
+        <th>Thoughts</th>
     </tr>
     {% for row in all_data %}
     <tr>
-      <td>{{ row.user_id }}</td>
-      <td><a href="{% url 'day_view' year=row.date.year month=row.date.month day=row.date.day %}">
-            {{ row.date }}
-          </a>
-      </td>
-      <td>{{ row.mood_rating }}</td>
-      <td>{{ row.productivity_score }}</td>
-      <td>{{ row.habits }}</td>
-      <td>{{ row.hourly_activity }}</td>
-      <td>{{ row.sleep_info }}</td>
-      <td>{{ row.thoughts }}</td>
+        <td>{{ row.user_id }}</td>
+        <td>
+            <a href="{% url 'day_view' year=row.date.year month=row.date.month day=row.date.day %}">
+                {{ row.date }}
+            </a>
+        </td>
+        <td>{{ row.mood_rating }}</td>
+        <td>{{ row.productivity_score }}</td>
+        <td>{{ row.habits }}</td>
+        <td>{{ row.hourly_activity }}</td>
+        <td>{{ row.sleep_info }}</td>
+        <td>{{ row.thoughts }}</td>
     </tr>
+    {% empty %}
+    <tr><td colspan="8">No records found.</td></tr>
     {% endfor %}
-  </table>
-</body>
-</html>
+</table>
+{% endblock %}

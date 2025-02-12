@@ -3,15 +3,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Main Page</title>
+    <title>{% block title %}Main Page{% endblock %}</title>
 </head>
 <body>
+
     <h1>Welcome, {{ username }}!</h1>
 
-    <!-- Add this link to go to personal_data page -->
-    <p><a href="{% url 'personal_data' %}">Edit Personal Info</a></p>
+    <!-- Navigation Links -->
+    <nav>
+        <p><a href="{% url 'main_page' %}">Home</a> | 
+           <a href="{% url 'personal_data' %}">Edit Personal Info</a> | 
+           <a href="{% url 'logout' %}">Log Out</a></p>
+    </nav>
 
-    <!-- Log Out Link -->
-    <p><a href="{% url 'logout' %}">Log Out</a></p>
+    <!-- Dynamic Content Block -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
 </body>
 </html>
