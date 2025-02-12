@@ -5,6 +5,15 @@
 {% block content %}
 <h2>All Daily Data</h2>
 
+<!-- Display messages (error handling for future date logs) -->
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 <!-- Button to add/log today's data -->
 <p>
   <a href="{% url 'day_view' year=today.year month=today.month day=today.day %}">

@@ -1,7 +1,9 @@
 from datetime import date
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from .models import DailyData
+
 
 
 @login_required
@@ -22,17 +24,22 @@ def main_page_view(request):
 
 @login_required
 def day_view(request, year, month, day):
-    """Shows a form for a specific date. Updates existing data instead of adding new rows."""
+    """Restricts users from logging future dates."""
     current_date = date(year, month, day)
+    today = date.today()
 
-    # Fetch or create a DailyData entry for the logged-in user
+    # Prevent future log creation
+    if current_date > today:
+        messages.error(request, "You cannot create or edit logs for future dates.")
+        return redirect('main_page')
+
+    # Fetch or create the daily log for the user
     daily_obj, _ = DailyData.objects.get_or_create(user_id=request.user.id, date=current_date)
 
     if request.method == 'POST':
-        # Grab form data
+        # Update only if the date is valid
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
         daily_obj.productivity_score = request.POST.get('productivity_score') or None
-
         daily_obj.sleep = request.POST.get('sleep')
         daily_obj.habits_completed = request.POST.get('habits_completed')
         daily_obj.thoughts = request.POST.get('thoughts')
