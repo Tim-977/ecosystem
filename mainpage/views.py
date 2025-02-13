@@ -36,7 +36,6 @@ def day_view(request, year, month, day):
     today = date.today()
     if current_date > today:
         messages.error(request, "You cannot create or edit logs for future dates.")
-        # You might show a message or redirect to the main page
         return redirect('main_page')
 
     # Get or create the daily log
