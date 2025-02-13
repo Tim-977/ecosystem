@@ -1,18 +1,12 @@
-<!-- mainpage/templates/mainpage/main.html -->
 {% extends "authapp/mainpage.html" %}
 {% block title %}Daily Logs{% endblock %}
 
 {% block content %}
 <h2>All Daily Data</h2>
 
-<!-- Display messages (error handling for future date logs) -->
-{% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+<p><strong>Streak:</strong> {{ current_streak }} days  |
+   <strong>Longest Streak:</strong> {{ longest_streak }} days
+</p>
 
 <!-- Button to add/log today's data -->
 <p>
@@ -20,6 +14,16 @@
     Add / Log Today
   </a>
 </p>
+
+<!-- If you have messages for future date restrictions, show them here -->
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li style="color: red;">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 
 <table border="1">
     <tr>
