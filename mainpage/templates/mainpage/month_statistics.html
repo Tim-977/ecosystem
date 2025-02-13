@@ -2,9 +2,7 @@
 {% load static %}
 {% block title %}Month Statistics{% endblock %}
 
-
 {% block content %}
-
 <div class="toggle-order-btn">
   {% if reverse %}
     <a href="?reverse=0" class="button">Show Oldest → Newest</a>
@@ -47,12 +45,40 @@
     </table>
   </section>
 
-  <!-- Right section: the Sleep Graph -->
-  <aside class="sleep-graph">
-    <h2>Sleep Graph (Coming Soon)</h2>
-    <div class="graph-box">
-      Sleep graph will be displayed here in the future.
-    </div>
-  </aside>
+  <!-- Right section: Sleep & Activity Info -->
+  <div class="right-section">
+    <aside class="sleep-graph">
+      <h2>Sleep Graph (Monthly Data)</h2>
+      <div class="graph-box">
+        {% if monthly_sleep_data %}
+          <p>Daily Sleep Hours:</p>
+          <ul>
+          {% for item in monthly_sleep_data %}
+            <li>{{ item.date_obj|date:"M d" }}: {{ item.sleep_hours|floatformat:1 }} hours</li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p>No sleep data for this month yet.</p>
+        {% endif %}
+      </div>
+    </aside>
+    
+    <aside class="activity-graph">
+      <h2>Activity Graph (Monthly Data)</h2>
+      <div class="graph-box">
+        {% if monthly_activity_aggregate %}
+          <p>Total Hours by Activity:</p>
+          <ul>
+          {% for activity_name, total_hours in monthly_activity_aggregate.items %}
+            <li>{{ activity_name }}: {{ total_hours }} hours</li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p>No activity data for this month yet.</p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
 </div>
 {% endblock %}

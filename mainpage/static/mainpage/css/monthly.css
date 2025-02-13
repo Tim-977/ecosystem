@@ -159,12 +159,10 @@ input[type="range"][orient="vertical"] {
   margin-top: 10px;
   border: 1px dashed #999;
 
-  /* Center the text */
   display: flex;
   align-items: center;
   justify-content: center;
 
-  /* Styling the message */
   font-style: italic;
   color: #666;
   font-size: 14px;
@@ -180,4 +178,10 @@ input[type="range"][orient="vertical"] {
 .stats-table {
   flex: 1;
   margin-right: 20px;
+}
+
+.right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }

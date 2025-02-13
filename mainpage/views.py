@@ -232,10 +232,8 @@ def set_habits_view(request):
     return render(request, 'mainpage/set_habits.html', context)
 
 
-
-
 ################################
-#          ACTIVITY CONFIG      #
+#          ACTIVITY CONFIG     #
 ################################
 @login_required
 def activity_config_view(request):
@@ -277,7 +275,6 @@ def get_activities(request):
     ]
     """
     activities_qs = ActivityMapping.objects.filter(user_id=request.user.id)
-    # Convert QuerySet to list of dict
     data = list(activities_qs.values('id', 'name', 'color'))
     return JsonResponse(data, safe=False)
 
@@ -286,29 +283,18 @@ def get_activities(request):
 #  DEADLINE-BASED TODO  #
 #########################
 def _normalize_task(task):
-    """
-    Ensure each task has:
-      - due_type: "none", "today", "until", or "exact"
-      - due_date: string or None (YYYY-MM-DD)
-      - due_time: string or None (HH:MM)
-      - priority: "critical", "high", "medium", or "low"
-    """
     if 'due_type' not in task:
         task['due_type'] = 'none'
     if 'due_date' not in task:
         task['due_date'] = None
     if 'due_time' not in task:
         task['due_time'] = None
-
-    # If old code used 'someday', treat as no deadline
     if isinstance(task.get('due_time'), str) and task['due_time'].lower() == 'someday':
         task['due_type'] = 'none'
         task['due_date'] = None
         task['due_time'] = None
-
     if 'priority' not in task:
         task['priority'] = 'medium'
-
     return task
 
 
@@ -348,16 +334,13 @@ def _sort_tasks(tasks):
             elif t is None:
                 t = time.min
             return (p_val, dt_val, d, t)
-
         elif dt == 'until':
             d, _ = parse_date_time(task['due_date'], None)
             if d is None:
                 d = date.max
             return (p_val, dt_val, d, time.min)
-
         elif dt == 'today':
             return (p_val, dt_val, date.max, time.max)
-
         else:
             return (p_val, dt_val, date.max, time.max)
 
@@ -366,11 +349,6 @@ def _sort_tasks(tasks):
 
 @login_required
 def get_todo_tasks(request):
-    """
-    Return the user's tasks as JSON (split into "pending" vs "done").
-    If the user doesn't have a UserTodo row yet, create it.
-    We'll also apply sorting by due_type, date, time.
-    """
     usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
     tasks = usertodo.tasks
 
@@ -442,12 +420,10 @@ def update_todo_task(request, task_id):
 
         for t in tasks:
             if t.get('id') == task_id:
-                # Validate required fields based on due_type
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
                     if dt in ['none', 'until', 'exact']:
                         t['due_type'] = dt
-
                         if dt == 'none':
                             t['due_date'] = None
                             t['due_time'] = None
@@ -462,7 +438,6 @@ def update_todo_task(request, task_id):
                             t['due_date'] = body.get('due_date')
                             t['due_time'] = body.get('due_time')
 
-                # Update other task fields
                 if 'priority' in body:
                     pr = body['priority'].lower()
                     if pr in ['critical', 'high', 'medium', 'low']:
@@ -479,12 +454,8 @@ def update_todo_task(request, task_id):
     return JsonResponse({"error": "PUT required"}, status=405)
 
 
-
 @login_required
 def delete_todo_task(request, task_id):
-    """
-    Delete a task by ID.
-    """
     if request.method == 'DELETE':
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
         tasks = usertodo.tasks
@@ -499,12 +470,12 @@ def delete_todo_task(request, task_id):
         return JsonResponse({"error": "DELETE required"}, status=405)
 
 
-
+###############################
+#         MONTH VIEW          #
+###############################
 @login_required
 def month_view(request, year, month):
     reverse = request.GET.get("reverse") == "1"
-
-    # Use descending or ascending order based on toggle
     order = '-date' if reverse else 'date'
 
     daily_logs = DailyData.objects.filter(
@@ -528,7 +499,6 @@ def month_view(request, year, month):
     for log in daily_logs:
         mood_val = log.mood_rating if log.mood_rating is not None else 0
         prod_val = log.productivity_score if log.productivity_score is not None else 0
-        # Convert to int if needed
         mood_val = int(mood_val)
         prod_val = int(prod_val)
 
@@ -542,12 +512,9 @@ def month_view(request, year, month):
                                        (5, '#ffffff'),   # white
                                        (10, '#ffc0cb'))  # pink
 
-        # Parse the 10-character habits_completed string (e.g. '0101100101')
-        # Then match it up with the actual habit names from monthly_obj
         habits_str = log.habits_completed or ''
         habits_str = habits_str.ljust(10, '0')[:10]
 
-        # If monthly_obj exists, get up to 10 habits. Otherwise, empty
         habit_labels = []
         if monthly_obj:
             habit_labels = [
@@ -559,7 +526,6 @@ def month_view(request, year, month):
         else:
             habit_labels = [""] * 10
 
-        # Build a list of (habit_name, is_complete_boolean)
         habit_statuses = []
         for i, hname in enumerate(habit_labels):
             is_complete = (habits_str[i] == '1')
@@ -576,6 +542,81 @@ def month_view(request, year, month):
             "self_reflection": log.self_reflection or "",
         })
 
+    ###############################
+    # NEW CODE FOR SLEEP & ACTIVITY
+    ###############################
+    
+    # We'll store a day-by-day list for sleep hours, plus a monthly aggregator for activities.
+    monthly_sleep_data = []
+    monthly_activity_aggregate = {}  # { activity_name -> total hours }
+
+    # Helper function to parse "HHMM" or "HH:MM" into a Python time object
+    def parse_time_str(t_str):
+        t_str = t_str.strip()
+        # If user left it blank, return None
+        if not t_str:
+            return None
+        # Remove any colon
+        t_str = t_str.replace(':', '')
+        # Must be 3 or 4 digits now
+        if len(t_str) == 3:
+            # e.g. '730' => '07:30'
+            h = int(t_str[0])
+            m = int(t_str[1:])
+        elif len(t_str) == 4:
+            h = int(t_str[:2])
+            m = int(t_str[2:])
+        else:
+            return None
+        # clamp in [0..23], [0..59] for safety
+        if h < 0 or h > 23 or m < 0 or m > 59:
+            return None
+        return time(h, m)
+
+    for log in daily_logs:
+        # --- Sleep data ---
+        if log.sleep:
+            parts = log.sleep.split(',')
+            bed_str = parts[0].strip() if len(parts) > 0 else ''
+            wake_str = parts[1].strip() if len(parts) > 1 else ''
+
+            bed_time_obj = parse_time_str(bed_str)
+            wake_time_obj = parse_time_str(wake_str)
+
+            # For a quick approach: if both times are valid, compute difference
+            # If wake_time < bed_time, assume it crossed midnight by +1 day
+            if bed_time_obj and wake_time_obj:
+                sleep_duration = (datetime.combine(log.date, wake_time_obj)
+                                  - datetime.combine(log.date, bed_time_obj))
+                if sleep_duration.total_seconds() < 0:
+                    # Crossed midnight => add 24h
+                    sleep_duration += timedelta(hours=24)
+                sleep_hours = sleep_duration.total_seconds() / 3600.0
+            else:
+                sleep_hours = 0
+        else:
+            sleep_hours = 0
+
+        monthly_sleep_data.append({
+            "date_obj": log.date,
+            "sleep_hours": sleep_hours
+        })
+
+        # --- Activity data ---
+        # hourly_activity_logging is JSON of [{"hour": 0, "activity": "Sleeping"}, ...]
+        if log.hourly_activity_logging:
+            try:
+                hour_list = json.loads(log.hourly_activity_logging)
+            except:
+                hour_list = []
+        else:
+            hour_list = []
+
+        for hour_item in hour_list:
+            act_name = hour_item.get('activity')
+            if act_name:  # Only increment if there's an actual activity name
+                monthly_activity_aggregate[act_name] = monthly_activity_aggregate.get(act_name, 0) + 1
+
     # 4) Render the template
     context = {
         "year": year,
@@ -584,18 +625,15 @@ def month_view(request, year, month):
         "days_data": days_data,
         "current_view": "month_view",
         "reverse": reverse,
+
+        # PASS THESE TO TEMPLATE
+        "monthly_sleep_data": monthly_sleep_data,
+        "monthly_activity_aggregate": monthly_activity_aggregate,
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
-def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
-    """
-    Interpolates (blends) a color for a value in [0..10] based on two
-    breakpoints: e.g. (0, #0000ff), (5, #ffffff), (10, #ffc0cb).
-    This is a simple 2-step gradient: [low..mid], then [mid..high].
-    """
 
-    # Each tuple is (break_value, hex_color), e.g. (0, '#ff0000')
-    # We assume we have exactly 3 breakpoints: low, mid, high
+def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
     lv, lc = low_tuple
     mv, mc = mid_tuple
     hv, hc = high_tuple
@@ -605,41 +643,28 @@ def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
     elif value >= hv:
         return hc
     elif value <= mv:
-        # Blend between low and mid
         ratio = (value - lv) / (mv - lv)
         return blend_hex_colors(lc, mc, ratio)
     else:
-        # Blend between mid and high
         ratio = (value - mv) / (hv - mv)
         return blend_hex_colors(mc, hc, ratio)
 
 
 def blend_hex_colors(colorA, colorB, t):
-    """
-    Blend two hex colors (like '#ff0000' and '#00ff00') by fraction t in [0..1].
-    Returns a hex color string.
-    """
-    # Strip leading '#'
     cA = colorA.lstrip('#')
     cB = colorB.lstrip('#')
-    # Convert to R,G,B integers
     rA, gA, bA = int(cA[0:2], 16), int(cA[2:4], 16), int(cA[4:6], 16)
     rB, gB, bB = int(cB[0:2], 16), int(cB[2:4], 16), int(cB[4:6], 16)
 
-    # Linear interpolate each channel
-    r = int(rA + (rB - rA)*t)
-    g = int(gA + (gB - gA)*t)
-    b = int(bA + (bB - bA)*t)
+    r = int(rA + (rB - rA) * t)
+    g = int(gA + (gB - gA) * t)
+    b = int(bA + (bB - bA) * t)
 
-    # Rebuild hex
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
 @login_required
 def diary_view(request, year, month):
-    """
-    Display a diary page that shows detailed thoughts and reflections by day.
-    """
     daily_logs = DailyData.objects.filter(
         user_id=request.user.id,
         date__year=year,
