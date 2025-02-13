@@ -43,7 +43,7 @@ def day_view(request, year, month, day):
         daily_obj.sleep = request.POST.get('sleep')
         daily_obj.habits_completed = request.POST.get('habits_completed')
         daily_obj.thoughts = request.POST.get('thoughts')
-        daily_obj.goal_progress = request.POST.get('goal_progress')
+        daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.todo = request.POST.get('todo')
 

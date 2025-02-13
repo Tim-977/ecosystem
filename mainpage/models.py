@@ -150,7 +150,7 @@ class DailyData(models.Model):
     sleep = models.TextField(null=True, blank=True)               # Was sleep_info
     habits_completed = models.TextField(null=True, blank=True)    # Was habits
     thoughts = models.TextField(null=True, blank=True)            # Unchanged
-    goal_progress = models.TextField(null=True, blank=True)       # New field
+    self_reflection = models.TextField(null=True, blank=True)     # New field
     hourly_activity_logging = models.TextField(null=True, blank=True)  # Was hourly_activity
     todo = models.TextField(null=True, blank=True)                # New field
 
