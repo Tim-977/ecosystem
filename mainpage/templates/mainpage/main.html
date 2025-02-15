@@ -1,18 +1,23 @@
 {% extends "authapp/mainpage.html" %}
+{% load static %}  <!-- Load static files -->
+
 {% block title %}Daily Logs{% endblock %}
 
 {% block content %}
 <h2>All Daily Data</h2>
 
+<!-- Display streak information -->
 <p><strong>Streak:</strong> {{ current_streak }} days  |
    <strong>Longest Streak:</strong> {{ longest_streak }} days
 </p>
 
-<!-- Button to add/log today's data -->
+<!-- Show local date/time for user convenience -->
+<p id="local-date" style="font-weight:bold;">Date: --</p>
+<p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+
+<!-- 'Add / Log Today' link will be assigned by JavaScript -->
 <p>
-  <a href="{% url 'day_view' year=today.year month=today.month day=today.day %}">
-    Add / Log Today
-  </a>
+  <a id="log-today-link" href="#">Add / Log Today</a>
 </p>
 
 <!-- If you have messages for future date restrictions, show them here -->
@@ -24,7 +29,7 @@
   </ul>
 {% endif %}
 
-
+<!-- Table of existing logs -->
 <table border="1">
     <tr>
         <th>User</th>
@@ -61,4 +66,8 @@
     </tr>
     {% endfor %}
 </table>
+
+<!-- Link to your external JavaScript, or embed inline script -->
+<script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
 {% endblock %}

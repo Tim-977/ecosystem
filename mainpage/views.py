@@ -1,65 +1,66 @@
-from datetime import date, timedelta
-
+from datetime import timedelta, date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import render, redirect
 
 from .models import DailyData, Streak
 
 
 @login_required
 def main_page_view(request):
+    # Fetch all logs for the current user
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
-    
-    # Fetch or create the user's streak
+
+    # Fetch or create the user's streak data
     streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
     streak_data = streak_obj.streak_data or {}
     current_streak = streak_data.get("current_streak", 0)
     longest_streak = streak_data.get("longest_streak", 0)
 
-    today = date.today()
+    # We DO NOT calculate "today" in Python now—let the browser do it
+
     context = {
         "all_data": all_data,
         "username": request.user.username,
-        "today": today,
         "current_streak": current_streak,
         "longest_streak": longest_streak,
+        # "today": date.today()  # <-- removed
     }
     return render(request, 'mainpage/main.html', context)
 
 
+
 @login_required
 def day_view(request, year, month, day):
+    # Convert the URL path into a Python date
     current_date = date(year, month, day)
 
-    # Prevent future logs, for example:
+    # Removed future date check:
     today = date.today()
     if current_date > today:
         messages.error(request, "You cannot create or edit logs for future dates.")
         return redirect('main_page')
 
-    # Get or create the daily log
+    # Get or create a daily log for that date
     daily_obj, _ = DailyData.objects.get_or_create(
-        user_id=request.user.id, 
+        user_id=request.user.id,
         date=current_date
     )
 
     if request.method == 'POST':
-        # Update the daily log
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
         daily_obj.productivity_score = request.POST.get('productivity_score') or None
         daily_obj.sleep = request.POST.get('sleep')
         daily_obj.habits_completed = request.POST.get('habits_completed')
         daily_obj.thoughts = request.POST.get('thoughts')
-        daily_obj.self_reflection = request.POST.get('self_reflection')  # or whatever your new field is
+        daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.todo = request.POST.get('todo')
         daily_obj.save()
 
-        # After saving, update the streak (only once per day)
+        # Update the streak
         _update_streak(request.user.id, current_date)
 
-        # Redirect back to the same page
         return redirect('day_view', year=year, month=month, day=day)
 
     context = {
@@ -67,6 +68,7 @@ def day_view(request, year, month, day):
         "date": current_date,
     }
     return render(request, 'mainpage/day.html', context)
+
 
 def _update_streak(user_id, logged_date):
     """
