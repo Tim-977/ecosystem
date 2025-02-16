@@ -2,6 +2,7 @@ from datetime import timedelta, date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from django.utils.timezone import now
 
 from .models import DailyData, Streak
 
@@ -14,17 +15,16 @@ def main_page_view(request):
     # Fetch or create the user's streak data
     streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
     streak_data = streak_obj.streak_data or {}
-    current_streak = streak_data.get("current_streak", 0)
-    longest_streak = streak_data.get("longest_streak", 0)
 
-    # We DO NOT calculate "today" in Python now—let the browser do it
+    # Get server time (UTC by default if USE_TZ=True in settings)
+    server_time = now()  # Returns a timezone-aware datetime object
 
     context = {
         "all_data": all_data,
         "username": request.user.username,
-        "current_streak": current_streak,
-        "longest_streak": longest_streak,
-        # "today": date.today()  # <-- removed
+        "current_streak": streak_data.get("current_streak", 0),
+        "longest_streak": streak_data.get("longest_streak", 0),
+        "server_time": server_time,  # Send server time to template
     }
     return render(request, 'mainpage/main.html', context)
 

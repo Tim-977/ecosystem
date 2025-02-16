@@ -11,6 +11,9 @@
    <strong>Longest Streak:</strong> {{ longest_streak }} days
 </p>
 
+<!-- Display Server Time -->
+<p><strong>Server Time:</strong> {{ server_time|date:"Y-m-d H:i:s" }}</p>
+
 <!-- Show local date/time for user convenience -->
 <p id="local-date" style="font-weight:bold;">Date: --</p>
 <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
