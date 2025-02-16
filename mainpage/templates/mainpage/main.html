@@ -1,5 +1,5 @@
 {% extends "authapp/mainpage.html" %}
-{% load static %}  <!-- Load static files -->
+{% load static %}
 
 {% block title %}Daily Logs{% endblock %}
 
@@ -11,19 +11,24 @@
    <strong>Longest Streak:</strong> {{ longest_streak }} days
 </p>
 
-<!-- Display Server Time -->
-<p><strong>Server Time:</strong> {{ server_time|date:"Y-m-d H:i:s" }}</p>
+<p><strong>Server Time (UTC):</strong> {{ server_time|date:"Y-m-d H:i:s" }}</p>
+<p><strong>Your Local Time:</strong> {{ user_time|date:"Y-m-d H:i:s" }}</p>
+<p><strong>Your Timezone:</strong> {{ user_timezone }}</p>
+<p><strong>Your Local Time:</strong> {{ user_time|date:"Y-m-d H:i:s T" }}</p>
 
-<!-- Show local date/time for user convenience -->
+<p>DEBUG: Raw server_time: {{ server_time }}</p>
+<p>DEBUG: Raw user_time: {{ user_time }}</p>
+<p>DEBUG: Raw user_time.tzinfo: {{ user_time.tzinfo }}</p>
+
+<!-- Existing elements -->
 <p id="local-date" style="font-weight:bold;">Date: --</p>
 <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
-<!-- 'Add / Log Today' link will be assigned by JavaScript -->
 <p>
   <a id="log-today-link" href="#">Add / Log Today</a>
 </p>
 
-<!-- If you have messages for future date restrictions, show them here -->
+<!-- Future restriction message -->
 {% if messages %}
   <ul class="messages">
     {% for message in messages %}
@@ -71,6 +76,6 @@
 </table>
 
 <!-- Link to your external JavaScript, or embed inline script -->
-<script src="{% static 'mainpage/js/localtime.js' %}"></script>
+<!-- <script src="{% static 'mainpage/js/localtime.js' %}"></script> -->
 
 {% endblock %}

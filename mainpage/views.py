@@ -1,7 +1,9 @@
-from datetime import timedelta, date
+from datetime import date, timedelta
+
+import pytz
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect, render
 from django.utils.timezone import now
 
 from .models import DailyData, Streak
@@ -9,24 +11,34 @@ from .models import DailyData, Streak
 
 @login_required
 def main_page_view(request):
-    # Fetch all logs for the current user
-    all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
+    server_time = now()  # Should be UTC if USE_TZ=True
 
-    # Fetch or create the user's streak data
-    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
-    streak_data = streak_obj.streak_data or {}
+    try:
+        user_timezone = request.user.personaldata.timezone
+    except PersonalData.DoesNotExist:
+        user_timezone = 'UTC'  # Default if not set
 
-    # Get server time (UTC by default if USE_TZ=True in settings)
-    server_time = now()  # Returns a timezone-aware datetime object
+    print(f"DEBUG: Retrieved user_timezone: {user_timezone}")
+    print(f"DEBUG: Server Time (UTC): {server_time}")
+
+    try:
+        user_time = server_time.astimezone(pytz.timezone(user_timezone))
+        print(f"DEBUG: Converted User Time ({user_timezone}): {user_time}")
+    except Exception as e:
+        print(f"ERROR: Timezone conversion failed - {e}")
+        user_time = server_time  # Fallback to UTC if conversion fails
 
     context = {
-        "all_data": all_data,
+        "all_data": DailyData.objects.filter(user_id=request.user.id).order_by('-date'),
         "username": request.user.username,
-        "current_streak": streak_data.get("current_streak", 0),
-        "longest_streak": streak_data.get("longest_streak", 0),
-        "server_time": server_time,  # Send server time to template
+        "current_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("current_streak", 0),
+        "longest_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("longest_streak", 0),
+        "server_time": server_time.strftime("%Y-%m-%d %H:%M:%S %Z"),  # Force timezone info
+        "user_time": user_time.strftime("%Y-%m-%d %H:%M:%S %Z"),      # Force timezone info
+        "user_timezone": user_timezone,
     }
     return render(request, 'mainpage/main.html', context)
+
 
 
 

@@ -86,5 +86,8 @@ def personal_data_view(request):
             return redirect('/')  # or redirect to main page
     else:
         form = PersonalDataForm(instance=personal_data)
-    
-    return render(request, 'authapp/personal_data.html', {'form': form})
+
+    return render(request, 'authapp/personal_data.html', {
+        'form': form,
+        'timezone': personal_data.timezone if personal_data else 'UTC'
+    })
