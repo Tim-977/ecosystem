@@ -23,18 +23,18 @@ def main_page_view(request):
 
     try:
         user_time = server_time.astimezone(pytz.timezone(user_timezone))
-        print(f"DEBUG: Converted User Time ({user_timezone}): {user_time}")
+        print(f"DEBUG: Converted User Time ({user_timezone}): {user_time} | tzinfo: {user_time.tzinfo}")
     except Exception as e:
         print(f"ERROR: Timezone conversion failed - {e}")
-        user_time = server_time  # Fallback to UTC if conversion fails
+        user_time = server_time  # Fallback to UTC if conversion fail
 
     context = {
         "all_data": DailyData.objects.filter(user_id=request.user.id).order_by('-date'),
         "username": request.user.username,
         "current_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("current_streak", 0),
         "longest_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("longest_streak", 0),
-        "server_time": server_time.strftime("%Y-%m-%d %H:%M:%S %Z"),  # Force timezone info
-        "user_time": user_time.strftime("%Y-%m-%d %H:%M:%S %Z"),      # Force timezone info
+        "server_time": server_time,  # Keep it as a timezone-aware datetime
+        "user_time": user_time,      # Keep it as a datetime, NOT a string
         "user_timezone": user_timezone,
     }
     return render(request, 'mainpage/main.html', context)

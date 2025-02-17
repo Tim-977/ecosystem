@@ -7,28 +7,29 @@
 <h2>All Daily Data</h2>
 
 <!-- Display streak information -->
-<p><strong>Streak:</strong> {{ current_streak }} days  |
-   <strong>Longest Streak:</strong> {{ longest_streak }} days
+<p>
+  <strong>Streak:</strong> {{ current_streak }} days  |
+  <strong>Longest Streak:</strong> {{ longest_streak }} days
 </p>
 
-<p><strong>Server Time (UTC):</strong> {{ server_time|date:"Y-m-d H:i:s" }}</p>
-<p><strong>Your Local Time:</strong> {{ user_time|date:"Y-m-d H:i:s" }}</p>
-<p><strong>Your Timezone:</strong> {{ user_timezone }}</p>
-<p><strong>Your Local Time:</strong> {{ user_time|date:"Y-m-d H:i:s T" }}</p>
+<!-- Show server time (UTC) and user local time -->
+<p><strong>Server Time (UTC):</strong> {{ server_time|date:"Y-m-d H:i:s T" }}</p>
+<p><strong>Your Local Time ({{ user_timezone }}):</strong> {{ user_time|date:"Y-m-d H:i:s T" }}</p>
 
+<!-- Remove debug prints (optional) -->
 <p>DEBUG: Raw server_time: {{ server_time }}</p>
 <p>DEBUG: Raw user_time: {{ user_time }}</p>
-<p>DEBUG: Raw user_time.tzinfo: {{ user_time.tzinfo }}</p>
 
-<!-- Existing elements -->
-<p id="local-date" style="font-weight:bold;">Date: --</p>
-<p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+
+<!-- Date/Time placeholders (currently not in use since localtime.js is disabled) -->
+<!-- <p id="local-date" style="font-weight:bold;">Date: --</p>
+<p id="local-time" style="font-weight:bold;">Time: --:--:--</p> -->
 
 <p>
   <a id="log-today-link" href="#">Add / Log Today</a>
 </p>
 
-<!-- Future restriction message -->
+<!-- Display any messages (e.g., future-date restrictions) -->
 {% if messages %}
   <ul class="messages">
     {% for message in messages %}
@@ -37,7 +38,7 @@
   </ul>
 {% endif %}
 
-<!-- Table of existing logs -->
+<!-- Daily logs table -->
 <table border="1">
     <tr>
         <th>User</th>
@@ -75,7 +76,7 @@
     {% endfor %}
 </table>
 
-<!-- Link to your external JavaScript, or embed inline script -->
+<!-- If you want live JavaScript updates, uncomment the script below and adjust accordingly. -->
 <!-- <script src="{% static 'mainpage/js/localtime.js' %}"></script> -->
 
 {% endblock %}
