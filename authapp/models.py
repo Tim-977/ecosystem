@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import pytz  # Import pytz for timezone choices
 
 class CustomUser(AbstractUser):
     first_name = None
@@ -20,7 +19,6 @@ class CustomUser(AbstractUser):
         help_text='Specific permissions for this user.'
     )
 
-
 class PersonalData(models.Model):
     GENDER_CHOICES = [
         (1, 'Male'),
@@ -33,19 +31,10 @@ class PersonalData(models.Model):
     )
     preferred_name = models.CharField(max_length=100, blank=True)
     b_day = models.DateField(null=True, blank=True)
-
-    # Gender field
     gender = models.IntegerField(
         choices=GENDER_CHOICES,
         null=True,
         blank=True
-    )
-
-    # New field: Timezone selection
-    timezone = models.CharField(
-        max_length=50,
-        choices=[(tz, tz) for tz in pytz.all_timezones],  # Dropdown list of timezones
-        default='UTC'
     )
 
     def __str__(self):

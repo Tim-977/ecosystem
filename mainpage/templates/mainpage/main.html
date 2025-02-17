@@ -12,24 +12,22 @@
   <strong>Longest Streak:</strong> {{ longest_streak }} days
 </p>
 
-<!-- Show server time (UTC) and user local time -->
-<p><strong>Server Time (UTC):</strong> {{ server_time|date:"Y-m-d H:i:s T" }}</p>
-<p><strong>Your Local Time ({{ user_timezone }}):</strong> {{ user_time|date:"Y-m-d H:i:s T" }}</p>
+<!-- JavaScript will insert the local time here -->
+<p><strong>Current Local Time:</strong> <span id="local-time"></span></p>
 
-<!-- Remove debug prints (optional) -->
-<p>DEBUG: Raw server_time: {{ server_time }}</p>
-<p>DEBUG: Raw user_time: {{ user_time }}</p>
-
-
-<!-- Date/Time placeholders (currently not in use since localtime.js is disabled) -->
-<!-- <p id="local-date" style="font-weight:bold;">Date: --</p>
-<p id="local-time" style="font-weight:bold;">Time: --:--:--</p> -->
-
+<!-- "Add / Log Today" link will be set by JavaScript -->
 <p>
   <a id="log-today-link" href="#">Add / Log Today</a>
 </p>
 
-<!-- Display any messages (e.g., future-date restrictions) -->
+<!-- Hidden form to submit logs -->
+<form id="log-form" method="POST">
+  {% csrf_token %}
+  <input type="hidden" name="date" id="log-date">
+  <button type="submit">Log This Day</button>
+</form>
+
+<!-- If you have messages for future date restrictions -->
 {% if messages %}
   <ul class="messages">
     {% for message in messages %}
@@ -53,10 +51,10 @@
         <th>TODO</th>
     </tr>
     {% for row in all_data %}
-    <tr>
+    <tr id="log-row-{{ row.date }}">
         <td>{{ row.user_id }}</td>
         <td>
-            <a href="{% url 'day_view' year=row.date.year month=row.date.month day=row.date.day %}">
+            <a href="{% url 'day_view' year=row.date.year month=row.date.month day=row.date.day %}" class="log-link">
                 {{ row.date }}
             </a>
         </td>
@@ -70,13 +68,27 @@
         <td>{{ row.todo }}</td>
     </tr>
     {% empty %}
-    <tr>
-      <td colspan="10">No records found.</td>
-    </tr>
+    <tr><td colspan="10">No records found.</td></tr>
     {% endfor %}
 </table>
 
-<!-- If you want live JavaScript updates, uncomment the script below and adjust accordingly. -->
-<!-- <script src="{% static 'mainpage/js/localtime.js' %}"></script> -->
+<!-- Include JavaScript -->
+<script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      let now = new Date();
+      let year = now.getFullYear();
+      let month = String(now.getMonth() + 1).padStart(2, "0"); // JS months start at 0
+      let day = String(now.getDate()).padStart(2, "0");
+
+      // Set "Add / Log Today" link
+      let todayLink = `/day/${year}/${month}/${day}/`;
+      document.getElementById("log-today-link").href = todayLink;
+
+      // Set the correct local date in the form before submission
+      document.getElementById("log-date").value = `${year}-${month}-${day}`;
+  });
+</script>
 
 {% endblock %}

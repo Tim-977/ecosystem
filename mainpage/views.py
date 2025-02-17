@@ -1,45 +1,28 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
-import pytz
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from django.utils.timezone import now
 
 from .models import DailyData, Streak
 
 
 @login_required
 def main_page_view(request):
-    server_time = now()  # Should be UTC if USE_TZ=True
+    # Just return raw date (don't format time)
+    all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
 
-    try:
-        user_timezone = request.user.personaldata.timezone
-    except PersonalData.DoesNotExist:
-        user_timezone = 'UTC'  # Default if not set
-
-    print(f"DEBUG: Retrieved user_timezone: {user_timezone}")
-    print(f"DEBUG: Server Time (UTC): {server_time}")
-
-    try:
-        user_time = server_time.astimezone(pytz.timezone(user_timezone))
-        print(f"DEBUG: Converted User Time ({user_timezone}): {user_time} | tzinfo: {user_time.tzinfo}")
-    except Exception as e:
-        print(f"ERROR: Timezone conversion failed - {e}")
-        user_time = server_time  # Fallback to UTC if conversion fail
+    # Fetch or create the user's streak data
+    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
+    streak_data = streak_obj.streak_data or {}
 
     context = {
-        "all_data": DailyData.objects.filter(user_id=request.user.id).order_by('-date'),
+        "all_data": all_data,
         "username": request.user.username,
-        "current_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("current_streak", 0),
-        "longest_streak": Streak.objects.get_or_create(user_id=request.user.id)[0].streak_data.get("longest_streak", 0),
-        "server_time": server_time,  # Keep it as a timezone-aware datetime
-        "user_time": user_time,      # Keep it as a datetime, NOT a string
-        "user_timezone": user_timezone,
+        "current_streak": streak_data.get("current_streak", 0),
+        "longest_streak": streak_data.get("longest_streak", 0),
     }
     return render(request, 'mainpage/main.html', context)
-
-
 
 
 @login_required
@@ -47,13 +30,7 @@ def day_view(request, year, month, day):
     # Convert the URL path into a Python date
     current_date = date(year, month, day)
 
-    # Removed future date check:
-    today = date.today()
-    if current_date > today:
-        messages.error(request, "You cannot create or edit logs for future dates.")
-        return redirect('main_page')
-
-    # Get or create a daily log for that date
+    # The future date check will be done in JavaScript, not Python
     daily_obj, _ = DailyData.objects.get_or_create(
         user_id=request.user.id,
         date=current_date
@@ -69,9 +46,6 @@ def day_view(request, year, month, day):
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.todo = request.POST.get('todo')
         daily_obj.save()
-
-        # Update the streak
-        _update_streak(request.user.id, current_date)
 
         return redirect('day_view', year=year, month=month, day=day)
 

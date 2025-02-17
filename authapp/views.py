@@ -8,42 +8,40 @@ from .models import PersonalData
 
 User = get_user_model()
 
-
-@require_GET  # Ensure only GET requests are allowed
+@require_GET
 def logout_view(request):
     logout(request)
-    request.session.flush()  # Clear session data
+    request.session.flush()
     return redirect('/auth/login/')
 
-
-def login_page(request): # Already logged in check
+def login_page(request):
     if request.user.is_authenticated:
         return redirect('/') 
 
     error_message = None
-
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        next_url = request.POST.get('next', '/')  # Default to gome page
+        next_url = request.POST.get('next', '/')
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect(next_url)  # Redirect if login is successful
+            return redirect(next_url)
         else:
             error_message = "Invalid username or password. Please try again."
 
     else:
-        next_url = request.GET.get('next', '/')  # For GET requests
+        next_url = request.GET.get('next', '/')
 
-    return render(request, 'authapp/login.html', {'next': next_url, 'error_message': error_message})
-
+    return render(request, 'authapp/login.html', {
+        'next': next_url,
+        'error_message': error_message
+    })
 
 def signup_page(request):
     if request.user.is_authenticated:
-        return redirect('/')  # Redirect if already logged in
-
+        return redirect('/')
     error_message = None
 
     if request.method == 'POST':
@@ -67,8 +65,9 @@ def signup_page(request):
             login(request, user)
             return redirect('personal_data')
 
-    return render(request, 'authapp/signup.html', {'error_message': error_message})
-
+    return render(request, 'authapp/signup.html', {
+        'error_message': error_message
+    })
 
 @login_required
 def personal_data_view(request):
@@ -83,11 +82,10 @@ def personal_data_view(request):
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
-            return redirect('/')  # or redirect to main page
+            return redirect('/')
     else:
         form = PersonalDataForm(instance=personal_data)
 
     return render(request, 'authapp/personal_data.html', {
-        'form': form,
-        'timezone': personal_data.timezone if personal_data else 'UTC'
+        'form': form
     })
