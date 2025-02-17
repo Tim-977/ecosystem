@@ -19,9 +19,23 @@
 <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
 <!-- 'Add / Log Today' link will be assigned by JavaScript -->
-<p>
-  <a id="log-today-link" href="#">Add / Log Today</a>
-</p>
+<a id="log-today-link" href="#">Add / Log Today</a>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get the user's local date
+        let today = new Date();
+        let year = today.getFullYear();
+        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+        let day = String(today.getDate()).padStart(2, '0');
+
+        // Construct the URL dynamically
+        let logTodayUrl = `/day/${year}/${month}/${day}/`;
+
+        // Set the "Add / Log Today" button link
+        document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
+    });
+</script>
 
 <!-- If you have messages for future date restrictions, show them here -->
 {% if messages %}
