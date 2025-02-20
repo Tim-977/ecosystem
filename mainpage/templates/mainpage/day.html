@@ -20,8 +20,17 @@
            value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
     <br/><br/>
 
-    <label for="sleep">Sleep:</label><br/>
-    <textarea name="sleep" id="sleep" rows="2" cols="40">{{ daily_obj.sleep|default_if_none:'' }}</textarea>
+    <!-- Replace the old "Sleep" textarea with three time fields -->
+    <label for="bed_time">Bed Time:</label>
+    <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" />
+    <br/><br/>
+
+    <label for="wake_up_time">Wake Up Time:</label>
+    <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" />
+    <br/><br/>
+
+    <label for="first_alarm_time">First Alarm Time:</label>
+    <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
     <br/><br/>
 
     <label for="habits_completed">Habits Completed:</label><br/>
