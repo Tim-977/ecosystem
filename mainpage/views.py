@@ -204,7 +204,7 @@ def _update_streak(user_id, logged_date):
 def set_habits_view(request):
     """
     Display or create MonthlyHabits for the user's current month.
-    The user can set goal_text and up to 10 habit names.
+    Add "Clear" functionality to remove a single habit and set its bits to 0.
     """
     today = date.today()
     this_year = today.year
@@ -216,7 +216,7 @@ def set_habits_view(request):
         month=this_month
     )
 
-    # Build a list of (index, habit_value) so the template can iterate cleanly
+    # Build a list of (index, habit_value) so the template can iterate
     habits_with_index = [
         (1, monthly_obj.habit_1),
         (2, monthly_obj.habit_2),
@@ -231,8 +231,68 @@ def set_habits_view(request):
     ]
 
     if request.method == 'POST':
+
+        # 1) Check if user clicked "Clear" for a single habit
+        clear_index_str = request.POST.get('clear_habit_index')
+        if clear_index_str is not None:
+            # The user pressed the "Clear Habit" button
+            try:
+                clear_index = int(clear_index_str)  # 1..10
+            except ValueError:
+                messages.error(request, "Invalid habit index.")
+                return redirect('set_habits')
+
+            # Adjust the monthly_obj (erase the habit name)
+            if clear_index == 1:
+                monthly_obj.habit_1 = ""
+            elif clear_index == 2:
+                monthly_obj.habit_2 = ""
+            elif clear_index == 3:
+                monthly_obj.habit_3 = ""
+            elif clear_index == 4:
+                monthly_obj.habit_4 = ""
+            elif clear_index == 5:
+                monthly_obj.habit_5 = ""
+            elif clear_index == 6:
+                monthly_obj.habit_6 = ""
+            elif clear_index == 7:
+                monthly_obj.habit_7 = ""
+            elif clear_index == 8:
+                monthly_obj.habit_8 = ""
+            elif clear_index == 9:
+                monthly_obj.habit_9 = ""
+            elif clear_index == 10:
+                monthly_obj.habit_10 = ""
+
+            monthly_obj.save()
+
+            # Now set all 1's to 0 for that column in daily logs for this month
+            from .models import DailyData  # or put at top of file
+            daily_logs = DailyData.objects.filter(
+                user_id=request.user.id,
+                date__year=this_year,
+                date__month=this_month
+            )
+            position = clear_index - 1  # 0-based index in the "habits_completed" string
+
+            for log in daily_logs:
+                hc = log.habits_completed or ""
+                # Pad/truncate to length 10
+                hc = hc.ljust(10, '0')[:10]
+
+                # Convert to list for easy manipulation
+                hc_list = list(hc)
+                hc_list[position] = '0'  # set that bit to '0'
+                new_hc = "".join(hc_list)
+
+                log.habits_completed = new_hc
+                log.save()
+
+            messages.success(request, f"Habit {clear_index} cleared, bits set to 0.")
+            return redirect('set_habits')
+
+        # 2) Otherwise, user submitted the main form -> Save all habits
         monthly_obj.goal_text = request.POST.get('goal_text', '')
-        # For each index from 1..10, grab the value from POST and store to the correct field
         monthly_obj.habit_1 = request.POST.get('habit_1', '')
         monthly_obj.habit_2 = request.POST.get('habit_2', '')
         monthly_obj.habit_3 = request.POST.get('habit_3', '')
@@ -250,7 +310,7 @@ def set_habits_view(request):
 
     context = {
         "monthly_obj": monthly_obj,
-        "habits_with_index": habits_with_index,  # We'll iterate over this in the template
+        "habits_with_index": habits_with_index,
     }
     return render(request, 'mainpage/set_habits.html', context)
 
