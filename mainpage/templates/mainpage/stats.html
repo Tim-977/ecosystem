@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monthly Habit Stats</title>
+</head>
+<body>
+  <h1>Monthly Habit Statistics</h1>
+
+  {% if monthly_obj %}
+    <h3>Goals for {{ monthly_obj.year }}-{{ monthly_obj.month|add:"0"|slice:"-2" }}</h3>
+    <p>{{ monthly_obj.goal_text }}</p>
+
+    <h3>Habit Completion</h3>
+    <table border="1" cellpadding="5">
+      <tr>
+        <th>Habit</th>
+        <th>Days Completed</th>
+        <th>Percentage</th>
+      </tr>
+      {% for h in habits_stats %}
+        <tr>
+          <td>{{ h.habit_name }}</td>
+          <td>{{ h.completed_days }} / {{ total_days }}</td>
+          <td>{{ h.percent }}%</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No habits set for this month yet. <a href="{% url 'set_habits' %}">Set them now</a>.</p>
+  {% endif %}
+
+  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+</body>
+</html>

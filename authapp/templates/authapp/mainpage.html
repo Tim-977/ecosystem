@@ -11,9 +11,15 @@
 
     <!-- Navigation Links -->
     <nav>
-        <p><a href="{% url 'main_page' %}">Home</a> | 
-           <a href="{% url 'personal_data' %}">Edit Personal Info</a> | 
-           <a href="{% url 'logout' %}">Log Out</a></p>
+        <p>
+            <a href="{% url 'main_page' %}">Home</a> | 
+            <a href="{% url 'personal_data' %}">Edit Personal Info</a> | 
+            <a href="{% url 'logout' %}">Log Out</a>
+        </p>
+        <p>
+            <a href="{% url 'set_habits' %}">Set Monthly Habits</a> |
+            <a href="{% url 'stats_view' %}">View Monthly Stats</a>
+        </p>
     </nav>
 
     <!-- Dynamic Content Block -->

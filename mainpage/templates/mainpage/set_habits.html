@@ -1,0 +1,38 @@
+<!-- mainpage/templates/mainpage/set_habits.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Set Monthly Habits</title>
+</head>
+<body>
+  <h1>Set or Update This Month's Habits</h1>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <p style="color: green;">{{ msg }}</p>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <label for="goal_text">Monthly Goals:</label><br/>
+    <textarea name="goal_text" id="goal_text" rows="2" cols="50">{{ monthly_obj.goal_text }}</textarea>
+    <br/><br/>
+
+    <h3>Habits:</h3>
+
+    {% for idx, habit_value in habits_with_index %}
+      <label>Habit {{ idx }}:</label>
+      <input type="text" name="habit_{{ idx }}"
+             value="{{ habit_value|default_if_none:'' }}">
+      <br/>
+    {% endfor %}
+
+    <br/>
+    <button type="submit">Save</button>
+  </form>
+
+  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+</body>
+</html>
