@@ -256,7 +256,7 @@ def set_habits_view(request):
 
 
 @login_required
-def stats_view(request):
+def monthly_stats_view(request):
     """
     Show the monthly stats for the user's habit completion.
     We'll get all DailyData for the current month, parse the habits_completed,
@@ -331,4 +331,4 @@ def stats_view(request):
         "habits_stats": habits_stats,
         "total_days": total_days,
     }
-    return render(request, 'mainpage/stats.html', context)
+    return render(request, 'mainpage/monthly-stats.html', context)
