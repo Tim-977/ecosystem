@@ -31,15 +31,36 @@ def main_page_view(request):
 
 @login_required
 def day_view(request, year, month, day):
+    from datetime import timedelta, date
+
     # Convert the URL path into a Python date
     current_date = date(year, month, day)
+    today = date.today()
 
     # Prevent logging future dates
-    today = date.today()
     if current_date > today:
         messages.error(request, "You cannot create or edit logs for future dates.")
         return redirect('main_page')
 
+    # Find the user's most recent log prior to current_date
+    last_log = DailyData.objects.filter(
+        user_id=request.user.id,
+        date__lt=current_date
+    ).order_by('-date').first()
+
+    if last_log:
+        # Start from last_log.date + 1 day, up until the day *before* current_date
+        day_to_fill = last_log.date + timedelta(days=1)
+        while day_to_fill < current_date:
+            # Create a blank DailyData if it doesn’t already exist
+            DailyData.objects.get_or_create(
+                user_id=request.user.id,
+                date=day_to_fill
+                # Do NOT call _update_streak() here, so the user’s streak is unaffected
+            )
+            day_to_fill += timedelta(days=1)
+
+    # Now handle the actual daily log for current_date
     # Get or create a daily log for that date
     daily_obj, _ = DailyData.objects.get_or_create(
         user_id=request.user.id,
@@ -66,10 +87,7 @@ def day_view(request, year, month, day):
         monthly_obj.habit_9,
         monthly_obj.habit_10,
     ]
-    # Filter out any blank habit names for display (or keep them so positions remain consistent).
-    # For now, let's keep them if they're empty, so we always have 10 slots.
 
-    # If POST, handle form submission
     if request.method == 'POST':
         # Update mood/productivity
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
@@ -92,10 +110,7 @@ def day_view(request, year, month, day):
         habit_completion_string = ""
         for i in range(10):
             checkbox_val = request.POST.get(f"habit_{i}", None)
-            if checkbox_val == "on":
-                habit_completion_string += "1"
-            else:
-                habit_completion_string += "0"
+            habit_completion_string += "1" if checkbox_val == "on" else "0"
         daily_obj.habits_completed = habit_completion_string
 
         # The rest of the fields remain as before
@@ -105,13 +120,12 @@ def day_view(request, year, month, day):
         daily_obj.todo = request.POST.get('todo')
         daily_obj.save()
 
-        # Update the streak
+        # Update the streak *only* for the day the user is explicitly editing
         _update_streak(request.user.id, current_date)
 
         return redirect('day_view', year=year, month=month, day=day)
 
-    # === If GET request ===
-    # Parse existing sleep data so we can show it in the form
+    # If GET request
     sleep_data = daily_obj.sleep or ""
     splitted = sleep_data.split(',')
 
@@ -123,7 +137,7 @@ def day_view(request, year, month, day):
         elif len(t) == 3:
             # e.g. '630' -> '06:30'
             return "0" + t[0] + ":" + t[1:]
-        return t  # If blank or unexpected length, leave as-is
+        return t
 
     bed_time_form = readd_colon(splitted[0]) if len(splitted) > 0 else ''
     wake_up_time_form = readd_colon(splitted[1]) if len(splitted) > 1 else ''
@@ -131,9 +145,7 @@ def day_view(request, year, month, day):
 
     # Convert daily_obj.habits_completed (e.g. "1010") into a list of '0'/'1'
     habits_binary = daily_obj.habits_completed or ""
-    # Ensure length at least 10 for indexing
     habits_binary = habits_binary.ljust(10, '0')[:10]
-    # We'll zip this with the habit names to show checkboxes
     habits_status = list(zip(habits, habits_binary))
 
     context = {
@@ -142,10 +154,11 @@ def day_view(request, year, month, day):
         "bed_time_form": bed_time_form,
         "wake_up_time_form": wake_up_time_form,
         "first_alarm_time_form": first_alarm_time_form,
-        "habits_status": habits_status,  # list of (habit_name, '0' or '1')
-        "monthly_obj": monthly_obj,       # we can show monthly goals if we want
+        "habits_status": habits_status,
+        "monthly_obj": monthly_obj,
     }
     return render(request, 'mainpage/day.html', context)
+
 
 
 def _update_streak(user_id, logged_date):
