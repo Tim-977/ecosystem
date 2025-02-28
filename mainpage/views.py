@@ -344,43 +344,50 @@ def monthly_stats_view(request):
 #########################
 def _normalize_task(task):
     """
-    Ensure the task dict has the following keys:
-      - due_type (str, one of: "none", "today", "until", "exact")
-      - due_date (str or None, format YYYY-MM-DD)
-      - due_time (str or None, format HH:MM)
-    Also handle any legacy 'due_time' strings like 'someday'.
+    Ensure each task has:
+      - due_type: "none", "today", "until", or "exact"
+      - due_date: string or None (YYYY-MM-DD)
+      - due_time: string or None (HH:MM)
+      - priority: "critical", "high", "medium", or "low"
     """
     if 'due_type' not in task:
-        # If old code just had 'due_time' with 'someday' or a raw string, default to "none"
         task['due_type'] = 'none'
-
     if 'due_date' not in task:
         task['due_date'] = None
-
     if 'due_time' not in task:
         task['due_time'] = None
 
-    # If we see an old 'due_time' == 'someday', treat as no deadline
-    # (We do this only if the new fields are absent or uninitialized)
+    # If old code used 'someday', treat as no deadline
     if isinstance(task.get('due_time'), str) and task['due_time'].lower() == 'someday':
         task['due_type'] = 'none'
         task['due_date'] = None
         task['due_time'] = None
 
+    # NEW: priority
+    if 'priority' not in task:
+        task['priority'] = 'medium'
+
     return task
 
 
 def _sort_tasks(tasks):
-    """
-    Sort tasks based on:
-      1. due_type: exact -> until -> today -> none
-      2. If exact, sort by (due_date + due_time) ascending
-      3. If until, sort by due_date ascending
-      4. 'today' tasks come after exact/until, but before 'none'
-    """
-    # Utility to parse YYYY-MM-DD and HH:MM
+    from datetime import datetime, date, time
+
+    priority_map = {
+        'critical': 0,
+        'high': 1,
+        'medium': 2,
+        'low': 3
+    }
+    due_type_map = {
+        'exact': 0,
+        'until': 1,
+        'today': 2,
+        'none': 3
+    }
+
     def parse_date_time(due_date, due_time):
-        # Return a (date_object, time_object) or (None, None) if invalid
+        """Safely parse date/time or return (None, None) on error."""
         try:
             d = datetime.strptime(due_date, "%Y-%m-%d").date() if due_date else None
             t = datetime.strptime(due_time, "%H:%M").time() if due_time else None
@@ -388,45 +395,37 @@ def _sort_tasks(tasks):
         except:
             return None, None
 
-    # Priority mapping for due_type
-    # We'll sort from lowest numeric to highest => exact (0) < until (1) < today (2) < none (3)
-    priority_map = {
-        'exact': 0,
-        'until': 1,
-        'today': 2,
-        'none': 3
-    }
-
     def sort_key(task):
-        dt = task['due_type']
-        prio = priority_map.get(dt, 3)
+        # 1) Priority
+        p_val = priority_map.get(task.get('priority', 'medium'), 2)
+        # 2) Due type
+        dt = task.get('due_type', 'none')
+        dt_val = due_type_map.get(dt, 3)
 
         if dt == 'exact':
             d, t = parse_date_time(task['due_date'], task['due_time'])
-            if d is None:  # fallback if parsing fails
-                return (prio, date.max, time.max)
-            if t is None:
+            if d is None:  # fallback
+                d, t = date.max, time.max
+            elif t is None:
                 t = time.min
-            return (prio, d, t)
+            return (p_val, dt_val, d, t)
 
         elif dt == 'until':
-            # Sort by date only
-            try:
-                d = datetime.strptime(task['due_date'], "%Y-%m-%d").date()
-            except:
+            d, _ = parse_date_time(task['due_date'], None)
+            if d is None:
                 d = date.max
-            return (prio, d, time.min)
+            return (p_val, dt_val, d, time.min)
 
         elif dt == 'today':
             # All 'today' tasks come after 'until' but before 'none'
-            # We can store today's date or just fix a placeholder
-            return (prio, date.max, time.max)
+            return (p_val, dt_val, date.max, time.max)
 
         else:
-            # 'none'
-            return (prio, date.max, time.max)
+            # none
+            return (p_val, dt_val, date.max, time.max)
 
     return sorted(tasks, key=sort_key)
+
 
 
 @login_required
@@ -461,36 +460,22 @@ def get_todo_tasks(request):
 
 @login_required
 def add_todo_task(request):
-    """
-    Add a new task. 
-    Expects JSON body:
-       {
-         "text": "...", 
-         "due_type": "none"|"today"|"until"|"exact",
-         "due_date": "...",  # e.g. "2025-03-10" (optional unless until/exact)
-         "due_time": "...",  # e.g. "14:00" (optional unless exact)
-       }
-    If omitted, we default to no deadline.
-    """
     if request.method == 'POST':
         body = json.loads(request.body.decode('utf-8'))
         text = body.get('text', '').strip()
         if not text:
             return JsonResponse({"error": "No task text provided."}, status=400)
 
-        # Grab these fields or use defaults
         due_type = body.get('due_type', 'none').lower()
         due_date = body.get('due_date')
         due_time = body.get('due_time')
-
-        # Validate / normalize
-        if due_type not in ('none', 'today', 'until', 'exact'):
-            due_type = 'none'
+        priority = body.get('priority', 'medium').lower()
+        if priority not in ['critical', 'high', 'medium', 'low']:
+            priority = 'medium'
 
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
         tasks = usertodo.tasks
 
-        # Generate a new ID
         new_id = 1
         if tasks:
             new_id = max(t.get('id', 0) for t in tasks) + 1
@@ -500,13 +485,13 @@ def add_todo_task(request):
             "text": text,
             "status": "pending",
             "due_type": due_type,
-            "due_date": due_date if due_type in ['until', 'exact'] else None,
+            "due_date": due_date if due_type in ('until', 'exact') else None,
             "due_time": due_time if due_type == 'exact' else None,
+            "priority": priority
         }
         tasks.append(new_task)
         usertodo.tasks = tasks
         usertodo.save()
-
         return JsonResponse({"success": True, "task": new_task})
     else:
         return JsonResponse({"error": "POST required"}, status=405)
@@ -514,11 +499,6 @@ def add_todo_task(request):
 
 @login_required
 def update_todo_task(request, task_id):
-    """
-    Update an existing task (e.g. mark it done, change text, or update due_*).
-    Accepts JSON body with fields:
-      'text', 'status', 'due_type', 'due_date', 'due_time'
-    """
     if request.method == 'PUT':
         body = json.loads(request.body.decode('utf-8'))
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
@@ -526,30 +506,25 @@ def update_todo_task(request, task_id):
 
         for t in tasks:
             if t.get('id') == task_id:
-                # Update fields if provided
                 if 'text' in body:
-                    new_text = body['text'].strip()
-                    t['text'] = new_text if new_text else t['text']
-                if 'status' in body:
-                    new_status = body['status']
-                    if new_status in ['pending', 'done']:
-                        t['status'] = new_status
+                    t['text'] = body['text'].strip() or t['text']
+                if 'status' in body and body['status'] in ['pending', 'done']:
+                    t['status'] = body['status']
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
-                    if dt in ('none', 'today', 'until', 'exact'):
+                    if dt in ['none', 'today', 'until', 'exact']:
                         t['due_type'] = dt
-                        # Reset date/time if needed
-                        if dt == 'none':
+                        if dt in ['none', 'today']:
                             t['due_date'] = None
                             t['due_time'] = None
-                        elif dt == 'today':
-                            t['due_date'] = None
-                            t['due_time'] = None
-                        # For 'until' or 'exact', we’ll see if user provides due_date/time
                 if 'due_date' in body:
-                    t['due_date'] = body['due_date']  # Could validate format
+                    t['due_date'] = body['due_date']
                 if 'due_time' in body:
                     t['due_time'] = body['due_time']
+                if 'priority' in body:
+                    pr = body['priority'].lower()
+                    if pr in ['critical', 'high', 'medium', 'low']:
+                        t['priority'] = pr
 
                 usertodo.tasks = tasks
                 usertodo.save()
