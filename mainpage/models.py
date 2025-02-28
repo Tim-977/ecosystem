@@ -26,7 +26,6 @@ class DailyData(models.Model):
     thoughts = models.TextField(null=True, blank=True)
     self_reflection = models.TextField(null=True, blank=True)
     hourly_activity_logging = models.TextField(null=True, blank=True)
-    todo = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"DailyData(user={self.user_id}, date={self.date})"

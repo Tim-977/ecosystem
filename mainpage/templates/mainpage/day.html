@@ -64,10 +64,6 @@
     <textarea name="hourly_activity_logging" id="hourly_activity_logging" rows="2" cols="40">{{ daily_obj.hourly_activity_logging|default_if_none:'' }}</textarea>
     <br/><br/>
 
-    <label for="todo">TODO (old field, optional):</label><br/>
-    <textarea name="todo" id="todo" rows="2" cols="40">{{ daily_obj.todo|default_if_none:'' }}</textarea>
-    <br/><br/>
-
     <button type="submit">Save</button>
   </form>
 

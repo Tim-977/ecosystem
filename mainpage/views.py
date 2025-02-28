@@ -103,7 +103,6 @@ def day_view(request, year, month, day):
         daily_obj.thoughts = request.POST.get('thoughts')
         daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
-        daily_obj.todo = request.POST.get('todo')
         daily_obj.save()
 
         _update_streak(request.user.id, current_date)
