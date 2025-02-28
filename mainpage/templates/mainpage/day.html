@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -63,13 +64,36 @@
     <textarea name="hourly_activity_logging" id="hourly_activity_logging" rows="2" cols="40">{{ daily_obj.hourly_activity_logging|default_if_none:'' }}</textarea>
     <br/><br/>
 
-    <label for="todo">TODO:</label><br/>
+    <label for="todo">TODO (old field, optional):</label><br/>
     <textarea name="todo" id="todo" rows="2" cols="40">{{ daily_obj.todo|default_if_none:'' }}</textarea>
     <br/><br/>
 
     <button type="submit">Save</button>
   </form>
 
+  <hr/>
+
+  <!-- NEW UI for the enhanced TODO List -->
+  <h2>TODO List</h2>
+  <div>
+    <button id="addTaskBtn">+ Add Task</button>
+  </div>
+  <br/>
+
+  <div style="display: flex; gap: 50px;">
+    <div>
+      <h3>Pending</h3>
+      <ul id="pendingList"></ul>
+    </div>
+    <div>
+      <h3>Done</h3>
+      <ul id="doneList"></ul>
+    </div>
+  </div>
+
   <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+
+  <!-- Include your JS -->
+  <script src="{% static 'mainpage/js/todo.js' %}"></script>
 </body>
 </html>

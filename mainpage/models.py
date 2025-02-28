@@ -1,4 +1,14 @@
+from django.conf import settings
 from django.db import models
+
+
+class UserTodo(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_todo')
+    tasks = models.JSONField(default=list)  # Stores tasks in JSON format
+
+    def __str__(self):
+        return f"TODO list for {self.user.username}"
+
 
 class DailyData(models.Model):
     user_id = models.IntegerField()
