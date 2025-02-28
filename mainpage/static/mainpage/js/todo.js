@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // 1. Fetch tasks from the server
+    // Fetch tasks from the server
     function loadTasks() {
         fetch("/api/todo/")
             .then(res => res.json())
@@ -39,27 +39,25 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => console.error("Error loading tasks:", err));
     }
 
-    // 2. Render tasks into <ul> lists
+    // Render tasks into <ul> lists
     function renderTasks(data) {
         const { pending, done } = data;
         pendingList.innerHTML = "";
         doneList.innerHTML = "";
 
-        // For each pending task, create an <li>
         pending.forEach(task => {
             const li = createTaskItem(task);
             pendingList.appendChild(li);
         });
-        // For each done task, create an <li>
+
         done.forEach(task => {
             const li = createTaskItem(task);
             doneList.appendChild(li);
         });
     }
 
-    // 3. Create an <li> for a given task object
+    // Create an <li> for a given task object
     function createTaskItem(task) {
-        // Example: {id, text, status, due_type, due_date, due_time, priority}
         const li = document.createElement("li");
 
         // Display priority & due info
@@ -74,19 +72,22 @@ document.addEventListener("DOMContentLoaded", function() {
             dueInfo = "(No deadline)";
         }
 
-        let priorityInfo = `[${task.priority.toUpperCase()}]`; 
-        li.textContent = `${priorityInfo} ${task.text} ${dueInfo} `;
+        let priorityInfo = `[${task.priority.toUpperCase()}]`;
+        li.textContent = `${priorityInfo} ${task.text} ${dueInfo}`;
+
+        // Apply deadline-based coloring
+        applyDeadlineHighlighting(li, task);
 
         // Mark done / undone
         const toggleBtn = document.createElement("button");
         toggleBtn.textContent = (task.status === "pending") ? "Mark Done" : "Mark Pending";
         toggleBtn.addEventListener("click", () => {
             const newStatus = (task.status === "pending") ? "done" : "pending";
-            updateTask(task.id, {status: newStatus});
+            updateTask(task.id, { status: newStatus });
         });
         li.appendChild(toggleBtn);
 
-        // Delete
+        // Delete button
         const delBtn = document.createElement("button");
         delBtn.textContent = "Delete";
         delBtn.style.marginLeft = "10px";
@@ -98,7 +99,31 @@ document.addEventListener("DOMContentLoaded", function() {
         return li;
     }
 
-    // 4. Add a new task
+    // Apply color highlighting based on deadlines
+    function applyDeadlineHighlighting(li, task) {
+        const now = new Date();
+
+        let deadline = null;
+        if (task.due_type === "exact" && task.due_date && task.due_time) {
+            deadline = new Date(`${task.due_date}T${task.due_time}`);
+        } else if (task.due_type === "until" && task.due_date) {
+            deadline = new Date(`${task.due_date}T23:59`);
+        } else if (task.due_type === "today") {
+            const todayStr = new Date().toISOString().split("T")[0];
+            deadline = new Date(`${todayStr}T23:59`);
+        }
+
+        if (deadline) {
+            const diffMinutes = (deadline - now) / (1000 * 60); // Convert ms to minutes
+            if (diffMinutes < 0) {
+                li.style.color = "red"; // Overdue tasks
+            } else if (diffMinutes <= 30) {
+                li.style.color = "orange"; // Due soon (next 30 mins)
+            }
+        }
+    }
+
+    // Add a new task
     createTaskBtn.addEventListener("click", function() {
         const textVal = taskText.value.trim();
         if (!textVal) {
@@ -112,10 +137,10 @@ document.addEventListener("DOMContentLoaded", function() {
         let dueDateVal = null;
         let dueTimeVal = null;
         if (dueTypeVal === "until") {
-            dueDateVal = taskDueDate.value;  // "YYYY-MM-DD"
+            dueDateVal = taskDueDate.value;
         } else if (dueTypeVal === "exact") {
-            dueDateVal = taskDueDate.value; 
-            dueTimeVal = taskDueTime.value;  // "HH:MM"
+            dueDateVal = taskDueDate.value;
+            dueTimeVal = taskDueTime.value;
         }
 
         // Build POST body
@@ -138,7 +163,6 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Clear the form
                 taskText.value = "";
                 taskPriority.value = "medium";
                 taskDueType.value = "none";
@@ -155,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(err => console.error("Error adding task:", err));
     });
 
-    // 5. Update a task (e.g., status)
+    // Update a task (e.g., status)
     function updateTask(taskId, changes) {
         fetch(`/api/todo/${taskId}/update/`, {
             method: "PUT",
@@ -176,11 +200,11 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(err => console.error("Error updating task:", err));
     }
 
-    // 6. Delete a task
+    // Delete a task
     function deleteTask(taskId) {
         fetch(`/api/todo/${taskId}/delete/`, {
             method: "DELETE",
-            headers: {"X-CSRFToken": getCSRFToken()}
+            headers: { "X-CSRFToken": getCSRFToken() }
         })
         .then(res => res.json())
         .then(data => {
@@ -193,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(err => console.error("Error deleting task:", err));
     }
 
-    // Utility: retrieve the CSRF token from cookies
+    // Retrieve CSRF token from cookies
     function getCSRFToken() {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -209,6 +233,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return cookieValue;
     }
 
-    // Finally, load tasks on page load
+    // Load tasks on page load
     loadTasks();
 });
