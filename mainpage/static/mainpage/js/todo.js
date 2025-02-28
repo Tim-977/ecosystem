@@ -3,24 +3,18 @@ document.addEventListener("DOMContentLoaded", function() {
     const doneList = document.getElementById("doneList");
     const addTaskBtn = document.getElementById("addTaskBtn");
 
-    // 1. Fetch tasks from the server
     function loadTasks() {
         fetch("/api/todo/")
             .then(res => res.json())
-            .then(data => {
-                renderTasks(data);
-            })
+            .then(data => renderTasks(data))
             .catch(err => console.error("Error loading tasks:", err));
     }
 
-    // 2. Render tasks into <ul> lists
     function renderTasks(data) {
         const { pending, done } = data;
-        // Clear current <ul> items
         pendingList.innerHTML = "";
         doneList.innerHTML = "";
 
-        // For each item, create an <li>
         pending.forEach(task => {
             const li = createTaskItem(task);
             pendingList.appendChild(li);
@@ -32,52 +26,76 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 3. Create an <li> for a given task object
     function createTaskItem(task) {
-        // Example task = {id, text, status, due_time}
+        // Example task = {id, text, status, due_type, due_date, due_time}
         const li = document.createElement("li");
-        li.textContent = task.text + " (due: " + task.due_time + ") ";
 
-        // Mark done / undone button
+        // Construct a label to show the due info
+        let dueInfo = "";
+        if (task.due_type === "exact") {
+            dueInfo = `Exact: ${task.due_date} ${task.due_time}`;
+        } else if (task.due_type === "until") {
+            dueInfo = `Until: ${task.due_date}`;
+        } else if (task.due_type === "today") {
+            dueInfo = `Today only`;
+        } else {
+            dueInfo = `No deadline`;
+        }
+
+        li.textContent = `${task.text} [${dueInfo}] `;
+
         const toggleBtn = document.createElement("button");
         toggleBtn.textContent = (task.status === "pending") ? "Mark Done" : "Mark Pending";
         toggleBtn.addEventListener("click", () => {
             const newStatus = (task.status === "pending") ? "done" : "pending";
-            updateTask(task.id, {status: newStatus});
+            updateTask(task.id, { status: newStatus });
         });
         li.appendChild(toggleBtn);
 
-        // Delete button
         const delBtn = document.createElement("button");
         delBtn.textContent = "Delete";
         delBtn.style.marginLeft = "10px";
-        delBtn.addEventListener("click", () => {
-            deleteTask(task.id);
-        });
+        delBtn.addEventListener("click", () => deleteTask(task.id));
         li.appendChild(delBtn);
 
         return li;
     }
 
-    // 4. Add a new task
     addTaskBtn.addEventListener("click", function() {
         const text = prompt("Enter task description:");
         if (!text) return;
 
-        let dueTime = prompt("Enter due time (or leave blank for 'someday'):");
-        if (dueTime === null) {
-            // user canceled
-            return;
-        }
+        const dueType = prompt(
+          "Pick due type: none / today / until / exact",
+          "none"
+        );
+        if (!dueType) return;
 
-        if (!dueTime) {
-            dueTime = "someday";
+        let bodyData = {
+            text: text,
+            due_type: dueType
+        };
+
+        if (dueType === "until") {
+            const d = prompt("Enter date (YYYY-MM-DD):");
+            if (!d) return;
+            bodyData.due_date = d;
+        } else if (dueType === "exact") {
+            const d = prompt("Enter date (YYYY-MM-DD):");
+            const t = prompt("Enter time (HH:MM):");
+            if (!d || !t) return;
+            bodyData.due_date = d;
+            bodyData.due_time = t;
         }
+        // if 'today' or 'none', no date/time needed
 
         fetch("/api/todo/add/", {
             method: "POST",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()},
-            body: JSON.stringify({text: text, due_time: dueTime})
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify(bodyData)
         })
             .then(res => res.json())
             .then(data => {
@@ -90,11 +108,13 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => console.error("Error adding task:", err));
     });
 
-    // 5. Update a task (e.g. status)
     function updateTask(taskId, changes) {
-        fetch("/api/todo/" + taskId + "/update/", {
+        fetch(`/api/todo/${taskId}/update/`, {
             method: "PUT",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()},
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
+            },
             body: JSON.stringify(changes)
         })
             .then(res => res.json())
@@ -108,11 +128,10 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => console.error("Error updating task:", err));
     }
 
-    // 6. Delete a task
     function deleteTask(taskId) {
-        fetch("/api/todo/" + taskId + "/delete/", {
+        fetch(`/api/todo/${taskId}/delete/`, {
             method: "DELETE",
-            headers: {"X-CSRFToken": getCSRFToken()}
+            headers: { "X-CSRFToken": getCSRFToken() }
         })
             .then(res => res.json())
             .then(data => {
@@ -125,9 +144,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => console.error("Error deleting task:", err));
     }
 
-    // Utility: retrieve the CSRF token from cookies
     function getCSRFToken() {
-        // Simple method to get cookie by name
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');

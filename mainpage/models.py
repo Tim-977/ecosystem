@@ -4,7 +4,7 @@ from django.db import models
 
 class UserTodo(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_todo')
-    tasks = models.JSONField(default=list)  # Stores tasks in JSON format
+    tasks = models.JSONField(default=list)  # Store tasks with due_type, due_date, due_time, etc.
 
     def __str__(self):
         return f"TODO list for {self.user.username}"
