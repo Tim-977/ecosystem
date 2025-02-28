@@ -174,23 +174,22 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // 5. Show an inline edit form for an existing task
     function showEditForm(task, li, displaySpan) {
-        // Hide the original display
         displaySpan.style.display = "none";
-
-        // Create a small inline form for editing
+    
+        const editBtn = li.querySelector("button:nth-of-type(2)"); // Find the edit button
+        editBtn.style.display = "none";  // Hide edit button
+    
         const formDiv = document.createElement("div");
         formDiv.style.marginTop = "8px";
         formDiv.style.border = "1px solid #ccc";
         formDiv.style.padding = "5px";
         formDiv.style.display = "inline-block";
-
-        // 1) Text
+    
         const textInput = document.createElement("input");
         textInput.type = "text";
         textInput.style.width = "120px";
         textInput.value = task.text;
-
-        // 2) Priority
+    
         const prioritySelect = document.createElement("select");
         ["critical", "high", "medium", "low"].forEach(p => {
             const opt = document.createElement("option");
@@ -201,8 +200,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             prioritySelect.appendChild(opt);
         });
-
-        // 3) Due type
+    
         const dueTypeSelect = document.createElement("select");
         ["none", "today", "until", "exact"].forEach(dt => {
             const opt = document.createElement("option");
@@ -213,17 +211,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             dueTypeSelect.appendChild(opt);
         });
-
-        // We'll create date/time inputs but enable/disable them based on the selected due type
+    
         const dateInput = document.createElement("input");
         dateInput.type = "date";
         dateInput.value = task.due_date || "";
-        // For 'exact' tasks, we might have a time
+    
         const timeInput = document.createElement("input");
         timeInput.type = "time";
         timeInput.value = task.due_time || "";
-
-        // Helper to toggle date/time fields
+    
         function handleDueTypeChange(val) {
             if (val === "until") {
                 dateInput.disabled = false;
@@ -233,36 +229,33 @@ document.addEventListener("DOMContentLoaded", function() {
                 dateInput.disabled = false;
                 timeInput.disabled = false;
             } else {
-                // none or today
                 dateInput.disabled = true;
                 timeInput.disabled = true;
                 dateInput.value = "";
                 timeInput.value = "";
             }
         }
-
-        handleDueTypeChange(task.due_type); // set initial state
+    
+        handleDueTypeChange(task.due_type);
         dueTypeSelect.addEventListener("change", () => {
             handleDueTypeChange(dueTypeSelect.value);
         });
-
-        // Add form elements to formDiv
+    
         formDiv.appendChild(document.createTextNode(" Text: "));
         formDiv.appendChild(textInput);
-
+    
         formDiv.appendChild(document.createTextNode(" Priority: "));
         formDiv.appendChild(prioritySelect);
-
+    
         formDiv.appendChild(document.createTextNode(" Due Type: "));
         formDiv.appendChild(dueTypeSelect);
-
+    
         formDiv.appendChild(document.createTextNode(" Date: "));
         formDiv.appendChild(dateInput);
-
+    
         formDiv.appendChild(document.createTextNode(" Time: "));
         formDiv.appendChild(timeInput);
-
-        // Save button
+    
         const saveBtn = document.createElement("button");
         saveBtn.textContent = "Save";
         saveBtn.style.marginLeft = "5px";
@@ -272,43 +265,38 @@ document.addEventListener("DOMContentLoaded", function() {
                 priority: prioritySelect.value,
                 due_type: dueTypeSelect.value
             };
-            // Only send date/time if relevant
             if (dueTypeSelect.value === "until") {
                 changes.due_date = dateInput.value;
-                changes.due_time = null; // or omit
+                changes.due_time = null;
             } else if (dueTypeSelect.value === "exact") {
                 changes.due_date = dateInput.value;
                 changes.due_time = timeInput.value;
-            } else if (dueTypeSelect.value === "today") {
-                changes.due_date = null;
-                changes.due_time = null;
             } else {
-                // none
                 changes.due_date = null;
                 changes.due_time = null;
             }
-
+    
             updateTask(task.id, changes, () => {
-                // After successful update, remove edit form & refresh
                 li.removeChild(formDiv);
                 displaySpan.style.display = "";
+                editBtn.style.display = "";  // Show edit button again
             });
         });
         formDiv.appendChild(saveBtn);
-
-        // Cancel button
+    
         const cancelBtn = document.createElement("button");
         cancelBtn.textContent = "Cancel";
         cancelBtn.style.marginLeft = "5px";
         cancelBtn.addEventListener("click", () => {
-            // Just remove the form & show original text
             li.removeChild(formDiv);
             displaySpan.style.display = "";
+            editBtn.style.display = "";  // Show edit button again
         });
         formDiv.appendChild(cancelBtn);
-
+    
         li.appendChild(formDiv);
     }
+    
 
     // 6. Update a task (e.g., text, priority, due info, status)
     function updateTask(taskId, changes, onSuccess) {
