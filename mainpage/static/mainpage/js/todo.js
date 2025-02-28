@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const pendingList = document.getElementById("pendingList");
     const doneList = document.getElementById("doneList");
 
-    // Form elements
+    // Form elements (for creating NEW tasks)
     const taskText = document.getElementById("taskText");
     const taskPriority = document.getElementById("taskPriority");
     const taskDueType = document.getElementById("taskDueType");
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const taskDueTime = document.getElementById("taskDueTime");
     const createTaskBtn = document.getElementById("createTaskBtn");
 
-    // Enable/disable date/time based on selection
+    // Enable/disable date/time based on selection for NEW tasks
     taskDueType.addEventListener("change", function() {
         const val = taskDueType.value;
         if (val === "until") {
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Fetch tasks from the server
+    // 1. Load tasks from the server
     function loadTasks() {
         fetch("/api/todo/")
             .then(res => res.json())
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => console.error("Error loading tasks:", err));
     }
 
-    // Render tasks into <ul> lists
+    // 2. Render tasks (pending & done) to <ul> lists
     function renderTasks(data) {
         const { pending, done } = data;
         pendingList.innerHTML = "";
@@ -56,11 +56,52 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Create an <li> for a given task object
+    // 3. Build an <li> for a given task
     function createTaskItem(task) {
         const li = document.createElement("li");
 
-        // Display priority & due info
+        // We'll keep the textual display in a <span> so we can hide/show
+        // an edit form on the same line
+        const displaySpan = document.createElement("span");
+        setDisplaySpanContent(displaySpan, task);
+
+        li.appendChild(displaySpan);
+
+        // Button: Mark Done / Mark Pending
+        const toggleBtn = document.createElement("button");
+        toggleBtn.textContent = (task.status === "pending") ? "Mark Done" : "Mark Pending";
+        toggleBtn.addEventListener("click", () => {
+            const newStatus = (task.status === "pending") ? "done" : "pending";
+            updateTask(task.id, { status: newStatus });
+        });
+        li.appendChild(toggleBtn);
+
+        // Button: Edit (inline)
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.style.marginLeft = "10px";
+        editBtn.addEventListener("click", () => {
+            showEditForm(task, li, displaySpan);
+        });
+        li.appendChild(editBtn);
+
+        // Button: Delete
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.style.marginLeft = "10px";
+        delBtn.addEventListener("click", () => {
+            deleteTask(task.id);
+        });
+        li.appendChild(delBtn);
+
+        // Apply deadline-based highlighting (red or orange)
+        applyDeadlineHighlighting(li, task);
+
+        return li;
+    }
+
+    // Helper: fill the text content for the displaySpan
+    function setDisplaySpanContent(span, task) {
         let dueInfo = "";
         if (task.due_type === "exact") {
             dueInfo = `(Exact: ${task.due_date} ${task.due_time})`;
@@ -73,57 +114,10 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         let priorityInfo = `[${task.priority.toUpperCase()}]`;
-        li.textContent = `${priorityInfo} ${task.text} ${dueInfo}`;
-
-        // Apply deadline-based coloring
-        applyDeadlineHighlighting(li, task);
-
-        // Mark done / undone
-        const toggleBtn = document.createElement("button");
-        toggleBtn.textContent = (task.status === "pending") ? "Mark Done" : "Mark Pending";
-        toggleBtn.addEventListener("click", () => {
-            const newStatus = (task.status === "pending") ? "done" : "pending";
-            updateTask(task.id, { status: newStatus });
-        });
-        li.appendChild(toggleBtn);
-
-        // Delete button
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.style.marginLeft = "10px";
-        delBtn.addEventListener("click", () => {
-            deleteTask(task.id);
-        });
-        li.appendChild(delBtn);
-
-        return li;
+        span.textContent = `${priorityInfo} ${task.text} ${dueInfo}  `;
     }
 
-    // Apply color highlighting based on deadlines
-    function applyDeadlineHighlighting(li, task) {
-        const now = new Date();
-
-        let deadline = null;
-        if (task.due_type === "exact" && task.due_date && task.due_time) {
-            deadline = new Date(`${task.due_date}T${task.due_time}`);
-        } else if (task.due_type === "until" && task.due_date) {
-            deadline = new Date(`${task.due_date}T23:59`);
-        } else if (task.due_type === "today") {
-            const todayStr = new Date().toISOString().split("T")[0];
-            deadline = new Date(`${todayStr}T23:59`);
-        }
-
-        if (deadline) {
-            const diffMinutes = (deadline - now) / (1000 * 60); // Convert ms to minutes
-            if (diffMinutes < 0) {
-                li.style.color = "red"; // Overdue tasks
-            } else if (diffMinutes <= 30) {
-                li.style.color = "orange"; // Due soon (next 30 mins)
-            }
-        }
-    }
-
-    // Add a new task
+    // 4. Add a NEW task (via the create form)
     createTaskBtn.addEventListener("click", function() {
         const textVal = taskText.value.trim();
         if (!textVal) {
@@ -137,13 +131,12 @@ document.addEventListener("DOMContentLoaded", function() {
         let dueDateVal = null;
         let dueTimeVal = null;
         if (dueTypeVal === "until") {
-            dueDateVal = taskDueDate.value;
+            dueDateVal = taskDueDate.value;  // e.g. "YYYY-MM-DD"
         } else if (dueTypeVal === "exact") {
             dueDateVal = taskDueDate.value;
-            dueTimeVal = taskDueTime.value;
+            dueTimeVal = taskDueTime.value;  // e.g. "HH:MM"
         }
 
-        // Build POST body
         const bodyData = {
             text: textVal,
             priority: priorityVal,
@@ -163,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // Reset form
                 taskText.value = "";
                 taskPriority.value = "medium";
                 taskDueType.value = "none";
@@ -170,7 +164,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 taskDueTime.disabled = true;
                 taskDueDate.value = "";
                 taskDueTime.value = "";
-
                 loadTasks();
             } else {
                 alert("Error adding task: " + JSON.stringify(data));
@@ -179,8 +172,146 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(err => console.error("Error adding task:", err));
     });
 
-    // Update a task (e.g., status)
-    function updateTask(taskId, changes) {
+    // 5. Show an inline edit form for an existing task
+    function showEditForm(task, li, displaySpan) {
+        // Hide the original display
+        displaySpan.style.display = "none";
+
+        // Create a small inline form for editing
+        const formDiv = document.createElement("div");
+        formDiv.style.marginTop = "8px";
+        formDiv.style.border = "1px solid #ccc";
+        formDiv.style.padding = "5px";
+        formDiv.style.display = "inline-block";
+
+        // 1) Text
+        const textInput = document.createElement("input");
+        textInput.type = "text";
+        textInput.style.width = "120px";
+        textInput.value = task.text;
+
+        // 2) Priority
+        const prioritySelect = document.createElement("select");
+        ["critical", "high", "medium", "low"].forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p;
+            opt.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+            if (p === task.priority) {
+                opt.selected = true;
+            }
+            prioritySelect.appendChild(opt);
+        });
+
+        // 3) Due type
+        const dueTypeSelect = document.createElement("select");
+        ["none", "today", "until", "exact"].forEach(dt => {
+            const opt = document.createElement("option");
+            opt.value = dt;
+            opt.textContent = dt.charAt(0).toUpperCase() + dt.slice(1);
+            if (dt === task.due_type) {
+                opt.selected = true;
+            }
+            dueTypeSelect.appendChild(opt);
+        });
+
+        // We'll create date/time inputs but enable/disable them based on the selected due type
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.value = task.due_date || "";
+        // For 'exact' tasks, we might have a time
+        const timeInput = document.createElement("input");
+        timeInput.type = "time";
+        timeInput.value = task.due_time || "";
+
+        // Helper to toggle date/time fields
+        function handleDueTypeChange(val) {
+            if (val === "until") {
+                dateInput.disabled = false;
+                timeInput.disabled = true;
+                timeInput.value = "";
+            } else if (val === "exact") {
+                dateInput.disabled = false;
+                timeInput.disabled = false;
+            } else {
+                // none or today
+                dateInput.disabled = true;
+                timeInput.disabled = true;
+                dateInput.value = "";
+                timeInput.value = "";
+            }
+        }
+
+        handleDueTypeChange(task.due_type); // set initial state
+        dueTypeSelect.addEventListener("change", () => {
+            handleDueTypeChange(dueTypeSelect.value);
+        });
+
+        // Add form elements to formDiv
+        formDiv.appendChild(document.createTextNode(" Text: "));
+        formDiv.appendChild(textInput);
+
+        formDiv.appendChild(document.createTextNode(" Priority: "));
+        formDiv.appendChild(prioritySelect);
+
+        formDiv.appendChild(document.createTextNode(" Due Type: "));
+        formDiv.appendChild(dueTypeSelect);
+
+        formDiv.appendChild(document.createTextNode(" Date: "));
+        formDiv.appendChild(dateInput);
+
+        formDiv.appendChild(document.createTextNode(" Time: "));
+        formDiv.appendChild(timeInput);
+
+        // Save button
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.style.marginLeft = "5px";
+        saveBtn.addEventListener("click", () => {
+            const changes = {
+                text: textInput.value.trim(),
+                priority: prioritySelect.value,
+                due_type: dueTypeSelect.value
+            };
+            // Only send date/time if relevant
+            if (dueTypeSelect.value === "until") {
+                changes.due_date = dateInput.value;
+                changes.due_time = null; // or omit
+            } else if (dueTypeSelect.value === "exact") {
+                changes.due_date = dateInput.value;
+                changes.due_time = timeInput.value;
+            } else if (dueTypeSelect.value === "today") {
+                changes.due_date = null;
+                changes.due_time = null;
+            } else {
+                // none
+                changes.due_date = null;
+                changes.due_time = null;
+            }
+
+            updateTask(task.id, changes, () => {
+                // After successful update, remove edit form & refresh
+                li.removeChild(formDiv);
+                displaySpan.style.display = "";
+            });
+        });
+        formDiv.appendChild(saveBtn);
+
+        // Cancel button
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.style.marginLeft = "5px";
+        cancelBtn.addEventListener("click", () => {
+            // Just remove the form & show original text
+            li.removeChild(formDiv);
+            displaySpan.style.display = "";
+        });
+        formDiv.appendChild(cancelBtn);
+
+        li.appendChild(formDiv);
+    }
+
+    // 6. Update a task (e.g., text, priority, due info, status)
+    function updateTask(taskId, changes, onSuccess) {
         fetch(`/api/todo/${taskId}/update/`, {
             method: "PUT",
             headers: {
@@ -192,6 +323,8 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // Optionally re-load tasks or call a callback
+                if (onSuccess) onSuccess();
                 loadTasks();
             } else {
                 alert("Error updating task: " + JSON.stringify(data));
@@ -200,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(err => console.error("Error updating task:", err));
     }
 
-    // Delete a task
+    // 7. Delete a task
     function deleteTask(taskId) {
         fetch(`/api/todo/${taskId}/delete/`, {
             method: "DELETE",
@@ -215,6 +348,41 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         })
         .catch(err => console.error("Error deleting task:", err));
+    }
+
+    // Highlight overdue tasks (red) or tasks due in next 30 min (orange)
+    function applyDeadlineHighlighting(li, task) {
+        const now = new Date();
+        let deadline = null;
+
+        if (task.due_type === "exact" && task.due_date && task.due_time) {
+            // Example: "2025-02-28T14:30"
+            deadline = new Date(`${task.due_date}T${task.due_time}`);
+        } else if (task.due_type === "until" && task.due_date) {
+            // e.g. "2025-02-28T23:59"
+            deadline = new Date(`${task.due_date}T23:59`);
+        } else if (task.due_type === "today") {
+            // use today's date + 23:59 local
+            const todayStr = new Date().toISOString().split("T")[0];
+            deadline = new Date(`${todayStr}T23:59`);
+        }
+
+        if (deadline) {
+            const diffMinutes = (deadline - now) / (1000 * 60); // ms → minutes
+            if (diffMinutes < 0) {
+                // Overdue
+                li.style.color = "red";
+            } else if (diffMinutes <= 30) {
+                // Due soon
+                li.style.color = "orange";
+            } else {
+                // Reset color (in case we updated the task)
+                li.style.color = "";
+            }
+        } else {
+            // No deadline → no highlight
+            li.style.color = "";
+        }
     }
 
     // Retrieve CSRF token from cookies
@@ -233,6 +401,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return cookieValue;
     }
 
-    // Load tasks on page load
+    // Finally, load tasks on page load
     loadTasks();
 });
