@@ -4,6 +4,7 @@
 <head>
   <title>Daily Data for {{ date }}</title>
   <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
+  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
 </head>
 <body>
   <h1>Daily Data for {{ date }}</h1>
@@ -48,7 +49,15 @@
         </div>
       {% endfor %}
     </div>
+
     <br/>
+
+    <!-- A hidden dropdown we’ll position near the clicked square -->
+    <div id="activity-dropdown" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc;">
+      <select id="activity-select">
+        <!-- We'll fill this with user activities via JS -->
+      </select>
+    </div>
 
     <!-- Hidden input to store hourly log JSON -->
     <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"

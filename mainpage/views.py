@@ -1,22 +1,15 @@
-# mainpage/views.py
-
 import json
 from datetime import date, datetime, time, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.utils.timezone import now
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.timezone import now
 
-from .models import (
-    DailyData,
-    Streak,
-    MonthlyHabits,
-    UserTodo,
-    ActivityMapping  # <-- Make sure this model is defined
-)
-
+from .models import ActivityMapping
+from .models import DailyData, MonthlyHabits, Streak, UserTodo
 
 
 @login_required
@@ -126,6 +119,17 @@ def day_view(request, year, month, day):
 
     # Optionally sort by hour (if not already sorted)
     hourly_data.sort(key=lambda x: x.get('hour', 0))
+
+    if not hourly_data:
+        hourly_data = [{"hour": h, "activity": None} for h in range(24)]
+    else:
+        # If you want to ensure it's always 24 hours in length, fill in missing hours:
+        existing_hours = {item["hour"] for item in hourly_data}
+        for h in range(24):
+            if h not in existing_hours:
+                hourly_data.append({"hour": h, "activity": None})
+        # Sort by hour
+        hourly_data.sort(key=lambda x: x["hour"])
 
     # Prepare context
     sleep_data = daily_obj.sleep or ""
@@ -395,6 +399,22 @@ def activity_config_view(request):
     return render(request, 'mainpage/activity_config.html', {'activities': activities})
 
 
+@login_required
+def get_activities(request):
+    """
+    Return a JSON list of the user's activities:
+    [
+      {"id": 1, "name": "Studying", "color": "red"},
+      {"id": 2, "name": "Sleeping", "color": "blue"},
+      ...
+    ]
+    """
+    activities_qs = ActivityMapping.objects.filter(user_id=request.user.id)
+    # Convert QuerySet to list of dict
+    data = list(activities_qs.values('id', 'name', 'color'))
+    return JsonResponse(data, safe=False)
+
+
 #########################
 #  DEADLINE-BASED TODO  #
 #########################
@@ -426,7 +446,7 @@ def _normalize_task(task):
 
 
 def _sort_tasks(tasks):
-    from datetime import datetime, date, time
+    from datetime import date, datetime, time
 
     priority_map = {
         'critical': 0,

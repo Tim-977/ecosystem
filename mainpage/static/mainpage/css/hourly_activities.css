@@ -1,21 +1,21 @@
-#hourly-activity-bar {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-  }
-  
-  .hour-square {
+/* Hour squares */
+.hour-square {
+    display: inline-block;
     width: 30px;
     height: 30px;
-    background-color: #ccc;
+    margin: 2px;
+    text-align: center;
+    line-height: 30px;
+    background-color: #ddd;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   
   .hour-square:hover {
     outline: 2px solid #444;
+  }
+  
+  /* The dropdown container */
+  #activity-dropdown {
+    z-index: 9999; /* So it appears above other elements */
   }
   
