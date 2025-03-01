@@ -1,15 +1,15 @@
-# mainpage/views.py
-
 import json
 from datetime import date, datetime, time, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.utils.timezone import now
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.timezone import now
 
-from .models import DailyData, Streak, MonthlyHabits, UserTodo
+from .models import ActivityMapping
+from .models import DailyData, MonthlyHabits, Streak, UserTodo
 
 
 @login_required
@@ -53,11 +53,13 @@ def day_view(request, year, month, day):
             )
             day_to_fill += timedelta(days=1)
 
+    # Get or create today's DailyData
     daily_obj, _ = DailyData.objects.get_or_create(
         user_id=request.user.id,
         date=current_date
     )
 
+    # Get or create the MonthlyHabits
     monthly_obj, _ = MonthlyHabits.objects.get_or_create(
         user_id=request.user.id,
         year=year,
@@ -77,6 +79,7 @@ def day_view(request, year, month, day):
         monthly_obj.habit_10,
     ]
 
+    # Handle form submission
     if request.method == 'POST':
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
         daily_obj.productivity_score = request.POST.get('productivity_score') or None
@@ -97,14 +100,38 @@ def day_view(request, year, month, day):
             habit_completion_string += "1" if checkbox_val == "on" else "0"
         daily_obj.habits_completed = habit_completion_string
 
+        # Save the raw text from the hourly logging <textarea> or hidden input
         daily_obj.thoughts = request.POST.get('thoughts')
         daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.save()
 
+        # Update streak info
         _update_streak(request.user.id, current_date)
+
         return redirect('day_view', year=year, month=month, day=day)
 
+    # On GET, parse the JSON for hourly activity
+    try:
+        hourly_data = json.loads(daily_obj.hourly_activity_logging) if daily_obj.hourly_activity_logging else []
+    except:
+        hourly_data = []
+
+    # Optionally sort by hour (if not already sorted)
+    hourly_data.sort(key=lambda x: x.get('hour', 0))
+
+    if not hourly_data:
+        hourly_data = [{"hour": h, "activity": None} for h in range(24)]
+    else:
+        # If you want to ensure it's always 24 hours in length, fill in missing hours:
+        existing_hours = {item["hour"] for item in hourly_data}
+        for h in range(24):
+            if h not in existing_hours:
+                hourly_data.append({"hour": h, "activity": None})
+        # Sort by hour
+        hourly_data.sort(key=lambda x: x["hour"])
+
+    # Prepare context
     sleep_data = daily_obj.sleep or ""
     splitted = sleep_data.split(',')
 
@@ -132,6 +159,7 @@ def day_view(request, year, month, day):
         "first_alarm_time_form": first_alarm_time_form,
         "habits_status": habits_status,
         "monthly_obj": monthly_obj,
+        "hourly_data": hourly_data,
     }
     return render(request, 'mainpage/day.html', context)
 
@@ -154,6 +182,7 @@ def _update_streak(user_id, logged_date):
         current_streak = 1
     else:
         if logged_date == last_activity_date:
+            # Same day was already logged, do nothing
             return
         elif logged_date == last_activity_date + timedelta(days=1):
             current_streak += 1
@@ -173,7 +202,6 @@ def _update_streak(user_id, logged_date):
 
 @login_required
 def set_habits_view(request):
-    # ... unchanged ...
     from datetime import date
     today = date.today()
     this_year = today.year
@@ -272,7 +300,6 @@ def set_habits_view(request):
 
 @login_required
 def monthly_stats_view(request):
-    # ... unchanged ...
     from datetime import date
     today = date.today()
     this_year = today.year
@@ -339,6 +366,55 @@ def monthly_stats_view(request):
     }
     return render(request, 'mainpage/monthly-stats.html', context)
 
+
+################################
+#          ACTIVITY CONFIG      #
+################################
+@login_required
+def activity_config_view(request):
+    """
+    View for managing user activity mappings (create, update, delete).
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            name = request.POST.get('name', '').strip()
+            color = request.POST.get('color', '#000000').strip()
+            if name:
+                ActivityMapping.objects.create(
+                    user_id=request.user.id,
+                    name=name,
+                    color=color
+                )
+        elif action == 'delete':
+            activity_id = request.POST.get('activity_id')
+            if activity_id:
+                ActivityMapping.objects.filter(
+                    user_id=request.user.id,
+                    id=activity_id
+                ).delete()
+        return redirect('activity_config_view')
+
+    activities = ActivityMapping.objects.filter(user_id=request.user.id).order_by('id')
+    return render(request, 'mainpage/activity_config.html', {'activities': activities})
+
+
+@login_required
+def get_activities(request):
+    """
+    Return a JSON list of the user's activities:
+    [
+      {"id": 1, "name": "Studying", "color": "red"},
+      {"id": 2, "name": "Sleeping", "color": "blue"},
+      ...
+    ]
+    """
+    activities_qs = ActivityMapping.objects.filter(user_id=request.user.id)
+    # Convert QuerySet to list of dict
+    data = list(activities_qs.values('id', 'name', 'color'))
+    return JsonResponse(data, safe=False)
+
+
 #########################
 #  DEADLINE-BASED TODO  #
 #########################
@@ -363,7 +439,6 @@ def _normalize_task(task):
         task['due_date'] = None
         task['due_time'] = None
 
-    # NEW: priority
     if 'priority' not in task:
         task['priority'] = 'medium'
 
@@ -371,7 +446,7 @@ def _normalize_task(task):
 
 
 def _sort_tasks(tasks):
-    from datetime import datetime, date, time
+    from datetime import date, datetime, time
 
     priority_map = {
         'critical': 0,
@@ -387,7 +462,6 @@ def _sort_tasks(tasks):
     }
 
     def parse_date_time(due_date, due_time):
-        """Safely parse date/time or return (None, None) on error."""
         try:
             d = datetime.strptime(due_date, "%Y-%m-%d").date() if due_date else None
             t = datetime.strptime(due_time, "%H:%M").time() if due_time else None
@@ -396,15 +470,13 @@ def _sort_tasks(tasks):
             return None, None
 
     def sort_key(task):
-        # 1) Priority
         p_val = priority_map.get(task.get('priority', 'medium'), 2)
-        # 2) Due type
         dt = task.get('due_type', 'none')
         dt_val = due_type_map.get(dt, 3)
 
         if dt == 'exact':
             d, t = parse_date_time(task['due_date'], task['due_time'])
-            if d is None:  # fallback
+            if d is None:
                 d, t = date.max, time.max
             elif t is None:
                 t = time.min
@@ -417,15 +489,12 @@ def _sort_tasks(tasks):
             return (p_val, dt_val, d, time.min)
 
         elif dt == 'today':
-            # All 'today' tasks come after 'until' but before 'none'
             return (p_val, dt_val, date.max, time.max)
 
         else:
-            # none
             return (p_val, dt_val, date.max, time.max)
 
     return sorted(tasks, key=sort_key)
-
 
 
 @login_required
@@ -438,17 +507,12 @@ def get_todo_tasks(request):
     usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
     tasks = usertodo.tasks
 
-    # 1) Normalize tasks (so each has due_type, due_date, due_time)
     normalized = [_normalize_task(t) for t in tasks]
-
-    # 2) Sort them with _sort_tasks
     sorted_tasks = _sort_tasks(normalized)
 
-    # 3) Separate by status
     pending = [t for t in sorted_tasks if t.get('status') == 'pending']
     done = [t for t in sorted_tasks if t.get('status') == 'done']
 
-    # 4) Save any updated tasks structure back (if changed)
     usertodo.tasks = normalized
     usertodo.save()
 
