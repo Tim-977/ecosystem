@@ -3,6 +3,7 @@
 <html>
 <head>
   <title>Daily Data for {{ date }}</title>
+  <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
 </head>
 <body>
   <h1>Daily Data for {{ date }}</h1>
@@ -12,7 +13,7 @@
     <h3>Monthly Goals: {{ monthly_obj.goal_text }}</h3>
   {% endif %}
 
-  <form method="POST">
+  <form method="POST" id="dayForm">
     {% csrf_token %}
 
     <label for="mood_rating">Mood Rating (1-10):</label>
@@ -38,6 +39,23 @@
     <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
     <br/><br/>
 
+    <!-- Hourly Activity Logging Section -->
+    <h3>Hourly Activity Logging</h3>
+    <div id="hourly-activity-bar">
+      {% for entry in hourly_data %}
+        <div class="hour-square" data-hour="{{ entry.hour }}" data-activity="{{ entry.activity }}">
+          {{ entry.hour }}
+        </div>
+      {% endfor %}
+    </div>
+    <br/>
+
+    <!-- Hidden input to store hourly log JSON -->
+    <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"
+           value='{{ daily_obj.hourly_activity_logging|default_if_none:"[]" }}' />
+
+    <p><a href="{% url 'activity_config_view' %}">Configure Activities</a></p>
+
     <!-- Checkboxes for each monthly habit -->
     <h3>Today's Habit Completion</h3>
     <div>
@@ -60,19 +78,13 @@
     <textarea name="self_reflection" id="self_reflection" rows="2" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
     <br/><br/>
 
-    <label for="hourly_activity_logging">Hourly Activity Logging:</label><br/>
-    <textarea name="hourly_activity_logging" id="hourly_activity_logging" rows="2" cols="40">{{ daily_obj.hourly_activity_logging|default_if_none:'' }}</textarea>
-    <br/><br/>
-
     <button type="submit">Save</button>
   </form>
 
   <hr/>
 
-  <!-- NEW UI for the enhanced TODO List -->
   <h2>TODO List</h2>
 
-  <!-- Form for adding a new task -->
   <div style="border: 1px solid #ccc; padding: 10px; width: 300px;">
     <h3>Add a New Task</h3>
 
@@ -127,7 +139,7 @@
 
   <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
 
-  <!-- JS -->
   <script src="{% static 'mainpage/js/todo.js' %}"></script>
+  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
 </body>
 </html>

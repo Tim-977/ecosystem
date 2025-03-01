@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Activities</title>
+</head>
+<body>
+  <h1>Activity Configuration</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create" />
+    <label for="name">Activity Name:</label><br/>
+    <input type="text" name="name" required><br/><br/>
+
+    <label for="color">Color (CSS name or #hex):</label><br/>
+    <input type="text" name="color" value="#0000ff" required><br/><br/>
+
+    <button type="submit">Add Activity</button>
+  </form>
+
+  <hr/>
+  <h2>Existing Activities</h2>
+  <ul>
+    {% for act in activities %}
+      <li style="color: '{{ act.color }}';">
+        {{ act.name }} ({{ act.color }})
+        <form method="POST" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="activity_id" value="{{ act.id }}">
+          <input type="hidden" name="action" value="delete">
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <p><a href="{% url 'day_view' year=2025 month=2 day=10 %}">Go to a Day Example</a></p>
+</body>
+</html>
