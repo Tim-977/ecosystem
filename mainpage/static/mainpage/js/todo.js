@@ -342,19 +342,19 @@ document.addEventListener("DOMContentLoaded", function() {
     function applyDeadlineHighlighting(li, task) {
         const now = new Date();
         let deadline = null;
-
+    
         if (task.due_type === "exact" && task.due_date && task.due_time) {
-            // Example: "2025-02-28T14:30"
             deadline = new Date(`${task.due_date}T${task.due_time}`);
         } else if (task.due_type === "until" && task.due_date) {
-            // e.g. "2025-02-28T23:59"
             deadline = new Date(`${task.due_date}T23:59`);
         } else if (task.due_type === "today") {
-            // use today's date + 23:59 local
-            const todayStr = new Date().toISOString().split("T")[0];
-            deadline = new Date(`${todayStr}T23:59`);
+            // FIX: Use the stored date (the day user set it).
+            // E.g. if task.due_date = "2025-03-04", treat it as 2025-03-04 23:59
+            if (task.due_date) {
+                deadline = new Date(`${task.due_date}T23:59`);
+            }
         }
-
+    
         if (deadline) {
             const diffMinutes = (deadline - now) / (1000 * 60); // ms → minutes
             if (diffMinutes < 0) {
@@ -364,14 +364,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Due soon
                 li.style.color = "orange";
             } else {
-                // Reset color (in case we updated the task)
+                // Reset color
                 li.style.color = "";
             }
         } else {
             // No deadline → no highlight
             li.style.color = "";
         }
-    }
+    }    
 
     // Retrieve CSRF token from cookies
     function getCSRFToken() {

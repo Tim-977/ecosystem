@@ -544,12 +544,17 @@ def add_todo_task(request):
         if tasks:
             new_id = max(t.get('id', 0) for t in tasks) + 1
 
+        # --- Fix: If user chooses "today", store today's date ---
+        if due_type == 'today':
+            due_date = datetime.now().strftime('%Y-%m-%d')
+            due_time = None
+
         new_task = {
             "id": new_id,
             "text": text,
             "status": "pending",
             "due_type": due_type,
-            "due_date": due_date if due_type in ('until', 'exact') else None,
+            "due_date": due_date if due_type in ('until', 'exact', 'today') else None,
             "due_time": due_time if due_type == 'exact' else None,
             "priority": priority
         }
@@ -570,25 +575,18 @@ def update_todo_task(request, task_id):
 
         for t in tasks:
             if t.get('id') == task_id:
-                if 'text' in body:
-                    t['text'] = body['text'].strip() or t['text']
-                if 'status' in body and body['status'] in ['pending', 'done']:
-                    t['status'] = body['status']
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
                     if dt in ['none', 'today', 'until', 'exact']:
                         t['due_type'] = dt
-                        if dt in ['none', 'today']:
+                        if dt == 'today':
+                            # Fix: set the date to today's date
+                            t['due_date'] = datetime.now().strftime('%Y-%m-%d')
+                            t['due_time'] = None
+                        elif dt in ['none', 'today']:
                             t['due_date'] = None
                             t['due_time'] = None
-                if 'due_date' in body:
-                    t['due_date'] = body['due_date']
-                if 'due_time' in body:
-                    t['due_time'] = body['due_time']
-                if 'priority' in body:
-                    pr = body['priority'].lower()
-                    if pr in ['critical', 'high', 'medium', 'low']:
-                        t['priority'] = pr
+
 
                 usertodo.tasks = tasks
                 usertodo.save()
