@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     
         const dueTypeSelect = document.createElement("select");
-        ["none", "today", "until", "exact"].forEach(dt => {
+        ["none", "until", "exact"].forEach(dt => {
             const opt = document.createElement("option");
             opt.value = dt;
             opt.textContent = dt.charAt(0).toUpperCase() + dt.slice(1);

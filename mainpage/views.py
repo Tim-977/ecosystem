@@ -577,26 +577,24 @@ def update_todo_task(request, task_id):
 
         for t in tasks:
             if t.get('id') == task_id:
-                # If the user sets a new 'due_type', check if it's "today"
+                # If the user sets a new 'due_type', validate and update it
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
-                    if dt in ['none', 'today', 'until', 'exact']:
-                        # Convert "today" -> "until" + date = today
-                        if dt == 'today':
-                            dt = 'until'
-                            t['due_type'] = dt
-                            t['due_date'] = datetime.now().strftime('%Y-%m-%d')
+                    if dt in ['none', 'until', 'exact']:  # 'today' is now removed
+                        t['due_type'] = dt
+                        if dt == 'none':
+                            t['due_date'] = None
                             t['due_time'] = None
-                        else:
-                            t['due_type'] = dt
-                            if dt in ['none']:
-                                t['due_date'] = None
-                                t['due_time'] = None
-                            # if dt == 'until' or dt == 'exact', we handle below
+                        elif dt == 'until':
+                            t['due_date'] = body.get('due_date')
+                            t['due_time'] = None  # Ensure time is reset
+                        elif dt == 'exact':
+                            t['due_date'] = body.get('due_date')
+                            t['due_time'] = body.get('due_time')
 
-                if 'due_date' in body:
+                if 'due_date' in body and t['due_type'] in ['until', 'exact']:
                     t['due_date'] = body['due_date']
-                if 'due_time' in body:
+                if 'due_time' in body and t['due_type'] == 'exact':
                     t['due_time'] = body['due_time']
                 if 'priority' in body:
                     pr = body['priority'].lower()
@@ -612,6 +610,7 @@ def update_todo_task(request, task_id):
         return JsonResponse({"error": "Task not found."}, status=404)
     else:
         return JsonResponse({"error": "PUT required"}, status=405)
+
 
 
 @login_required
