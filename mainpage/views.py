@@ -529,33 +529,32 @@ def add_todo_task(request):
         body = json.loads(request.body.decode('utf-8'))
         text = body.get('text', '').strip()
         if not text:
-            return JsonResponse({"error": "No task text provided."}, status=400)
+            return JsonResponse({"error": "Task description cannot be empty."}, status=400)
 
         due_type = body.get('due_type', 'none').lower()
         due_date = body.get('due_date')
         due_time = body.get('due_time')
         priority = body.get('priority', 'medium').lower()
+
         if priority not in ['critical', 'high', 'medium', 'low']:
             priority = 'medium'
 
-        if due_type == 'today':
-            due_type = 'until'
-            due_date = datetime.now().strftime('%Y-%m-%d')
-            due_time = None
+        if due_type == 'until' and not due_date:
+            return JsonResponse({"error": "Due date is required for 'Until'."}, status=400)
+        if due_type == 'exact' and (not due_date or not due_time):
+            return JsonResponse({"error": "Both date and time are required for 'Exact'."}, status=400)
 
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
         tasks = usertodo.tasks or []
 
-        new_id = 1
-        if tasks:
-            new_id = max(t.get('id', 0) for t in tasks) + 1
+        new_id = max([t.get('id', 0) for t in tasks], default=0) + 1
 
         new_task = {
             "id": new_id,
             "text": text,
             "status": "pending",
             "due_type": due_type,
-            "due_date": due_date if due_type in ('until', 'exact') else None,
+            "due_date": due_date if due_type in ['until', 'exact'] else None,
             "due_time": due_time if due_type == 'exact' else None,
             "priority": priority
         }
@@ -564,8 +563,8 @@ def add_todo_task(request):
         usertodo.tasks = tasks
         usertodo.save()
         return JsonResponse({"success": True, "task": new_task})
-    else:
-        return JsonResponse({"error": "POST required"}, status=405)
+    
+    return JsonResponse({"error": "POST required"}, status=405)
 
 
 @login_required
@@ -577,25 +576,27 @@ def update_todo_task(request, task_id):
 
         for t in tasks:
             if t.get('id') == task_id:
-                # If the user sets a new 'due_type', validate and update it
+                # Validate required fields based on due_type
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
-                    if dt in ['none', 'until', 'exact']:  # 'today' is now removed
+                    if dt in ['none', 'until', 'exact']:
                         t['due_type'] = dt
+
                         if dt == 'none':
                             t['due_date'] = None
                             t['due_time'] = None
                         elif dt == 'until':
+                            if not body.get('due_date'):
+                                return JsonResponse({"error": "Due date is required for 'Until'."}, status=400)
                             t['due_date'] = body.get('due_date')
-                            t['due_time'] = None  # Ensure time is reset
+                            t['due_time'] = None
                         elif dt == 'exact':
+                            if not body.get('due_date') or not body.get('due_time'):
+                                return JsonResponse({"error": "Both date and time are required for 'Exact'."}, status=400)
                             t['due_date'] = body.get('due_date')
                             t['due_time'] = body.get('due_time')
 
-                if 'due_date' in body and t['due_type'] in ['until', 'exact']:
-                    t['due_date'] = body['due_date']
-                if 'due_time' in body and t['due_type'] == 'exact':
-                    t['due_time'] = body['due_time']
+                # Update other task fields
                 if 'priority' in body:
                     pr = body['priority'].lower()
                     if pr in ['critical', 'high', 'medium', 'low']:
@@ -608,8 +609,8 @@ def update_todo_task(request, task_id):
                 return JsonResponse({"success": True, "task": t})
 
         return JsonResponse({"error": "Task not found."}, status=404)
-    else:
-        return JsonResponse({"error": "PUT required"}, status=405)
+    
+    return JsonResponse({"error": "PUT required"}, status=405)
 
 
 
