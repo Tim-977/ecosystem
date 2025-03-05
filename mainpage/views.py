@@ -537,27 +537,28 @@ def add_todo_task(request):
         if priority not in ['critical', 'high', 'medium', 'low']:
             priority = 'medium'
 
+        if due_type == 'today':
+            due_type = 'until'
+            due_date = datetime.now().strftime('%Y-%m-%d')
+            due_time = None
+
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
-        tasks = usertodo.tasks
+        tasks = usertodo.tasks or []
 
         new_id = 1
         if tasks:
             new_id = max(t.get('id', 0) for t in tasks) + 1
-
-        # --- Fix: If user chooses "today", store today's date ---
-        if due_type == 'today':
-            due_date = datetime.now().strftime('%Y-%m-%d')
-            due_time = None
 
         new_task = {
             "id": new_id,
             "text": text,
             "status": "pending",
             "due_type": due_type,
-            "due_date": due_date if due_type in ('until', 'exact', 'today') else None,
+            "due_date": due_date if due_type in ('until', 'exact') else None,
             "due_time": due_time if due_type == 'exact' else None,
             "priority": priority
         }
+
         tasks.append(new_task)
         usertodo.tasks = tasks
         usertodo.save()
@@ -571,22 +572,37 @@ def update_todo_task(request, task_id):
     if request.method == 'PUT':
         body = json.loads(request.body.decode('utf-8'))
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
-        tasks = usertodo.tasks
+        tasks = usertodo.tasks or []
 
         for t in tasks:
             if t.get('id') == task_id:
+                # If the user sets a new 'due_type', check if it's "today"
                 if 'due_type' in body:
                     dt = body['due_type'].lower()
                     if dt in ['none', 'today', 'until', 'exact']:
-                        t['due_type'] = dt
+                        # Convert "today" -> "until" + date = today
                         if dt == 'today':
-                            # Fix: set the date to today's date
+                            dt = 'until'
+                            t['due_type'] = dt
                             t['due_date'] = datetime.now().strftime('%Y-%m-%d')
                             t['due_time'] = None
-                        elif dt in ['none', 'today']:
-                            t['due_date'] = None
-                            t['due_time'] = None
+                        else:
+                            t['due_type'] = dt
+                            if dt in ['none']:
+                                t['due_date'] = None
+                                t['due_time'] = None
+                            # if dt == 'until' or dt == 'exact', we handle below
 
+                if 'due_date' in body:
+                    t['due_date'] = body['due_date']
+                if 'due_time' in body:
+                    t['due_time'] = body['due_time']
+                if 'priority' in body:
+                    pr = body['priority'].lower()
+                    if pr in ['critical', 'high', 'medium', 'low']:
+                        t['priority'] = pr
+                if 'status' in body and body['status'] in ['pending', 'done']:
+                    t['status'] = body['status']
 
                 usertodo.tasks = tasks
                 usertodo.save()
