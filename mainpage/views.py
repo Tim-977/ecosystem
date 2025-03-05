@@ -35,8 +35,9 @@ def day_view(request, year, month, day):
     current_date = date(year, month, day)
     today = date.today()
 
-    if current_date > today:
-        messages.error(request, "You cannot create or edit logs for future dates.")
+    allowable_date = today + timedelta(days=1)
+    if current_date > allowable_date:
+        messages.error(request, "You cannot create or edit logs for dates more than 24h in the future.")
         return redirect('main_page')
 
     last_log = DailyData.objects.filter(
