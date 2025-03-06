@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // Button: Mark Done / Mark Pending
         const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
         toggleBtn.textContent = (task.status === "pending") ? "Mark Done" : "Mark Pending";
         toggleBtn.addEventListener("click", () => {
             const newStatus = (task.status === "pending") ? "done" : "pending";
@@ -78,6 +79,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // Button: Edit (inline)
         const editBtn = document.createElement("button");
+        editBtn.type = "button";
         editBtn.textContent = "Edit";
         editBtn.style.marginLeft = "10px";
         editBtn.addEventListener("click", () => {
@@ -87,6 +89,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // Button: Delete
         const delBtn = document.createElement("button");
+        delBtn.type = "button";
         delBtn.textContent = "Delete";
         delBtn.style.marginLeft = "10px";
         delBtn.addEventListener("click", () => {
@@ -176,8 +179,9 @@ document.addEventListener("DOMContentLoaded", function() {
     function showEditForm(task, li, displaySpan) {
         displaySpan.style.display = "none";
     
-        const editBtn = li.querySelector("button:nth-of-type(2)"); // Find the edit button
-        editBtn.style.display = "none";  // Hide edit button
+        // Hide the original Edit button
+        const editBtn = li.querySelector("button:nth-of-type(2)");
+        editBtn.style.display = "none";
     
         const formDiv = document.createElement("div");
         formDiv.style.marginTop = "8px";
@@ -202,6 +206,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     
         const dueTypeSelect = document.createElement("select");
+        // No "today" option for editing
         ["none", "until", "exact"].forEach(dt => {
             const opt = document.createElement("option");
             opt.value = dt;
@@ -256,7 +261,9 @@ document.addEventListener("DOMContentLoaded", function() {
         formDiv.appendChild(document.createTextNode(" Time: "));
         formDiv.appendChild(timeInput);
     
+        // Save button
         const saveBtn = document.createElement("button");
+        saveBtn.type = "button";
         saveBtn.textContent = "Save";
         saveBtn.style.marginLeft = "5px";
         saveBtn.addEventListener("click", () => {
@@ -279,24 +286,25 @@ document.addEventListener("DOMContentLoaded", function() {
             updateTask(task.id, changes, () => {
                 li.removeChild(formDiv);
                 displaySpan.style.display = "";
-                editBtn.style.display = "";  // Show edit button again
+                editBtn.style.display = ""; // Show edit button again
             });
         });
         formDiv.appendChild(saveBtn);
     
+        // Cancel button
         const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
         cancelBtn.textContent = "Cancel";
         cancelBtn.style.marginLeft = "5px";
         cancelBtn.addEventListener("click", () => {
             li.removeChild(formDiv);
             displaySpan.style.display = "";
-            editBtn.style.display = "";  // Show edit button again
+            editBtn.style.display = ""; // Show edit button again
         });
         formDiv.appendChild(cancelBtn);
     
         li.appendChild(formDiv);
     }
-    
 
     // 6. Update a task (e.g., text, priority, due info, status)
     function updateTask(taskId, changes, onSuccess) {
@@ -311,7 +319,6 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Optionally re-load tasks or call a callback
                 if (onSuccess) onSuccess();
                 loadTasks();
             } else {
@@ -348,15 +355,13 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (task.due_type === "until" && task.due_date) {
             deadline = new Date(`${task.due_date}T23:59`);
         } else if (task.due_type === "today") {
-            // FIX: Use the stored date (the day user set it).
-            // E.g. if task.due_date = "2025-03-04", treat it as 2025-03-04 23:59
             if (task.due_date) {
                 deadline = new Date(`${task.due_date}T23:59`);
             }
         }
     
         if (deadline) {
-            const diffMinutes = (deadline - now) / (1000 * 60); // ms → minutes
+            const diffMinutes = (deadline - now) / (1000 * 60);
             if (diffMinutes < 0) {
                 // Overdue
                 li.style.color = "red";
@@ -364,7 +369,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Due soon
                 li.style.color = "orange";
             } else {
-                // Reset color
                 li.style.color = "";
             }
         } else {
