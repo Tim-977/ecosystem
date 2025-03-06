@@ -67,9 +67,7 @@
           <!-- Quick thought (middle top) -->
           <div class="thoughts-box">
             <h2>Write a thought...</h2>
-            <textarea name="thoughts" id="thoughts" rows="2" cols="40">
-              {{ daily_obj.thoughts|default_if_none:'' }}
-            </textarea>
+            <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
           </div>
 
           <!-- TODO List (right, spans two rows) -->
@@ -131,9 +129,7 @@
           <!-- Self Reflection (middle bottom) -->
           <div class="reflection-box">
             <h2>Detailed Thoughts (Self-Reflection)</h2>
-            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">
-              {{ daily_obj.self_reflection|default_if_none:'' }}
-            </textarea>
+            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
           </div>
 
           <!-- Sleep Tracker (left bottom) -->
