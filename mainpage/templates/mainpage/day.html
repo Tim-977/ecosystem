@@ -3,23 +3,25 @@
 <html>
 <head>
   <title>Daily Data for {{ date }}</title>
-  <!-- Existing CSS link -->
+  <!-- Include your existing CSS -->
   <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
-  <!-- New separate stylesheet -->
   <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
 </head>
+
 <body>
-  
   <!-- ========== HEADER ========== -->
   <header>
     <div class="header-left">
+      <!-- Sample date display (like "01 Jan 2025 WED") -->
       <h1>{{ date }}</h1>
       {% if monthly_obj.goal_text %}
         <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
       {% endif %}
     </div>
     <div class="streak-info">
+      <!-- Example of where you'd show your streak info -->
       Streak: {{ streak_obj.some_field|default_if_none:"N/A" }}
+      <!-- Link to monthly page -->
       <a href="{% url 'monthly_stats_view' %}" style="margin-left:20px;">Go to Month View</a>
     </div>
   </header>
@@ -38,7 +40,7 @@
   <!-- ========== MAIN CONTENT AREA ========== -->
   <div class="main-container">
     <main>
-      <!-- We still use one form to POST everything (day data). -->
+      <!-- We still use one form to POST everything. Keep all name/IDs the same. -->
       <form method="POST" id="dayForm">
         {% csrf_token %}
 
@@ -65,12 +67,67 @@
             <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
           </div>
 
+          <!-- TODO List (right, spans two rows) -->
+          <div class="todo-box">
+            <h2>TODO</h2>
+
+            <!-- Add Task Section -->
+            <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+              <h3>Add a New Task</h3>
+              <label>Task Description:</label><br/>
+              <input type="text" id="taskText" style="width:100%;" />
+              <br/><br/>
+
+              <label>Priority:</label><br/>
+              <select id="taskPriority">
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <br/><br/>
+
+              <label>Deadline Type:</label><br/>
+              <select id="taskDueType">
+                <option value="none" selected>No Deadline</option>
+                <option value="today">Today</option>
+                <option value="until">Until (Date)</option>
+                <option value="exact">Exact (Date + Time)</option>
+              </select>
+              <br/><br/>
+
+              <div>
+                <label>Due Date:</label><br/>
+                <input type="date" id="taskDueDate" disabled />
+              </div>
+              <br/>
+              <div>
+                <label>Due Time:</label><br/>
+                <input type="time" id="taskDueTime" disabled />
+              </div>
+              <br/>
+
+              <button id="createTaskBtn" type="button">Add Task</button>
+            </div>
+
+            <!-- Pending / Done Lists side by side -->
+            <div style="display: flex; gap: 30px;">
+              <div>
+                <h3>Pending</h3>
+                <ul id="pendingList"></ul>
+              </div>
+              <div>
+                <h3>Done</h3>
+                <ul id="doneList"></ul>
+              </div>
+            </div>
+          </div>
+
           <!-- Self Reflection (middle bottom) -->
           <div class="reflection-box">
             <h2>Detailed Thoughts (Self-Reflection)</h2>
             <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
           </div>
-
           <!-- Sleep Tracker (left bottom) -->
           <div class="sleep-tracker">
             <h2>Sleep Tracker</h2>
@@ -91,7 +148,6 @@
         <!-- ========== BOTTOM SECTION ========== -->
         <div class="bottom-section">
           <h2>Hourly Activity Logging</h2>
-
           <div id="hourly-activity-bar">
             {% for entry in hourly_data %}
               <div class="hour-square"
@@ -124,77 +180,12 @@
                  value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
         </div>
 
-        <hr/>
-
-        <!-- ====== TODO List Section ====== -->
-
-        <h2>TODO List</h2>
-
-        <!-- For purely AJAX-based tasks, we use <button type="button"> 
-             so it doesn't submit the form -->
-        <div style="border: 1px solid #ccc; padding: 10px; width: 300px;">
-          <h3>Add a New Task</h3>
-
-          <label>Task Description:</label><br/>
-          <input type="text" id="taskText" style="width:100%;" />
-          <br/><br/>
-
-          <label>Priority:</label><br/>
-          <select id="taskPriority">
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium" selected>Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <br/><br/>
-
-          <label>Deadline Type:</label><br/>
-          <select id="taskDueType">
-            <option value="none" selected>No Deadline</option>
-            <option value="today">Today</option>
-            <option value="until">Until (Date)</option>
-            <option value="exact">Exact (Date + Time)</option>
-          </select>
-          <br/><br/>
-
-          <div>
-            <label>Due Date:</label><br/>
-            <input type="date" id="taskDueDate" disabled />
-          </div>
-          <br/>
-
-          <div>
-            <label>Due Time:</label><br/>
-            <input type="time" id="taskDueTime" disabled />
-          </div>
-          <br/>
-
-          <!-- Button that will not submit the entire form -->
-          <button id="createTaskBtn" type="button">Add Task</button>
-        </div>
         <br/>
-
-        <div style="display: flex; gap: 50px;">
-          <div>
-            <h3>Pending</h3>
-            <ul id="pendingList"></ul>
-          </div>
-          <div>
-            <h3>Done</h3>
-            <ul id="doneList"></ul>
-          </div>
-        </div>
-
-        <br/>
-        <!-- The ONLY actual submit button for the entire dayForm -->
         <button type="submit">Save</button>
-
       </form>
     </main>
   </div>
-
-  <!-- Load JS at the end of <body> -->
-  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
-  <script src="{% static 'mainpage/js/todo.js' %}"></script>
+<script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
+<script src="{% static 'mainpage/js/todo.js' %}"></script>
 </body>
 </html>
