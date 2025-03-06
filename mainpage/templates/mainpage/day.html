@@ -3,137 +3,28 @@
 <html>
 <head>
   <title>Daily Data for {{ date }}</title>
-  <!-- Include your existing CSS/JS as before -->
+  <!-- Existing CSS link -->
   <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
+  <!-- New separate stylesheet -->
+  <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
+  
+  <!-- JS includes -->
   <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
   <script src="{% static 'mainpage/js/todo.js' %}"></script>
-  <style>
-    /* ===== Minimal layout CSS to match the screenshot ===== */
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
-    header {
-      background-color: #f4f4f4;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #ccc;
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .header-left h1 {
-      margin: 0;
-    }
-    .streak-info {
-      font-weight: bold;
-    }
-
-    /* Simple nav bar on the left or as needed */
-    nav {
-      background-color: #f8f8f8;
-      padding: 10px;
-      border-right: 1px solid #ccc;
-    }
-    nav ul {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
-    }
-    nav ul li {
-      margin-bottom: 5px;
-    }
-
-    /* Main container to hold our entire page aside from header/nav */
-    .main-container {
-      display: flex;
-    }
-
-    /* The main content area to the right of the nav */
-    main {
-      padding: 20px;
-      flex: 1;
-    }
-
-    /* Let’s arrange the top portion in a grid that matches the screenshot:
-       - Left: Habits
-       - Middle top: Thought
-       - Right top: TODO
-       - Middle bottom: Self-Reflection
-       - Right bottom: Sleep Tracker
-    */
-    .top-section {
-      display: grid;
-      grid-template-columns: 2fr 2fr 2fr; /* 3 columns */
-      grid-template-rows: auto auto;      /* 2 rows */
-      gap: 20px;
-    }
-    .habits-tracker {
-      grid-column: 1; /* left column, row 1 */
-      grid-row: 1;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    .thoughts-box {
-      grid-column: 2; /* middle column, row 1 */
-      grid-row: 1;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    .todo-box {
-      grid-column: 3; /* right column, row 1 */
-      grid-row: 1 / span 2; /* occupies row 1 and 2 vertically */
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    .reflection-box {
-      grid-column: 2; /* middle column, row 2 */
-      grid-row: 2;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    .sleep-tracker {
-      grid-column: 1; /* left column, row 2 */
-      grid-row: 2;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-
-    /* Hourly Logging + Mood/Productivity at the bottom */
-    .bottom-section {
-      margin-top: 30px;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-    /* Just to give the hour squares some horizontal scrolling if needed */
-    #hourly-activity-bar {
-      overflow-x: auto;
-      white-space: nowrap;
-      margin-bottom: 10px;
-    }
-  </style>
 </head>
-
 <body>
+  <!-- The rest of your day.html HTML exactly as before, but without the <style> block -->
+  
   <!-- ========== HEADER ========== -->
   <header>
     <div class="header-left">
-      <!-- Sample date display (like "01 Jan 2025 WED") -->
       <h1>{{ date }}</h1>
       {% if monthly_obj.goal_text %}
         <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
       {% endif %}
     </div>
     <div class="streak-info">
-      <!-- Example of where you'd show your streak info -->
       Streak: {{ streak_obj.some_field|default_if_none:"N/A" }}
-      <!-- Link to monthly page -->
       <a href="{% url 'monthly_stats_view' %}" style="margin-left:20px;">Go to Month View</a>
     </div>
   </header>
