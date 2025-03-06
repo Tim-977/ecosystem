@@ -60,7 +60,7 @@ main {
 */
 .top-section {
     display: grid;
-    grid-template-columns: 2fr 2fr 2fr; /* 3 columns */
+    grid-template-columns: 0.5fr 1fr 1.7fr; /* 3 columns */
     grid-template-rows: auto auto;      /* 2 rows */
     gap: 20px;
 }
