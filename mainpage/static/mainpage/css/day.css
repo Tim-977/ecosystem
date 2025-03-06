@@ -1,0 +1,105 @@
+/* day.css */
+
+/* Base resets/typography */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Header layout */
+  header {
+    background-color: #f4f4f4;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #ccc;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-left h1 {
+    margin: 0;
+  }
+  .streak-info {
+    font-weight: bold;
+  }
+  
+  /* Simple nav bar (left sidebar) */
+  nav {
+    background-color: #f8f8f8;
+    padding: 10px;
+    border-right: 1px solid #ccc;
+  }
+  nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+  nav ul li {
+    margin-bottom: 5px;
+  }
+  
+  /* Main container */
+  .main-container {
+    display: flex;
+  }
+  
+  /* Content area */
+  main {
+    padding: 20px;
+    flex: 1;
+  }
+  
+  /* Top section grid layout */
+  .top-section {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr; /* 3 columns */
+    grid-template-rows: auto auto;      /* 2 rows */
+    gap: 20px;
+  }
+  .habits-tracker,
+  .thoughts-box,
+  .todo-box,
+  .reflection-box,
+  .sleep-tracker {
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  .todo-box {
+    grid-column: 3;         /* right column */
+    grid-row: 1 / span 2;   /* spans both rows */
+  }
+  .habits-tracker {
+    grid-column: 1; /* left column, row 1 */
+    grid-row: 1;
+  }
+  .thoughts-box {
+    grid-column: 2; /* middle column, row 1 */
+    grid-row: 1;
+  }
+  .reflection-box {
+    grid-column: 2; /* middle column, row 2 */
+    grid-row: 2;
+  }
+  .sleep-tracker {
+    grid-column: 1; /* left column, row 2 */
+    grid-row: 2;
+  }
+  
+  /* Bottom section for hourly logging + mood/productivity */
+  .bottom-section {
+    margin-top: 30px;
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  
+  /* If you want horizontal scrolling for hour squares */
+  #hourly-activity-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 10px;
+  }
+  
