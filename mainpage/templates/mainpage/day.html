@@ -14,11 +14,12 @@
     <div class="header-left">
       <!-- We store the current date in data attributes for JavaScript -->
       <h1 id="currentDate"
-          data-year="{{ date.year }}"
-          data-month="{{ date.month }}"
-          data-day="{{ date.day }}">
-        {{ date }}
-      </h1>
+        data-year="{{ date.year }}"
+        data-month="{{ date.month }}"
+        data-day="{{ date.day }}">
+      {{ date }}
+    </h1>
+
 
       <!-- Local clock display (like in main.html) -->
       <p id="local-date" style="font-weight:bold;">Date: --</p>
@@ -39,9 +40,25 @@
   <!-- ========== DATE SLIDER ========== -->
   <div class="date-slider-wrapper" style="margin: 20px;">
     <label for="dateSlider">Pick a day of this month:</label><br/>
-    <input type="range" id="dateSlider" min="1" max="31" step="1" value="1" />
+    
+    <!-- The slider references the datalist by "list='dayTickmarks'" -->
+    <input 
+      type="range" 
+      id="dateSlider" 
+      min="1" 
+      max="31"
+      step="1" 
+      value="1"
+      list="dayTickmarks"
+    />
+    <datalist id="dayTickmarks">
+      <!-- We'll fill this in via JS or you can pre-generate them in Django -->
+    </datalist>
+    
     <span id="sliderDayLabel"></span>
   </div>
+
+
 
   <!-- ========== NAVIGATION (LEFT SIDEBAR) ========== -->
   <nav>
