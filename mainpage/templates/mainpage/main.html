@@ -58,7 +58,6 @@
         <th>Thoughts</th>
         <th>Self Reflection</th>
         <th>Hourly Activity</th>
-        <th>TODO</th>
     </tr>
     {% for row in all_data %}
     <tr>
@@ -75,16 +74,14 @@
         <td>{{ row.thoughts }}</td>
         <td>{{ row.self_reflection }}</td>
         <td>{{ row.hourly_activity_logging }}</td>
-        <td>{{ row.todo }}</td>
     </tr>
     {% empty %}
     <tr>
-      <td colspan="10">No records found.</td>
+      <td colspan="9">No records found.</td>
     </tr>
     {% endfor %}
 </table>
 
-<!-- Link to your external JavaScript, or embed inline script -->
 <script src="{% static 'mainpage/js/localtime.js' %}"></script>
 
 {% endblock %}
