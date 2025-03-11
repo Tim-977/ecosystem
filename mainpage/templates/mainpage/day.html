@@ -3,152 +3,229 @@
 <html>
 <head>
   <title>Daily Data for {{ date }}</title>
+  <!-- Include your existing CSS -->
   <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
-  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
 </head>
+
 <body>
-  <h1>Daily Data for {{ date }}</h1>
+  <!-- ========== HEADER ========== -->
+  <header>
+    <div class="header-left">
+      <!-- We store the current date in data attributes for JavaScript -->
+      <h1 id="currentDate"
+        data-year="{{ date.year }}"
+        data-month="{{ date.month }}"
+        data-day="{{ date.day }}">
+      {{ date }}
+    </h1>
 
-  <!-- Show monthly goals, if any -->
-  {% if monthly_obj.goal_text %}
-    <h3>Monthly Goals: {{ monthly_obj.goal_text }}</h3>
-  {% endif %}
 
-  <form method="POST" id="dayForm">
-    {% csrf_token %}
+      <!-- Local clock display (like in main.html) -->
+      <p id="local-date" style="font-weight:bold;">Date: --</p>
+      <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
-    <label for="mood_rating">Mood Rating (1-10):</label>
-    <input type="number" name="mood_rating" id="mood_rating"
-           value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
-    <br/><br/>
+      {% if monthly_obj.goal_text %}
+        <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
+      {% endif %}
+    </div>
+    <div class="streak-info">
+      <!-- Streak data -->
+      <strong>Streak:</strong> {{ current_streak }} days &nbsp;|&nbsp;
+      <strong>Longest:</strong> {{ longest_streak }} days &nbsp;&nbsp;  
+      <a href="{% url 'monthly_stats_view' %}">Go to Month View</a>
+    </div>
+  </header>
 
-    <label for="productivity_score">Productivity Score (1-10):</label>
-    <input type="number" name="productivity_score" id="productivity_score"
-           value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
-    <br/><br/>
+  <!-- ========== DATE SLIDER ========== -->
+  <div class="date-slider-wrapper" style="margin: 20px;">
+    <label for="dateSlider">Pick a day of this month:</label><br/>
+    
+    <!-- The slider references the datalist by "list='dayTickmarks'" -->
+    <input 
+      type="range" 
+      id="dateSlider" 
+      min="1" 
+      max="31"
+      step="1" 
+      value="1"
+      list="dayTickmarks"
+    />
+    <datalist id="dayTickmarks">
+      <!-- We'll fill this in via JS or you can pre-generate them in Django -->
+    </datalist>
+    
+    <span id="sliderDayLabel"></span>
+  </div>
 
-    <!-- Sleep form -->
-    <label for="bed_time">Bed Time:</label>
-    <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" />
-    <br/><br/>
 
-    <label for="wake_up_time">Wake Up Time:</label>
-    <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" />
-    <br/><br/>
 
-    <label for="first_alarm_time">First Alarm Time:</label>
-    <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
-    <br/><br/>
+  <!-- ========== NAVIGATION (LEFT SIDEBAR) ========== -->
+  <nav>
+    <ul>
+      <li><a href="{% url 'main_page' %}">Return to Main Page</a></li>
+      <li><a href="{% url 'personal_data' %}">Personal Info</a></li>
+      <li><a href="{% url 'set_habits' %}">Set Monthly Habits</a></li>
+      <li><a href="{% url 'monthly_stats_view' %}">View Monthly Stats</a></li>
+      <li><a href="{% url 'logout' %}">Log out</a></li>
+    </ul>
+  </nav>
 
-    <!-- Hourly Activity Logging Section -->
-    <h3>Hourly Activity Logging</h3>
-    <div id="hourly-activity-bar">
-      {% for entry in hourly_data %}
-        <div class="hour-square" data-hour="{{ entry.hour }}" data-activity="{{ entry.activity }}">
-          {{ entry.hour }}
+  <!-- ========== MAIN CONTENT AREA ========== -->
+  <div class="main-container">
+    <main>
+      <!-- We still use one form to POST everything. Keep all name/IDs the same. -->
+      <form method="POST" id="dayForm">
+        {% csrf_token %}
+
+        <!-- ========== TOP SECTION (GRID) ========== -->
+        <div class="top-section">
+
+          <!-- Habits Tracker (left) -->
+          <div class="habits-tracker">
+            <h2>Habits Tracker</h2>
+            <div>
+              {% for habit, status in habits_status %}
+                {% if habit %}
+                  <input type="checkbox" name="habit_{{ forloop.counter0 }}" 
+                         {% if status == '1' %} checked {% endif %}>
+                  <label>{{ habit }}</label><br/>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Quick thought (middle top) -->
+          <div class="thoughts-box">
+            <h2>Write a thought...</h2>
+            <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
+          </div>
+
+          <!-- TODO List (right, spans two rows) -->
+          <div class="todo-box">
+            <h2>TODO</h2>
+
+            <!-- Add Task Section -->
+            <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+              <h3>Add a New Task</h3>
+              <label>Task Description:</label><br/>
+              <input type="text" id="taskText" style="width:100%;" />
+              <br/><br/>
+
+              <label>Priority:</label><br/>
+              <select id="taskPriority">
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <br/><br/>
+
+              <label>Deadline Type:</label><br/>
+              <select id="taskDueType">
+                <option value="none" selected>No Deadline</option>
+                <option value="today">Today</option>
+                <option value="until">Until (Date)</option>
+                <option value="exact">Exact (Date + Time)</option>
+              </select>
+              <br/><br/>
+
+              <div>
+                <label>Due Date:</label><br/>
+                <input type="date" id="taskDueDate" disabled />
+              </div>
+              <br/>
+              <div>
+                <label>Due Time:</label><br/>
+                <input type="time" id="taskDueTime" disabled />
+              </div>
+              <br/>
+
+              <button id="createTaskBtn" type="button">Add Task</button>
+            </div>
+
+            <!-- Pending / Done Lists side by side -->
+            <div style="display: flex; gap: 30px;">
+              <div>
+                <h3>Pending</h3>
+                <ul id="pendingList"></ul>
+              </div>
+              <div>
+                <h3>Done</h3>
+                <ul id="doneList"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Self Reflection (middle bottom) -->
+          <div class="reflection-box">
+            <h2>Detailed Thoughts (Self-Reflection)</h2>
+            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
+          </div>
+          <!-- Sleep Tracker (left bottom) -->
+          <div class="sleep-tracker">
+            <h2>Sleep Tracker</h2>
+            <label for="bed_time">Bed Time:</label><br/>
+            <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" />
+            <br/><br/>
+
+            <label for="wake_up_time">Wake Up Time:</label><br/>
+            <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" />
+            <br/><br/>
+
+            <label for="first_alarm_time">First Alarm Time:</label><br/>
+            <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
+          </div>
+
+        </div><!-- end top-section (grid) -->
+
+        <!-- ========== BOTTOM SECTION ========== -->
+        <div class="bottom-section">
+          <h2>Hourly Activity Logging</h2>
+          <div id="hourly-activity-bar">
+            {% for entry in hourly_data %}
+              <div class="hour-square"
+                   data-hour="{{ entry.hour }}"
+                   data-activity="{{ entry.activity }}">
+                {{ entry.hour }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- Hidden dropdown for activities -->
+          <div id="activity-dropdown">
+            <select id="activity-select">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Hidden JSON field that stores the final hourly logs -->
+          <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"
+                 value='{{ daily_obj.hourly_activity_logging|default_if_none:"[]" }}' />
+
+          <!-- Mood & Productivity at the bottom -->
+          <label for="mood_rating">Mood Rating (1-10):</label>
+          <input type="number" name="mood_rating" id="mood_rating"
+                 value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
+          <br/><br/>
+
+          <label for="productivity_score">Productivity Score (1-10):</label>
+          <input type="number" name="productivity_score" id="productivity_score"
+                 value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
         </div>
-      {% endfor %}
-    </div>
 
-    <br/>
-
-    <!-- A hidden dropdown we’ll position near the clicked square -->
-    <div id="activity-dropdown" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc;">
-      <select id="activity-select">
-        <!-- We'll fill this with user activities via JS -->
-      </select>
-    </div>
-
-    <!-- Hidden input to store hourly log JSON -->
-    <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"
-           value='{{ daily_obj.hourly_activity_logging|default_if_none:"[]" }}' />
-
-    <p><a href="{% url 'activity_config_view' %}">Configure Activities</a></p>
-
-    <!-- Checkboxes for each monthly habit -->
-    <h3>Today's Habit Completion</h3>
-    <div>
-      {% for habit, status in habits_status %}
-        {% if habit %}
-          <input type="checkbox" name="habit_{{ forloop.counter0 }}"
-                 {% if status == '1' %} checked {% endif %}>
-          <label>{{ habit }}</label>
-          <br/>
-        {% endif %}
-      {% endfor %}
-    </div>
-    <br/>
-
-    <label for="thoughts">Thoughts:</label><br/>
-    <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
-    <br/><br/>
-
-    <label for="self_reflection">Self Reflection:</label><br/>
-    <textarea name="self_reflection" id="self_reflection" rows="2" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
-    <br/><br/>
-
-    <button type="submit">Save</button>
-  </form>
-
-  <hr/>
-
-  <h2>TODO List</h2>
-
-  <div style="border: 1px solid #ccc; padding: 10px; width: 300px;">
-    <h3>Add a New Task</h3>
-
-    <label>Task Description:</label><br/>
-    <input type="text" id="taskText" style="width:100%;" />
-    <br/><br/>
-
-    <label>Priority:</label><br/>
-    <select id="taskPriority">
-      <option value="critical">Critical</option>
-      <option value="high">High</option>
-      <option value="medium" selected>Medium</option>
-      <option value="low">Low</option>
-    </select>
-    <br/><br/>
-
-    <label>Deadline Type:</label><br/>
-    <select id="taskDueType">
-      <option value="none" selected>No Deadline</option>
-      <option value="today">Today</option>
-      <option value="until">Until (Date)</option>
-      <option value="exact">Exact (Date + Time)</option>
-    </select>
-    <br/><br/>
-
-    <div>
-      <label>Due Date:</label><br/>
-      <input type="date" id="taskDueDate" disabled />
-    </div>
-    <br/>
-
-    <div>
-      <label>Due Time:</label><br/>
-      <input type="time" id="taskDueTime" disabled />
-    </div>
-    <br/>
-
-    <button id="createTaskBtn">Add Task</button>
-  </div>
-  <br/>
-
-  <div style="display: flex; gap: 50px;">
-    <div>
-      <h3>Pending</h3>
-      <ul id="pendingList"></ul>
-    </div>
-    <div>
-      <h3>Done</h3>
-      <ul id="doneList"></ul>
-    </div>
+        <br/>
+        <button type="submit">Save</button>
+      </form>
+    </main>
   </div>
 
-  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
-
-  <script src="{% static 'mainpage/js/todo.js' %}"></script>
+  <!-- Scripts for your hourly activity, TODO, local clock, etc. -->
   <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
+  <script src="{% static 'mainpage/js/todo.js' %}"></script>
+  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
+  <!-- New script for the date slider logic -->
+  <script src="{% static 'mainpage/js/date_slider.js' %}"></script>
 </body>
 </html>
