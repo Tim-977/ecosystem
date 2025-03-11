@@ -29,6 +29,26 @@
     <p>No habits set for this month yet. <a href="{% url 'set_habits' %}">Set them now</a>.</p>
   {% endif %}
 
-  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+  <!-- Placeholder link; will be replaced via JS to local time. -->
+  <p id="return-local-link">
+    <a href="#">Return to today's page</a>
+  </p>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Grab the user’s LOCAL date/time
+      let now = new Date();
+      let y = now.getFullYear();
+      let m = String(now.getMonth() + 1).padStart(2, '0');  // zero-based months
+      let d = String(now.getDate()).padStart(2, '0');
+
+      // Build the URL to your day_view for the local date
+      let localDayUrl = `/day/${y}/${m}/${d}/`;
+
+      // Set the link’s href
+      let link = document.querySelector('#return-local-link a');
+      link.setAttribute('href', localDayUrl);
+    });
+  </script>
 </body>
 </html>
