@@ -12,8 +12,13 @@
   <!-- ========== HEADER ========== -->
   <header>
     <div class="header-left">
-      <!-- Sample date display (like "01 Jan 2025 WED") -->
-      <h1>{{ date }}</h1>
+      <!-- We store the current date in data attributes for JavaScript -->
+      <h1 id="currentDate"
+          data-year="{{ date.year }}"
+          data-month="{{ date.month }}"
+          data-day="{{ date.day }}">
+        {{ date }}
+      </h1>
 
       <!-- Local clock display (like in main.html) -->
       <p id="local-date" style="font-weight:bold;">Date: --</p>
@@ -30,6 +35,13 @@
       <a href="{% url 'monthly_stats_view' %}">Go to Month View</a>
     </div>
   </header>
+
+  <!-- ========== DATE SLIDER ========== -->
+  <div class="date-slider-wrapper" style="margin: 20px;">
+    <label for="dateSlider">Pick a day of this month:</label><br/>
+    <input type="range" id="dateSlider" min="1" max="31" step="1" value="1" />
+    <span id="sliderDayLabel"></span>
+  </div>
 
   <!-- ========== NAVIGATION (LEFT SIDEBAR) ========== -->
   <nav>
@@ -190,8 +202,13 @@
       </form>
     </main>
   </div>
-<script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
-<script src="{% static 'mainpage/js/todo.js' %}"></script>
-<script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
+  <!-- Scripts for your hourly activity, TODO, local clock, etc. -->
+  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
+  <script src="{% static 'mainpage/js/todo.js' %}"></script>
+  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
+  <!-- New script for the date slider logic -->
+  <script src="{% static 'mainpage/js/date_slider.js' %}"></script>
 </body>
 </html>
