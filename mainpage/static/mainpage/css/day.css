@@ -107,3 +107,9 @@ main {
     white-space: nowrap;
     margin-bottom: 10px;
 }
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    justify-content: space-evenly;
+}
