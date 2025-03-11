@@ -152,6 +152,9 @@ def day_view(request, year, month, day):
     habits_binary = habits_binary.ljust(10, '0')[:10]
     habits_status = list(zip(habits, habits_binary))
 
+    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
+    streak_data = streak_obj.streak_data or {}
+
     context = {
         "daily_obj": daily_obj,
         "date": current_date,
@@ -161,6 +164,8 @@ def day_view(request, year, month, day):
         "habits_status": habits_status,
         "monthly_obj": monthly_obj,
         "hourly_data": hourly_data,
+        "current_streak": streak_data.get("current_streak", 0),
+        "longest_streak": streak_data.get("longest_streak", 0),
     }
     return render(request, 'mainpage/day.html', context)
 
