@@ -71,7 +71,7 @@ input[type="range"][orient="vertical"] {
 
 .menu-buttons button {
   display: block;
-  margin-bottom: 100px;
+  margin-bottom: 10px;
   width: 100%;
 }
 

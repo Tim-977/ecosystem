@@ -1,3 +1,5 @@
+from datetime import date  # Import date
+
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -72,6 +74,8 @@ def signup_page(request):
 
 @login_required
 def personal_data_view(request):
+    today = date.today()  # Get the current date
+
     try:
         personal_data = PersonalData.objects.get(user=request.user)
     except PersonalData.DoesNotExist:
@@ -83,8 +87,12 @@ def personal_data_view(request):
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
-            return redirect('/')  # or redirect to main page
+            return redirect('main_page')  # Redirect to main page after saving
+
     else:
         form = PersonalDataForm(instance=personal_data)
-    
-    return render(request, 'authapp/personal_data.html', {'form': form})
+
+    return render(request, 'authapp/personal_data.html', {
+        'form': form,
+        'date': today  # Pass the current date to the template
+    })

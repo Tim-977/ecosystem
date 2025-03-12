@@ -12,6 +12,22 @@
         {{ form.as_p }}
         <button type="submit">Save</button>
     </form>
-<p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+    <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
+    <p><a href="{% url 'month_view' date.year date.month %}">Go to Month View</a></p>
+    <div class="header-right">
+    <a id="log-today-link" href="#">Go to Today's View</a>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let today = new Date();
+        let year = today.getFullYear();
+        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+        let day = String(today.getDate()).padStart(2, '0');
+
+        let logTodayUrl = `/day/${year}/${month}/${day}/`;
+
+        document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
+    });
+    </script>
 </body>
 </html>

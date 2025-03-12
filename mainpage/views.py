@@ -207,8 +207,7 @@ def _update_streak(user_id, logged_date):
 
 @login_required
 def set_habits_view(request):
-    from datetime import date
-    today = date.today()
+    today = date.today()  # Get the current date
     this_year = today.year
     this_month = today.month
 
@@ -217,6 +216,7 @@ def set_habits_view(request):
         year=this_year,
         month=this_month
     )
+
     habits_with_index = [
         (1, monthly_obj.habit_1),
         (2, monthly_obj.habit_2),
@@ -239,27 +239,14 @@ def set_habits_view(request):
                 messages.error(request, "Invalid habit index.")
                 return redirect('set_habits')
 
-            if clear_index == 1:
-                monthly_obj.habit_1 = ""
-            elif clear_index == 2:
-                monthly_obj.habit_2 = ""
-            elif clear_index == 3:
-                monthly_obj.habit_3 = ""
-            elif clear_index == 4:
-                monthly_obj.habit_4 = ""
-            elif clear_index == 5:
-                monthly_obj.habit_5 = ""
-            elif clear_index == 6:
-                monthly_obj.habit_6 = ""
-            elif clear_index == 7:
-                monthly_obj.habit_7 = ""
-            elif clear_index == 8:
-                monthly_obj.habit_8 = ""
-            elif clear_index == 9:
-                monthly_obj.habit_9 = ""
-            elif clear_index == 10:
-                monthly_obj.habit_10 = ""
-            monthly_obj.save()
+            habit_fields = [
+                "habit_1", "habit_2", "habit_3", "habit_4", "habit_5",
+                "habit_6", "habit_7", "habit_8", "habit_9", "habit_10"
+            ]
+            
+            if 1 <= clear_index <= 10:
+                setattr(monthly_obj, habit_fields[clear_index - 1], "")
+                monthly_obj.save()
 
             from .models import DailyData
             daily_logs = DailyData.objects.filter(
@@ -273,8 +260,7 @@ def set_habits_view(request):
                 hc = hc.ljust(10, '0')[:10]
                 hc_list = list(hc)
                 hc_list[position] = '0'
-                new_hc = "".join(hc_list)
-                log.habits_completed = new_hc
+                log.habits_completed = "".join(hc_list)
                 log.save()
 
             messages.success(request, f"Habit {clear_index} cleared, bits set to 0.")
@@ -299,77 +285,11 @@ def set_habits_view(request):
     context = {
         "monthly_obj": monthly_obj,
         "habits_with_index": habits_with_index,
+        "date": today,  # Pass the date to the template
     }
     return render(request, 'mainpage/set_habits.html', context)
 
 
-@login_required
-def monthly_stats_view(request):
-    from datetime import date
-    today = date.today()
-    this_year = today.year
-    this_month = today.month
-
-    try:
-        monthly_obj = MonthlyHabits.objects.get(
-            user_id=request.user.id,
-            year=this_year,
-            month=this_month
-        )
-    except MonthlyHabits.DoesNotExist:
-        monthly_obj = None
-
-    habit_names = []
-    if monthly_obj:
-        habit_names = [
-            monthly_obj.habit_1,
-            monthly_obj.habit_2,
-            monthly_obj.habit_3,
-            monthly_obj.habit_4,
-            monthly_obj.habit_5,
-            monthly_obj.habit_6,
-            monthly_obj.habit_7,
-            monthly_obj.habit_8,
-            monthly_obj.habit_9,
-            monthly_obj.habit_10,
-        ]
-
-    daily_logs = DailyData.objects.filter(
-        user_id=request.user.id,
-        date__year=this_year,
-        date__month=this_month
-    ).order_by('date')
-
-    habit_completions = [0]*10
-    total_days = daily_logs.count()
-
-    for log in daily_logs:
-        completions = log.habits_completed or ""
-        completions = completions.ljust(10, '0')[:10]
-        for i, ch in enumerate(completions):
-            if ch == '1':
-                habit_completions[i] += 1
-
-    habits_stats = []
-    for i, name in enumerate(habit_names):
-        if not name.strip():
-            continue
-        done_count = habit_completions[i]
-        percent = 0
-        if total_days > 0:
-            percent = int((done_count / total_days) * 100)
-        habits_stats.append({
-            "habit_name": name,
-            "completed_days": done_count,
-            "percent": percent,
-        })
-
-    context = {
-        "monthly_obj": monthly_obj,
-        "habits_stats": habits_stats,
-        "total_days": total_days,
-    }
-    return render(request, 'mainpage/monthly-stats.html', context)
 
 
 ################################
