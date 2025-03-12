@@ -15,8 +15,10 @@
       <h1 id="currentMonth"
           data-year="{{ year }}"
           data-month="{{ month }}">
-        Month View for {{ year }}-{{ month|add:"0"|slice:"-2" }}
+        {{ year }} {{ month|default:""|date:"F" }}
       </h1>
+
+
       <p id="local-date" style="font-weight:bold;">Date: --</p>
       <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 

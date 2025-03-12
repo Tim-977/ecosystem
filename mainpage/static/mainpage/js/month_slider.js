@@ -15,10 +15,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const localYear = now.getFullYear();
   const localMonth = now.getMonth() + 1;
 
-  // Initialize label
-  sliderMonthLabel.innerText = `Current: ${dataMonth.toString().padStart(2, "0")}`;
+  // Function to get full month name
+  function getMonthName(month) {
+    return new Date(dataYear, month - 1).toLocaleString("default", { month: "long" });
+  }
 
-  // Update label dynamically
+  // Update header text dynamically to show "YYYY Month"
+  function updateHeader(year, month) {
+    monthElement.innerText = `${year} ${getMonthName(month)}`;
+  }
+
+  // Initialize header and slider label
+  updateHeader(dataYear, dataMonth);
+  sliderMonthLabel.innerText = `Current: ${getMonthName(dataMonth)}`;
+
+  // Update label dynamically when slider moves
   monthSlider.addEventListener("input", function () {
     let sliderValue = parseInt(monthSlider.value, 10);
 
@@ -28,7 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
       monthSlider.value = String(sliderValue);
     }
 
-    sliderMonthLabel.innerText = `Current: ${sliderValue.toString().padStart(2, "0")}`;
+    sliderMonthLabel.innerText = `Current: ${getMonthName(sliderValue)}`;
+    updateHeader(dataYear, sliderValue);
   });
 
   // Redirect on change
