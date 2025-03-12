@@ -1,14 +1,29 @@
-/* Basic reset/structure */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
 }
 
-/* Top header styling */
-.main-header {
-  background-color: #f5f5f5;
+header {
+  background-color: #f4f4f4;
   padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   border-bottom: 1px solid #ccc;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  position: relative;
+}
+
+#log-today-link {
+  margin-left: auto;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .main-header h1 {
