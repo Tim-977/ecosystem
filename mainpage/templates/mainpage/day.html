@@ -12,30 +12,35 @@
   <!-- ========== HEADER ========== -->
   <header>
     <div class="header-left">
-      <!-- We store the current date in data attributes for JavaScript -->
-      <h1 id="currentDate"
-        data-year="{{ date.year }}"
-        data-month="{{ date.month }}"
-        data-day="{{ date.day }}">
-      {{ date }}
-    </h1>
+        <h1 id="currentDate"
+            data-year="{{ date.year }}"
+            data-month="{{ date.month }}"
+            data-day="{{ date.day }}">
+            {{ date }}
+        </h1>
+        <p id="local-date" style="font-weight:bold;">Date: --</p>
+        <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
-
-      <!-- Local clock display (like in main.html) -->
-      <p id="local-date" style="font-weight:bold;">Date: --</p>
-      <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
-
-      {% if monthly_obj.goal_text %}
+        {% if monthly_obj.goal_text %}
         <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
-      {% endif %}
+        {% endif %}
     </div>
-    <div class="streak-info">
-      <!-- Streak data -->
-      <strong>Streak:</strong> {{ current_streak }} days &nbsp;|&nbsp;
-      <strong>Longest:</strong> {{ longest_streak }} days &nbsp;&nbsp;  
-      <a href="{% url 'month_view' date.year date.month %}">Go to Month View</a>
+
+    <!-- Centered Go to Month View Button -->
+    <div class="center-nav">
+        <a href="{% url 'month_view' date.year date.month %}" class="month-view-link">
+            Go to Month View
+        </a>
+    </div>
+
+    <!-- Streak Info and Username -->
+    <div class="right-info">
+        <strong>Streak:</strong> {{ current_streak }} days &nbsp;|&nbsp;
+        <strong>Longest:</strong> {{ longest_streak }} days &nbsp;&nbsp;
+        <span class="username">{{ user.username }}</span>
     </div>
   </header>
+
 
   <!-- ========== DATE SLIDER ========== -->
   <div class="date-slider-wrapper" style="margin: 20px;">

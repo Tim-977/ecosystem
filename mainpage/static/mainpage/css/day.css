@@ -1,5 +1,3 @@
-/* ===== Minimal layout CSS to match the screenshot ===== */
-
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -12,15 +10,39 @@ header {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid #ccc;
+    position: relative;
+    height: 50px; /* ✅ Fix the header height */
+    flex-wrap: nowrap; /* ✅ Prevent wrapping */
 }
+
+/* Left Section */
 .header-left {
     display: flex;
     align-items: center;
     gap: 20px;
 }
-.header-left h1 {
-    margin: 0;
+
+/* Centered Navigation */
+.center-nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    line-height: 50px; /* ✅ Ensures it stays vertically aligned */
 }
+
+/* Right Section with Username */
+.right-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Style for Username */
+.username {
+    font-weight: bold;
+    color: #333;
+}
+
 .streak-info {
     font-weight: bold;
 }
