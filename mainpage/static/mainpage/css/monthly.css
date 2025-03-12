@@ -13,27 +13,49 @@ header {
 }
 
 .main-header {
+  background-color: #f4f4f4;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
   position: relative;
+  height: 50px; /* ✅ Fixed header height */
+  flex-wrap: nowrap; /* ✅ Prevents header content from wrapping */
 }
 
-#log-today-link {
-  margin-left: auto;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.main-header h1 {
-  margin: 0;
-}
-
+/* Left Section */
 .header-left {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+/* Centered Navigation */
+.center-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  line-height: 50px; /* ✅ Keeps "Go to Today's View" vertically aligned */
+}
+
+/* Right Section with Username */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Style for "Go to Today's View" */
+#log-today-link {
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Style for Username */
+.username {
+  font-weight: bold;
+  color: #333;
 }
 
 

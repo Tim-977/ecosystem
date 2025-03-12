@@ -12,25 +12,31 @@
   <!-- ========== HEADER ========== -->
   <header class="main-header">
     <div class="header-left">
-      <h1 id="currentMonth"
-          data-year="{{ year }}"
-          data-month="{{ month }}">
-        {{ year }} {{ month|default:""|date:"F" }}
-      </h1>
+        <h1 id="currentMonth"
+            data-year="{{ year }}"
+            data-month="{{ month }}">
+            {{ year }} {{ month|default:""|date:"F" }}
+        </h1>
 
+        <p id="local-date" style="font-weight:bold;">Date: --</p>
+        <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
-      <p id="local-date" style="font-weight:bold;">Date: --</p>
-      <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
-
-      {% if monthly_obj.goal_text %}
+        {% if monthly_obj.goal_text %}
         <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
-      {% endif %}
+        {% endif %}
     </div>
 
+    <!-- Centered "Go to Today's View" -->
+    <div class="center-nav">
+        <a id="log-today-link" href="#">Go to Today's View</a>
+    </div>
+
+    <!-- Streak Info and Username -->
     <div class="header-right">
-      <a id="log-today-link" href="#">Go to Today's View</a>
+        <span class="username">{{ user.username }}</span>
     </div>
   </header>
+
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
