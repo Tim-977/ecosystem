@@ -8,8 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
-from .models import ActivityMapping
-from .models import DailyData, MonthlyHabits, Streak, UserTodo
+from .models import ActivityMapping, DailyData, MonthlyHabits, Streak, UserTodo
 
 
 @login_required
@@ -636,3 +635,139 @@ def delete_todo_task(request, task_id):
         return JsonResponse({"success": True})
     else:
         return JsonResponse({"error": "DELETE required"}, status=405)
+
+
+
+@login_required
+def month_view(request, year, month):
+    """
+    Display a month-based page that shows daily data (mood, productivity,
+    habits completed, and a placeholder for sleep graph).
+    Allows user to pick a different month via vertical slider.
+    """
+
+    # 1) Collect all daily logs for the requested year/month
+    daily_logs = DailyData.objects.filter(
+        user_id=request.user.id,
+        date__year=year,
+        date__month=month
+    ).order_by('date')
+
+    # 2) Also retrieve the monthly-habits record (if any) for that year/month
+    try:
+        monthly_obj = MonthlyHabits.objects.get(
+            user_id=request.user.id,
+            year=year,
+            month=month
+        )
+    except MonthlyHabits.DoesNotExist:
+        monthly_obj = None
+
+    # 3) Prepare data for each day, including color gradients for mood/productivity
+    days_data = []
+    for log in daily_logs:
+        mood_val = log.mood_rating if log.mood_rating is not None else 0
+        prod_val = log.productivity_score if log.productivity_score is not None else 0
+        # Convert to int if needed
+        mood_val = int(mood_val)
+        prod_val = int(prod_val)
+
+        mood_color = interpolate_color(mood_val,  # 0=red, 5=yellow, 10=green
+                                       (0, '#ff0000'),   # red
+                                       (5, '#ffff00'),   # yellow
+                                       (10, '#00ff00'))  # green
+
+        prod_color = interpolate_color(prod_val, # 0=blue, 5=white, 10=pink
+                                       (0, '#0000ff'),   # blue
+                                       (5, '#ffffff'),   # white
+                                       (10, '#ffc0cb'))  # pink
+
+        # Parse the 10-character habits_completed string (e.g. '0101100101')
+        # Then match it up with the actual habit names from monthly_obj
+        habits_str = log.habits_completed or ''
+        habits_str = habits_str.ljust(10, '0')[:10]
+
+        # If monthly_obj exists, get up to 10 habits. Otherwise, empty
+        habit_labels = []
+        if monthly_obj:
+            habit_labels = [
+                monthly_obj.habit_1, monthly_obj.habit_2, monthly_obj.habit_3,
+                monthly_obj.habit_4, monthly_obj.habit_5, monthly_obj.habit_6,
+                monthly_obj.habit_7, monthly_obj.habit_8, monthly_obj.habit_9,
+                monthly_obj.habit_10
+            ]
+        else:
+            habit_labels = [""] * 10
+
+        # Build a list of (habit_name, is_complete_boolean)
+        habit_statuses = []
+        for i, hname in enumerate(habit_labels):
+            is_complete = (habits_str[i] == '1')
+            habit_statuses.append((hname, is_complete))
+
+        days_data.append({
+            "date_obj": log.date,
+            "mood_val": mood_val,
+            "mood_color": mood_color,
+            "prod_val": prod_val,
+            "prod_color": prod_color,
+            "habit_statuses": habit_statuses,
+            "thoughts": log.thoughts or "",
+            "self_reflection": log.self_reflection or "",
+        })
+
+    # 4) Render the template
+    context = {
+        "year": year,
+        "month": month,
+        "monthly_obj": monthly_obj,
+        "days_data": days_data,
+    }
+    return render(request, 'mainpage/month.html', context)
+
+def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
+    """
+    Interpolates (blends) a color for a value in [0..10] based on two
+    breakpoints: e.g. (0, #0000ff), (5, #ffffff), (10, #ffc0cb).
+    This is a simple 2-step gradient: [low..mid], then [mid..high].
+    """
+
+    # Each tuple is (break_value, hex_color), e.g. (0, '#ff0000')
+    # We assume we have exactly 3 breakpoints: low, mid, high
+    lv, lc = low_tuple
+    mv, mc = mid_tuple
+    hv, hc = high_tuple
+
+    if value <= lv:
+        return lc
+    elif value >= hv:
+        return hc
+    elif value <= mv:
+        # Blend between low and mid
+        ratio = (value - lv) / (mv - lv)
+        return blend_hex_colors(lc, mc, ratio)
+    else:
+        # Blend between mid and high
+        ratio = (value - mv) / (hv - mv)
+        return blend_hex_colors(mc, hc, ratio)
+
+
+def blend_hex_colors(colorA, colorB, t):
+    """
+    Blend two hex colors (like '#ff0000' and '#00ff00') by fraction t in [0..1].
+    Returns a hex color string.
+    """
+    # Strip leading '#'
+    cA = colorA.lstrip('#')
+    cB = colorB.lstrip('#')
+    # Convert to R,G,B integers
+    rA, gA, bA = int(cA[0:2], 16), int(cA[2:4], 16), int(cA[4:6], 16)
+    rB, gB, bB = int(cB[0:2], 16), int(cB[2:4], 16), int(cB[4:6], 16)
+
+    # Linear interpolate each channel
+    r = int(rA + (rB - rA)*t)
+    g = int(gA + (gB - gA)*t)
+    b = int(bA + (bB - bA)*t)
+
+    # Rebuild hex
+    return f"#{r:02x}{g:02x}{b:02x}"

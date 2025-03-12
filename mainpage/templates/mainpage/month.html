@@ -1,0 +1,101 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Month Overview</title>
+  <!-- Link to your monthly.css (or wherever your styles live) -->
+  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
+</head>
+<body>
+
+  <!-- Header (could be copied from day.html or from a base.html) -->
+  <header>
+    <h1>Month View for {{ year }}-{{ month|add:"0"|slice:"-2" }}</h1>
+  </header>
+
+  <!-- Sidebar with vertical slider + menu buttons -->
+  <div class="month-sidebar">
+    <label for="monthSlider">Select Month:</label>
+    <input
+      type="range"
+      id="monthSlider"
+      name="monthSlider"
+      min="1"
+      max="12"
+      step="1"
+      value="{{ month }}"
+      orient="vertical"
+    />
+
+    <div class="menu-buttons">
+      <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
+      <button onclick="window.location.href='{% url 'set_habits' %}'">Set Habits</button>
+    </div>
+  </div>
+
+  <!-- Main content area: display each day’s mood, productivity, habits, etc. -->
+  <div class="month-days">
+    <table class="days-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Mood (0-10)</th>
+          <th>Productivity (0-10)</th>
+          <th>Habits</th>
+          <th>Thoughts</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for d in days_data %}
+        <tr>
+          <td>{{ d.date_obj|date:"M d" }}</td>
+
+          <!-- Mood cell with background color -->
+          <td style="background-color: {{ d.mood_color }};">
+            {{ d.mood_val }}
+          </td>
+
+          <!-- Productivity cell with background color -->
+          <td style="background-color: {{ d.prod_color }};">
+            {{ d.prod_val }}
+          </td>
+
+          <!-- Habits: green/red squares -->
+          <td>
+            {% for habit_name, is_done in d.habit_statuses %}
+              {% if habit_name %}
+                <span
+                  class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}"
+                  title="{{ habit_name }}">
+                </span>
+              {% endif %}
+            {% endfor %}
+          </td>
+
+          <!-- Quick snippet of thoughts -->
+          <td>{{ d.thoughts|truncatewords:10 }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Sleep Graph placeholder -->
+    <div class="sleep-graph-placeholder">
+      <h2>Sleep Graph (Coming Soon)</h2>
+      <div class="graph-box"></div>
+    </div>
+  </div>
+
+  <!-- Include the JS for handling the month slider -->
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
+
+  <!-- Pass in year/month so JS can redirect properly -->
+  <script>
+    const currentYear = {{ year }};
+    const currentMonth = {{ month }};
+  </script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (activity_config_view, add_todo_task, day_view,
                     delete_todo_task, get_activities, get_todo_tasks,
                     main_page_view, monthly_stats_view, set_habits_view,
-                    update_todo_task)
+                    update_todo_task, month_view)
 
 urlpatterns = [
     path('', main_page_view, name='main_page'),
@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/todo/<int:task_id>/delete/', delete_todo_task, name='delete_todo_task'),
     path('activities/', activity_config_view, name='activity_config_view'),
     path('api/activities/', get_activities, name='get_activities'),
+    path('month/<int:year>/<int:month>/', month_view, name='month_view'),
 ]
