@@ -1,15 +1,41 @@
-document.addEventListener("DOMContentLoaded", function() {
-    const slider = document.getElementById("monthSlider");
-    if (!slider) return;
-  
-    // When user drags the slider, change the month
-    slider.addEventListener("input", function(e) {
-      let newMonth = parseInt(e.target.value, 10);
-  
-      // We'll keep currentYear as a global var from the template
-      // Redirect to the new month (still in the same year)
-      // e.g. /month/2025/3/
-      window.location.href = `/month/${currentYear}/${newMonth}/`;
-    });
+document.addEventListener("DOMContentLoaded", function () {
+  const monthElement = document.getElementById("currentMonth");
+  if (!monthElement) return;
+
+  const dataYear = parseInt(monthElement.dataset.year, 10);
+  const dataMonth = parseInt(monthElement.dataset.month, 10);
+
+  const monthSlider = document.getElementById("monthSlider");
+  const sliderMonthLabel = document.getElementById("sliderMonthLabel");
+  const monthTickmarks = document.getElementById("monthTickmarks");
+  if (!monthSlider || !sliderMonthLabel || !monthTickmarks) return;
+
+  // Get local time for clamping
+  const now = new Date();
+  const localYear = now.getFullYear();
+  const localMonth = now.getMonth() + 1;
+
+  // Initialize label
+  sliderMonthLabel.innerText = `Current: ${dataMonth.toString().padStart(2, "0")}`;
+
+  // Update label dynamically
+  monthSlider.addEventListener("input", function () {
+    let sliderValue = parseInt(monthSlider.value, 10);
+
+    // Clamp future months if in current year
+    if (localYear === dataYear && sliderValue > localMonth) {
+      sliderValue = localMonth;
+      monthSlider.value = String(sliderValue);
+    }
+
+    sliderMonthLabel.innerText = `Current: ${sliderValue.toString().padStart(2, "0")}`;
   });
-  
+
+  // Redirect on change
+  monthSlider.addEventListener("change", function () {
+    const chosenMonth = parseInt(monthSlider.value, 10);
+    const monthStr = chosenMonth.toString().padStart(2, "0");
+
+    window.location.href = `/month/${dataYear}/${monthStr}/`;
+  });
+});

@@ -5,7 +5,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Month Overview</title>
-  <!-- Link to your CSS -->
   <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
 </head>
 <body>
@@ -13,14 +12,11 @@
   <!-- ========== HEADER ========== -->
   <header class="main-header">
     <div class="header-left">
-      <!-- Display the current month/year -->
-      <h1 id="currentDate"
+      <h1 id="currentMonth"
           data-year="{{ year }}"
           data-month="{{ month }}">
         Month View for {{ year }}-{{ month|add:"0"|slice:"-2" }}
       </h1>
-
-      <!-- Local clock display -->
       <p id="local-date" style="font-weight:bold;">Date: --</p>
       <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
@@ -33,13 +29,13 @@
       <a id="log-today-link" href="#">Go to Today's View</a>
     </div>
   </header>
+
   <script>
     document.addEventListener("DOMContentLoaded", function () {
         let today = new Date();
         let year = today.getFullYear();
-        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+        let month = String(today.getMonth() + 1).padStart(2, '0');
         let day = String(today.getDate()).padStart(2, '0');
-
         let logTodayUrl = `/day/${year}/${month}/${day}/`;
 
         document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
@@ -60,8 +56,14 @@
         max="12"
         step="1"
         value="{{ month }}"
-        orient="vertical"
+        list="monthTickmarks"
       />
+      <datalist id="monthTickmarks">
+        {% for m in "123456789101112" %}
+          <option value="{{ m }}">{{ m|add:"0"|slice:"-2" }}</option>
+        {% endfor %}
+      </datalist>
+      <p id="sliderMonthLabel">Current: {{ month|add:"0"|slice:"-2" }}</p>
 
       <div class="menu-buttons">
         <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
@@ -87,26 +89,15 @@
           {% for d in days_data %}
           <tr>
             <td>{{ d.date_obj|date:"M d" }}</td>
-            <!-- Mood cell with background color -->
-            <td style="background-color: {{ d.mood_color }};">
-              {{ d.mood_val }}
-            </td>
-            <!-- Productivity cell with background color -->
-            <td style="background-color: {{ d.prod_color }};">
-              {{ d.prod_val }}
-            </td>
-            <!-- Habits squares -->
+            <td style="background-color: {{ d.mood_color }};">{{ d.mood_val }}</td>
+            <td style="background-color: {{ d.prod_color }};">{{ d.prod_val }}</td>
             <td>
               {% for habit_name, is_done in d.habit_statuses %}
                 {% if habit_name %}
-                  <span
-                    class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}"
-                    title="{{ habit_name }}">
-                  </span>
+                  <span class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}" title="{{ habit_name }}"></span>
                 {% endif %}
               {% endfor %}
             </td>
-            <!-- Thoughts -->
             <td>{{ d.thoughts|truncatewords:10 }}</td>
           </tr>
           {% endfor %}
@@ -123,13 +114,9 @@
   </div> <!-- end .content-container -->
 
   <!-- ========== SCRIPTS ========== -->
-  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
   <script src="{% static 'mainpage/js/localtime.js' %}"></script>
-
-  <script>
-    const currentYear = {{ year }};
-    const currentMonth = {{ month }};
-  </script>
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
+  
 
 </body>
 </html>
