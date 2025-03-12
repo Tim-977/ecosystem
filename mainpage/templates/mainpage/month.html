@@ -1,0 +1,135 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Month Overview</title>
+  <!-- Link to your CSS -->
+  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="main-header">
+    <div class="header-left">
+      <!-- Display the current month/year -->
+      <h1 id="currentDate"
+          data-year="{{ year }}"
+          data-month="{{ month }}">
+        Month View for {{ year }}-{{ month|add:"0"|slice:"-2" }}
+      </h1>
+
+      <!-- Local clock display -->
+      <p id="local-date" style="font-weight:bold;">Date: --</p>
+      <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+
+      {% if monthly_obj.goal_text %}
+        <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="header-right">
+      <a id="log-today-link" href="#">Go to Today's View</a>
+    </div>
+  </header>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let today = new Date();
+        let year = today.getFullYear();
+        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+        let day = String(today.getDate()).padStart(2, '0');
+
+        let logTodayUrl = `/day/${year}/${month}/${day}/`;
+
+        document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
+    });
+  </script>
+
+  <!-- ========== MAIN CONTAINER ========== -->
+  <div class="content-container">
+
+    <!-- Left sidebar ("navbar") -->
+    <nav class="navbar">
+      <label for="monthSlider">Select Month:</label>
+      <input
+        type="range"
+        id="monthSlider"
+        name="monthSlider"
+        min="1"
+        max="12"
+        step="1"
+        value="{{ month }}"
+        orient="vertical"
+      />
+
+      <div class="menu-buttons">
+        <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
+        <button onclick="window.location.href='{% url 'set_habits' %}'">Set Habits</button>
+        <button onclick="window.location.href='{% url 'personal_data' %}'">Personal Data</button>
+        <button onclick="window.location.href='{% url 'logout' %}'">Log Out</button>
+      </div>
+    </nav>
+
+    <!-- Center area with the days/habits table -->
+    <main class="main-content">
+      <table class="days-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Mood</th>
+            <th>Prod</th>
+            <th>Habits</th>
+            <th>Thoughts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in days_data %}
+          <tr>
+            <td>{{ d.date_obj|date:"M d" }}</td>
+            <!-- Mood cell with background color -->
+            <td style="background-color: {{ d.mood_color }};">
+              {{ d.mood_val }}
+            </td>
+            <!-- Productivity cell with background color -->
+            <td style="background-color: {{ d.prod_color }};">
+              {{ d.prod_val }}
+            </td>
+            <!-- Habits squares -->
+            <td>
+              {% for habit_name, is_done in d.habit_statuses %}
+                {% if habit_name %}
+                  <span
+                    class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}"
+                    title="{{ habit_name }}">
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </td>
+            <!-- Thoughts -->
+            <td>{{ d.thoughts|truncatewords:10 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </main>
+
+    <!-- Right side Sleep Graph placeholder -->
+    <aside class="sleep-graph">
+      <h2>Sleep Graph (Soon)</h2>
+      <div class="graph-box"></div>
+    </aside>
+
+  </div> <!-- end .content-container -->
+
+  <!-- ========== SCRIPTS ========== -->
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
+  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+
+  <script>
+    const currentYear = {{ year }};
+    const currentMonth = {{ month }};
+  </script>
+
+</body>
+</html>

@@ -33,7 +33,7 @@
       <!-- Streak data -->
       <strong>Streak:</strong> {{ current_streak }} days &nbsp;|&nbsp;
       <strong>Longest:</strong> {{ longest_streak }} days &nbsp;&nbsp;  
-      <a href="{% url 'monthly_stats_view' %}">Go to Month View</a>
+      <a href="{% url 'month_view' date.year date.month %}">Go to Month View</a>
     </div>
   </header>
 
@@ -64,7 +64,6 @@
     <li><a href="{% url 'main_page' %}">Return to Main Page</a></li>
     <li><a href="{% url 'personal_data' %}">Personal Info</a></li>
     <li><a href="{% url 'set_habits' %}">Set Monthly Habits</a></li>
-    <li><a href="{% url 'monthly_stats_view' %}">View Monthly Stats</a></li>
     <li><a href="{% url 'logout' %}">Log out</a></li>
   </ul>
 
