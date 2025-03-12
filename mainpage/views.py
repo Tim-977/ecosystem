@@ -311,6 +311,11 @@ def monthly_stats_view(request):
     this_year = today.year
     this_month = today.month
 
+    # If you want to support GET parameters, you could do:
+    # this_year = int(request.GET.get('year', today.year))
+    # this_month = int(request.GET.get('month', today.month))
+
+    # Grab monthly object if exists
     try:
         monthly_obj = MonthlyHabits.objects.get(
             user_id=request.user.id,
@@ -320,30 +325,23 @@ def monthly_stats_view(request):
     except MonthlyHabits.DoesNotExist:
         monthly_obj = None
 
-    habit_names = []
-    if monthly_obj:
-        habit_names = [
-            monthly_obj.habit_1,
-            monthly_obj.habit_2,
-            monthly_obj.habit_3,
-            monthly_obj.habit_4,
-            monthly_obj.habit_5,
-            monthly_obj.habit_6,
-            monthly_obj.habit_7,
-            monthly_obj.habit_8,
-            monthly_obj.habit_9,
-            monthly_obj.habit_10,
-        ]
-
+    # Grab all daily logs
     daily_logs = DailyData.objects.filter(
         user_id=request.user.id,
         date__year=this_year,
         date__month=this_month
     ).order_by('date')
 
+    # Prepare habit stats just like your current code does
+    habit_names = []
+    if monthly_obj:
+        habit_names = [
+            monthly_obj.habit_1, monthly_obj.habit_2, # ...
+            monthly_obj.habit_10,
+        ]
+
     habit_completions = [0]*10
     total_days = daily_logs.count()
-
     for log in daily_logs:
         completions = log.habits_completed or ""
         completions = completions.ljust(10, '0')[:10]
@@ -358,17 +356,26 @@ def monthly_stats_view(request):
         done_count = habit_completions[i]
         percent = 0
         if total_days > 0:
-            percent = int((done_count / total_days) * 100)
+            percent = int(done_count / total_days * 100)
         habits_stats.append({
             "habit_name": name,
             "completed_days": done_count,
             "percent": percent,
         })
 
+    # If you track streak:
+    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
+    streak_data = streak_obj.streak_data or {}
+    current_streak = streak_data.get("current_streak", 0)
+    longest_streak = streak_data.get("longest_streak", 0)
+
     context = {
         "monthly_obj": monthly_obj,
         "habits_stats": habits_stats,
         "total_days": total_days,
+        "daily_logs": daily_logs,        # ← Pass daily logs
+        "current_streak": current_streak,
+        "longest_streak": longest_streak,
     }
     return render(request, 'mainpage/monthly-stats.html', context)
 

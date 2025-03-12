@@ -1,53 +1,110 @@
+<!-- File: mainpage/templates/mainpage/monthly-stats.html -->
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Monthly Habit Stats</title>
+  <title>Monthly View</title>
+  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
 </head>
 <body>
-  <h1>Monthly Habit Statistics</h1>
+  <div class="header">
+    <h1>Monthly Page ({{ monthly_obj.year }}-{{ monthly_obj.month }})</h1>
+    <p>Streak: {{ current_streak }} | Longest: {{ longest_streak }}</p>
+    <nav>
+      <a href="{% url 'main_page' %}">Return to Main Page</a>
+      <a href="{% url 'set_habits' %}">Set Monthly Habits</a>
+    </nav>
+  </div>
 
-  {% if monthly_obj %}
-    <h3>Goals for {{ monthly_obj.year }}-{{ monthly_obj.month|add:"0"|slice:"-2" }}</h3>
-    <p>{{ monthly_obj.goal_text }}</p>
+  <div class="month-page-container">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <label for="monthSlider">Pick a Month</label>
+      <input type="range" id="monthSlider" name="monthSlider" min="1" max="12" value="{{ monthly_obj.month }}" orient="vertical">
+      <div class="menu-buttons">
+        <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
+        <button onclick="window.location.href='{% url 'set_habits' %}'">Personal Data</button>
+        <button disabled>Future Button</button>
+      </div>
+    </aside>
 
-    <h3>Habit Completion</h3>
-    <table border="1" cellpadding="5">
-      <tr>
-        <th>Habit</th>
-        <th>Days Completed</th>
-        <th>Percentage</th>
-      </tr>
-      {% for h in habits_stats %}
-        <tr>
-          <td>{{ h.habit_name }}</td>
-          <td>{{ h.completed_days }} / {{ total_days }}</td>
-          <td>{{ h.percent }}%</td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% else %}
-    <p>No habits set for this month yet. <a href="{% url 'set_habits' %}">Set them now</a>.</p>
-  {% endif %}
+    <!-- MAIN CONTENT -->
+    <section class="main-month-content">
+      {% if monthly_obj %}
+        <h2>Monthly Goals for {{ monthly_obj.year }}-{{ monthly_obj.month }}</h2>
+        <p>{{ monthly_obj.goal_text }}</p>
 
-  <!-- Placeholder link; will be replaced via JS to local time. -->
-  <p id="return-local-link">
-    <a href="#">Return to today's page</a>
-  </p>
+        <h3>Habit Completion Summary</h3>
+        <table border="1" cellpadding="5">
+          <thead>
+            <tr>
+              <th>Habit</th>
+              <th>Days Completed</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in habits_stats %}
+              <tr>
+                <td>{{ h.habit_name }}</td>
+                <td>{{ h.completed_days }} / {{ total_days }}</td>
+                <td>{{ h.percent }}%</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No habits set for this month yet. <a href="{% url 'set_habits' %}">Set them now</a>.</p>
+      {% endif %}
 
+      <!-- DETAILED DAILY LIST -->
+      <h3>Daily Breakdown</h3>
+      <div class="daily-list">
+        {% if daily_logs %}
+          {% for log in daily_logs %}
+            <div class="day-row" data-date="{{ log.date|date:'Y-m-d' }}" data-mood="{{ log.mood_rating|default:0 }}" data-prod="{{ log.productivity_score|default:0 }}">
+              
+              <div class="date-label">{{ log.date|date:"M d (D)" }}</div>
+
+              <div class="mood-bar">Mood: {{ log.mood_rating|default:"?" }}</div>
+              <div class="productivity-bar">Productivity: {{ log.productivity_score|default:"?" }}</div>
+
+              <!-- FIXED HABIT SQUARES -->
+              <div class="habits-area">
+                {% for c in log.habits_completed %}
+                  {% if c == "1" %}
+                    <span class="habit-square habit-complete"></span>
+                  {% else %}
+                    <span class="habit-square habit-incomplete"></span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>No daily logs found for this month.</p>
+        {% endif %}
+      </div>
+
+      <!-- SLEEP GRAPH PLACEHOLDER -->
+      <div class="sleep-graph-placeholder">
+        <h3>Sleep Graph (Coming Soon)</h3>
+        <div class="sleep-graph-box"></div>
+      </div>
+    </section>
+  </div>
+
+  <p id="return-local-link"><a href="#">Return to today's page</a></p>
+
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      // Grab the user’s LOCAL date/time
       let now = new Date();
       let y = now.getFullYear();
-      let m = String(now.getMonth() + 1).padStart(2, '0');  // zero-based months
+      let m = String(now.getMonth() + 1).padStart(2, '0');
       let d = String(now.getDate()).padStart(2, '0');
-
-      // Build the URL to your day_view for the local date
       let localDayUrl = `/day/${y}/${m}/${d}/`;
-
-      // Set the link’s href
-      let link = document.querySelector('#return-local-link a');
-      link.setAttribute('href', localDayUrl);
+      document.querySelector('#return-local-link a').setAttribute('href', localDayUrl);
     });
   </script>
 </body>
