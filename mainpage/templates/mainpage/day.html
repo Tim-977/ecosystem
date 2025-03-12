@@ -33,7 +33,7 @@
       <!-- Streak data -->
       <strong>Streak:</strong> {{ current_streak }} days &nbsp;|&nbsp;
       <strong>Longest:</strong> {{ longest_streak }} days &nbsp;&nbsp;  
-      <a href="{% url 'monthly_stats_view' %}">Go to Month View</a>
+      <a href="{% url 'month_view' date.year date.month %}">Go to Month View</a>
     </div>
   </header>
 

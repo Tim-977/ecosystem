@@ -1,86 +1,125 @@
-.month-container {
-    display: flex;
-    flex-direction: row;
-    margin: 20px;
-  }
-  
-  .month-header {
-    flex: 1 0 100%;
-    margin-bottom: 20px;
-  }
-  
-  .month-sidebar {
-    width: 200px;
-    border-right: 1px solid #ccc;
-    padding: 10px;
-    margin-right: 20px;
-  }
-  
-  /* Vertical slider orientation */
-  input[type="range"][orient="vertical"] {
-    writing-mode: bt-lr;  /* Some browsers might need different approach. */
-    -webkit-appearance: slider-vertical;
-    height: 200px;
-    width: 20px;
-    margin: 20px 0;
-  }
-  
-  .menu-buttons {
-    margin-top: 30px;
-  }
-  
-  .menu-buttons button {
-    display: block;
-    margin-bottom: 10px;
-    width: 100%;
-  }
-  
-  .month-days {
-    flex: 1;
-  }
-  
-  .days-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .days-table th, .days-table td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: center;
-  }
-  
-  /* Habits squares */
-  .habit-square {
-    display: inline-block;
-    width: 15px;
-    height: 15px;
-    margin: 0 4px 0 0;
-    border: 1px solid #aaa;
-    border-radius: 2px;
-  }
-  
-  .habit-square.complete {
-    background-color: #4caf50; /* green */
-  }
-  
-  .habit-square.incomplete {
-    background-color: #f44336; /* red */
-  }
-  
-  /* Sleep Graph Placeholder */
-  .sleep-graph-placeholder {
-    border: 1px dashed #999;
-    padding: 10px;
-    margin: 10px 0;
-    text-align: center;
-  }
-  
-  .sleep-graph-placeholder .graph-box {
-    width: 100%;
-    height: 200px;
-    background-color: #f1f1f1;
-    margin-top: 10px;
-  }
-  
+/* Basic reset/structure */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Top header styling */
+.main-header {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.main-header h1 {
+  margin: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+
+/* Flex container that holds sidebar, main content, and right aside */
+.content-container {
+  display: flex;
+  flex-direction: row;
+  /* If you want it to fill the full viewport minus header, you can do:
+     height: calc(100vh - 60px);
+     or just let it flow naturally
+  */
+}
+
+/* Left sidebar (navbar) */
+.navbar {
+  width: 200px;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+  background-color: #fafafa; /* Slightly different bg color */
+}
+
+/* Vertical slider */
+input[type="range"][orient="vertical"] {
+  writing-mode: bt-lr; /* Some browsers need different props */
+  -webkit-appearance: slider-vertical;
+  height: 200px;
+  width: 20px;
+  margin: 20px 0;
+}
+
+/* Buttons in the sidebar */
+.menu-buttons {
+  margin-top: 30px;
+}
+
+.menu-buttons button {
+  display: block;
+  margin-bottom: 100px;
+  width: 100%;
+}
+
+/* Center main content area (the table) */
+.main-content {
+  flex: 1;          /* Take up remaining space */
+  overflow-y: auto; /* Scroll if content is tall */
+  padding: 10px;
+}
+
+/* The days/habits table */
+.days-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.days-table th,
+.days-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.days-table td:nth-child(2), 
+.days-table td:nth-child(3) {
+  width: 85px;
+  text-align: center;
+}
+
+
+/* Habit squares styling */
+.habit-square {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin: 0 4px 0 0;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+}
+
+.habit-square.complete {
+  background-color: #4caf50; /* green */
+}
+
+.habit-square.incomplete {
+  background-color: #f44336; /* red */
+}
+
+/* Right side Sleep Graph placeholder */
+.sleep-graph {
+  width: 500px;
+  border-left: 1px solid #ccc;
+  padding: 10px;
+  background-color: #fafafa; /* same as navbar for symmetry */
+  text-align: center;
+}
+
+.sleep-graph .graph-box {
+  width: 100%;
+  height: 200px;
+  background-color: #f1f1f1;
+  margin-top: 10px;
+  border: 1px dashed #999;
+}
+
