@@ -22,10 +22,12 @@
       {% endif %}
     </div>
 
+    <!-- Centered "Go to Today's View" -->
     <div class="center-nav">
       <a id="log-today-link" href="#">Go to Today's View</a>
     </div>
 
+    <!-- Username or Streak Info -->
     <div class="header-right">
       <span class="username">{{ user.username }}</span>
     </div>
@@ -43,6 +45,8 @@
   </script>
 
   <div class="content-container">
+
+    <!-- Left sidebar / Navbar -->
     <nav class="navbar">
       <label for="monthSlider">Select Month:</label>
       <input
@@ -61,7 +65,7 @@
           <option value="{{ m }}">{{ m|add:"0"|slice:"-2" }}</option>
         {% endfor %}
       </datalist>
-      <p id="sliderMonthLabel">Current: {{ month|add:"0"|slice:"-2" }}</p>
+      <p id="sliderMonthLabel">Current: --</p>
 
       <div class="menu-buttons">
         <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
@@ -73,16 +77,14 @@
       </div>
     </nav>
 
+    <!-- Main content block (diary or stats) -->
     <main class="main-content">
       {% block content %}{% endblock %}
     </main>
 
-    <aside class="sleep-graph">
-      <h2>Sleep Graph (Soon)</h2>
-      <div class="graph-box"></div>
-    </aside>
   </div>
 
+  <!-- SCRIPTS -->
   <script src="{% static 'mainpage/js/localtime.js' %}"></script>
   <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
   {% block extra_js %}{% endblock %}

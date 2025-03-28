@@ -644,7 +644,7 @@ def month_view(request, year, month):
         "days_data": days_data,
         "current_view": "month_view",
     }
-    return render(request, 'mainpage/month.html', context)
+    return render(request, 'mainpage/month_statistics.html', context)
 
 def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
     """
@@ -719,4 +719,4 @@ def diary_view(request, year, month):
         "days_data": days_data,
         "current_view": "diary_view",
     }
-    return render(request, 'mainpage/diary.html', context)
+    return render(request, 'mainpage/month_diary.html', context)

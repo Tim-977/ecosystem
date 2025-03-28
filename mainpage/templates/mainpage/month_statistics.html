@@ -1,0 +1,49 @@
+{% extends "mainpage/base_month.html" %}
+{% load static %}
+{% block title %}Month Statistics{% endblock %}
+
+
+{% block content %}
+<div class="stats-container">
+  <!-- Left section: the table -->
+  <section class="stats-table">
+    <table class="days-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Mood</th>
+          <th>Prod</th>
+          <th>Habits</th>
+          <th>Thoughts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in days_data %}
+        <tr>
+          <td>{{ d.date_obj|date:"M d" }}</td>
+          <td style="background-color: {{ d.mood_color }};">{{ d.mood_val }}</td>
+          <td style="background-color: {{ d.prod_color }};">{{ d.prod_val }}</td>
+          <td>
+            {% for habit_name, is_done in d.habit_statuses %}
+              {% if habit_name %}
+                <span class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}"
+                      title="{{ habit_name }}"></span>
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>{{ d.thoughts|truncatewords:10 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Right section: the Sleep Graph -->
+  <aside class="sleep-graph">
+    <h2>Sleep Graph (Coming Soon)</h2>
+    <div class="graph-box">
+      Sleep graph will be displayed here in the future.
+    </div>
+  </aside>
+</div>
+{% endblock %}

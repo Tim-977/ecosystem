@@ -148,7 +148,7 @@ input[type="range"][orient="vertical"] {
   width: 500px;
   border-left: 1px solid #ccc;
   padding: 10px;
-  background-color: #fafafa; /* same as navbar for symmetry */
+  background-color: #fafafa;
   text-align: center;
 }
 
@@ -158,5 +158,26 @@ input[type="range"][orient="vertical"] {
   background-color: #f1f1f1;
   margin-top: 10px;
   border: 1px dashed #999;
+
+  /* Center the text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Styling the message */
+  font-style: italic;
+  color: #666;
+  font-size: 14px;
+  text-align: center;
 }
 
+.stats-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.stats-table {
+  flex: 1;
+  margin-right: 20px;
+}
