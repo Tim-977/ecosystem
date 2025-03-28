@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const monthSlider = document.getElementById("monthSlider");
   const sliderMonthLabel = document.getElementById("sliderMonthLabel");
   const monthTickmarks = document.getElementById("monthTickmarks");
+  const currentView = monthSlider?.dataset.view || "month_view";
+
   if (!monthSlider || !sliderMonthLabel || !monthTickmarks) return;
 
   // Get local time for clamping
@@ -48,6 +50,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const chosenMonth = parseInt(monthSlider.value, 10);
     const monthStr = chosenMonth.toString().padStart(2, "0");
 
-    window.location.href = `/month/${dataYear}/${monthStr}/`;
+    let redirectUrl = "/";
+    if (currentView === "diary_view") {
+      redirectUrl = `/diary/${dataYear}/${monthStr}/`;
+    } else {
+      redirectUrl = `/month/${dataYear}/${monthStr}/`;
+    }
+
+    window.location.href = redirectUrl;
   });
 });

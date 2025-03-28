@@ -53,6 +53,7 @@
         max="12"
         step="1"
         value="{{ month }}"
+        data-view="{{ current_view }}"
         list="monthTickmarks"
       />
       <datalist id="monthTickmarks">
@@ -64,6 +65,8 @@
 
       <div class="menu-buttons">
         <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
+        <button onclick="window.location.href='{% url 'month_view' year=year month=month %}'">Statistics</button>
+        <button onclick="window.location.href='{% url 'diary_view' year=year month=month %}'">Diary</button>
         <button onclick="window.location.href='{% url 'set_habits' %}'">Set Habits</button>
         <button onclick="window.location.href='{% url 'personal_data' %}'">Personal Data</button>
         <button onclick="window.location.href='{% url 'logout' %}'">Log Out</button>

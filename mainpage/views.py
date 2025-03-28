@@ -642,6 +642,7 @@ def month_view(request, year, month):
         "month": month,
         "monthly_obj": monthly_obj,
         "days_data": days_data,
+        "current_view": "month_view",
     }
     return render(request, 'mainpage/month.html', context)
 
@@ -716,5 +717,6 @@ def diary_view(request, year, month):
         "year": year,
         "month": month,
         "days_data": days_data,
+        "current_view": "diary_view",
     }
     return render(request, 'mainpage/diary.html', context)
