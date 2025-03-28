@@ -691,3 +691,30 @@ def blend_hex_colors(colorA, colorB, t):
 
     # Rebuild hex
     return f"#{r:02x}{g:02x}{b:02x}"
+
+
+@login_required
+def diary_view(request, year, month):
+    """
+    Display a diary page that shows detailed thoughts and reflections by day.
+    """
+    daily_logs = DailyData.objects.filter(
+        user_id=request.user.id,
+        date__year=year,
+        date__month=month
+    ).order_by('date')
+
+    days_data = []
+    for log in daily_logs:
+        days_data.append({
+            "date_obj": log.date,
+            "thoughts": log.thoughts or "",
+            "self_reflection": log.self_reflection or "",
+        })
+
+    context = {
+        "year": year,
+        "month": month,
+        "days_data": days_data,
+    }
+    return render(request, 'mainpage/diary.html', context)

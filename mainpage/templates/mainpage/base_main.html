@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}My App{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="main-header">
+    <div class="header-left">
+      <h1 id="currentMonth" data-year="{{ year }}" data-month="{{ month }}">
+        {{ year }} {{ month|default:""|date:"F" }}
+      </h1>
+      <p id="local-date" style="font-weight:bold;">Date: --</p>
+      <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+      {% if monthly_obj.goal_text %}
+        <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="center-nav">
+      <a id="log-today-link" href="#">Go to Today's View</a>
+    </div>
+
+    <div class="header-right">
+      <span class="username">{{ user.username }}</span>
+    </div>
+  </header>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let today = new Date();
+      let year = today.getFullYear();
+      let month = String(today.getMonth() + 1).padStart(2, '0');
+      let day = String(today.getDate()).padStart(2, '0');
+      let logTodayUrl = `/day/${year}/${month}/${day}/`;
+      document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
+    });
+  </script>
+
+  <div class="content-container">
+    <nav class="navbar">
+      <label for="monthSlider">Select Month:</label>
+      <input
+        type="range"
+        id="monthSlider"
+        name="monthSlider"
+        min="1"
+        max="12"
+        step="1"
+        value="{{ month }}"
+        list="monthTickmarks"
+      />
+      <datalist id="monthTickmarks">
+        {% for m in "123456789101112" %}
+          <option value="{{ m }}">{{ m|add:"0"|slice:"-2" }}</option>
+        {% endfor %}
+      </datalist>
+      <p id="sliderMonthLabel">Current: {{ month|add:"0"|slice:"-2" }}</p>
+
+      <div class="menu-buttons">
+        <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
+        <button onclick="window.location.href='{% url 'set_habits' %}'">Set Habits</button>
+        <button onclick="window.location.href='{% url 'personal_data' %}'">Personal Data</button>
+        <button onclick="window.location.href='{% url 'logout' %}'">Log Out</button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <aside class="sleep-graph">
+      <h2>Sleep Graph (Soon)</h2>
+      <div class="graph-box"></div>
+    </aside>
+  </div>
+
+  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
