@@ -3,14 +3,30 @@
 {% block title %}Month Diary{% endblock %}
 
 {% block content %}
-  <h2>Diary - Detailed Thoughts</h2>
-  <ul class="diary-list">
-    {% for d in days_data %}
-      <li>
-        <strong>{{ d.date_obj|date:"M d, Y" }}</strong>
-        <p><em>Reflection:</em> {{ d.self_reflection|default:"No reflection" }}</p>
-        <p><em>Thoughts:</em> {{ d.thoughts|default:"No thoughts" }}</p>
-      </li>
-    {% endfor %}
-  </ul>
+<link rel="stylesheet" href="{% static 'mainpage/css/diary.css' %}">
+<div class="vintage-diary">
+  <!-- <p class="intro">Daily Diary</p> -->
+
+  {% for d in days_data %}
+    <div class="entry">
+      <h3>{{ d.date_obj|date:"F d, Y" }}</h3>
+      <p>
+        <span class="label">Reflection:</span>
+        {% if d.self_reflection %}
+          {{ d.self_reflection }}
+        {% else %}
+          I didn’t write down any reflections today.
+        {% endif %}
+      </p>
+      <p>
+        <span class="label">Thoughts:</span>
+        {% if d.thoughts %}
+          {{ d.thoughts }}
+        {% else %}
+          Nothing particular on my mind.
+        {% endif %}
+      </p>
+    </div>
+  {% endfor %}
+</div>
 {% endblock %}

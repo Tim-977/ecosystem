@@ -11,8 +11,8 @@ header {
     justify-content: space-between;
     border-bottom: 1px solid #ccc;
     position: relative;
-    height: 50px; /* ✅ Fix the header height */
-    flex-wrap: nowrap; /* ✅ Prevent wrapping */
+    height: 50px;
+    flex-wrap: nowrap;
 }
 
 /* Left Section */
@@ -27,7 +27,7 @@ header {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    line-height: 50px; /* ✅ Ensures it stays vertically aligned */
+    line-height: 50px;
 }
 
 /* Right Section with Username */

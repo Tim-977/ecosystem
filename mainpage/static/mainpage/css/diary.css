@@ -1,0 +1,39 @@
+.vintage-diary {
+font-family: 'Georgia', serif;
+color: #3a3a3a;
+background-color: #fdfaf4;
+padding: 40px 60px;
+border-radius: 6px;
+line-height: 1.7;
+box-sizing: border-box;
+}
+
+.vintage-diary .intro {
+font-style: italic;
+margin-bottom: 30px;
+font-size: 1.1em;
+color: #4b3e35;
+}
+
+.vintage-diary .entry {
+margin-bottom: 32px;
+padding-bottom: 16px;
+border-bottom: 1px solid #e5e2dc;
+}
+
+.vintage-diary h3 {
+font-size: 1.4em;
+margin-bottom: 10px;
+color: #2e2a26;
+}
+
+.vintage-diary p {
+margin: 6px 0;
+text-indent: 2em;
+}
+
+.vintage-diary .label {
+font-weight: bold;
+font-style: italic;
+color: #5a5148;
+}
