@@ -1,11 +1,12 @@
 from datetime import date  # Import date
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
+# authapp/views.py
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET
 
-from .forms import PersonalDataForm
+from .forms import PersonalDataForm, SettingsForm
 from .models import PersonalData
 
 User = get_user_model()
@@ -96,3 +97,29 @@ def personal_data_view(request):
         'form': form,
         'date': today  # Pass the current date to the template
     })
+
+
+@login_required
+def settings_view(request):
+    # Get the user
+    user = request.user
+
+    # Get or create the PersonalData object for this user
+    personal_data, created = PersonalData.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        form = SettingsForm(
+            request.POST,
+            user_instance=user,
+            personal_data_instance=personal_data
+        )
+        if form.is_valid():
+            form.save()  # This updates both user + personal_data
+            return redirect('settings')  # or wherever you want to go
+    else:
+        form = SettingsForm(
+            user_instance=user,
+            personal_data_instance=personal_data
+        )
+
+    return render(request, 'authapp/settings.html', {'form': form})
