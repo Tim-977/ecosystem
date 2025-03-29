@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
-from .forms import SettingsForm
+from .forms import GeneralSettingsForm, PersonalizationForm
 
 User = get_user_model()
 
@@ -74,11 +74,35 @@ def signup_page(request):
 @login_required
 def settings_view(request):
     user = request.user
+
     if request.method == 'POST':
-        form = SettingsForm(request.POST, user_instance=user)
-        if form.is_valid():
-            form.save()
-            return redirect('settings')
+        # Check which button was pressed:
+        if 'save_general' in request.POST:
+            # The user clicked "Save" in the General Settings section
+            general_form = GeneralSettingsForm(request.POST, user_instance=user)
+            personalization_form = PersonalizationForm(user_instance=user)  # unbound
+            if general_form.is_valid():
+                general_form.save()
+                return redirect('settings')
+
+        elif 'save_personalization' in request.POST:
+            # The user clicked "Save" in the Personalization section
+            personalization_form = PersonalizationForm(request.POST, user_instance=user)
+            general_form = GeneralSettingsForm(user_instance=user)  # unbound
+            if personalization_form.is_valid():
+                personalization_form.save()
+                return redirect('settings')
+
+        else:
+            # If neither button is recognized (or Cancel was clicked), just reload
+            general_form = GeneralSettingsForm(user_instance=user)
+            personalization_form = PersonalizationForm(user_instance=user)
     else:
-        form = SettingsForm(user_instance=user)
-    return render(request, 'authapp/settings.html', {'form': form})
+        # GET request: display forms with current user data
+        general_form = GeneralSettingsForm(user_instance=user)
+        personalization_form = PersonalizationForm(user_instance=user)
+
+    return render(request, 'authapp/settings.html', {
+        'general_form': general_form,
+        'personalization_form': personalization_form,
+    })

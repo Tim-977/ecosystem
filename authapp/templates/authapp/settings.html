@@ -1,77 +1,109 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Settings</title>
+  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
+  <script src="{% static 'authapp/js/settings.js' %}"></script>
 </head>
 <body>
   <h1>Settings</h1>
 
-  <!-- General Settings -->
-  <h2>General Settings</h2>
+  <!-- ==================== GENERAL SETTINGS ====================== -->
+  <form method="POST" action="">
+    {% csrf_token %}
+    <h2>General Settings</h2>
 
-  <label>Username / Display Name</label><br>
-  <input type="text" placeholder="Enter your username"><br><br>
+    <!-- Render form fields from our GeneralSettingsForm -->
+    <p>
+      {{ general_form.username.label_tag }}
+      {{ general_form.username }}
+    </p>
+    <p>
+      {{ general_form.email.label_tag }}
+      {{ general_form.email }}
+    </p>
 
-  <label>Email</label><br>
-  <input type="email" placeholder="Enter your email"><br><br>
+    <!-- The following are “coming soon,” so we disable them -->
+    <p>
+      <label>Theme (soon)</label><br>
+      <input type="text" disabled placeholder="Coming soon">
+    </p>
+    <p>
+      <label>Language (soon)</label><br>
+      <input type="text" disabled placeholder="Coming soon">
+    </p>
+    <p>
+      <label>Time Format (optional)</label><br>
+      <select disabled>
+        <option value="12">12h</option>
+        <option value="24">24h</option>
+      </select>
+    </p>
 
-  <label>Theme (soon)</label><br>
-  <input type="text" disabled placeholder="Coming soon"><br><br>
+    <!-- Save & Cancel for GENERAL SETTINGS only -->
+    <button type="submit" name="save_general">Save</button>
+    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
+  </form>
 
-  <label>Language (soon)</label><br>
-  <input type="text" disabled placeholder="Coming soon"><br><br>
 
-  <label>Time Format (optional)</label><br>
-  <select>
-    <option value="12">12h</option>
-    <option value="24">24h</option>
-  </select><br><br>
+  <!-- ==================== PERSONALIZATION ======================= -->
+  <form method="POST" action="">
+    {% csrf_token %}
+    <h2>Personalization</h2>
 
-  <!-- Personalization -->
-  <h2>Personalization</h2>
+    <!-- Render fields from our PersonalizationForm -->
+    <p>
+      {{ personalization_form.gender.label_tag }}
+      {{ personalization_form.gender }}
+    </p>
+    <p>
+      {{ personalization_form.b_day.label_tag }}
+      {{ personalization_form.b_day }}
+    </p>
+    <p>
+      {{ personalization_form.preferred_name.label_tag }}
+      {{ personalization_form.preferred_name }}
+    </p>
 
-  <label>Gender</label><br>
-  <select>
-    <option value="">Select</option>
-    <option value="1">Male</option>
-    <option value="2">Female</option>
-  </select><br><br>
+    <!-- Save & Cancel for PERSONALIZATION only -->
+    <button type="submit" name="save_personalization">Save</button>
+    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
+  </form>
 
-  <label>Birthday (optional)</label><br>
-  <input type="date"><br><br>
 
-  <!-- Data -->
+  <!-- ==================== DATA SECTION (placeholder) ============ -->
   <h2>Data</h2>
+  <p>
+    <button>Export Data</button><br><br>
+    <button>Clear All Logs</button><br><br>
+    <button>Reset All Settings</button><br><br>
+    <button>Download All Data (as JSON)</button><br><br>
+  </p>
 
-  <button>Export Data</button><br><br>
-  <button>Clear All Logs</button><br><br>
-  <button>Reset All Settings</button><br><br>
-  <button>Download All Data (as JSON)</button><br><br>
-
-  <!-- Privacy and Security -->
+  <!-- ==================== PRIVACY & SECURITY (coming soon) ====== -->
   <h2>Privacy and Security (soon)</h2>
+  <p>
+    <label>App Lock (future)</label><br>
+    <input type="text" disabled placeholder="Coming soon"><br><br>
+    <label>Local-only Mode (future)</label><br>
+    <input type="text" disabled placeholder="Coming soon"><br><br>
+    <label>Data Usage Disclaimer (future)</label><br>
+    <input type="text" disabled placeholder="Coming soon">
+  </p>
 
-  <label>App Lock (future)</label><br>
-  <input type="text" disabled placeholder="Coming soon"><br><br>
-
-  <label>Local-only Mode (future)</label><br>
-  <input type="text" disabled placeholder="Coming soon"><br><br>
-
-  <label>Data Usage Disclaimer (future)</label><br>
-  <input type="text" disabled placeholder="Coming soon"><br><br>
-
-  <!-- About / Support -->
+  <!-- ==================== ABOUT / SUPPORT ======================== -->
   <h2>About / Support</h2>
-
-  <label>App Version</label><br>
-  <input type="text" value="v0.1" disabled><br><br>
-
-  <button>Report a Bug</button><br><br>
-  <button>Give Feedback</button><br><br>
-  <button>Developer Info</button><br><br>
-  <button>Donate / Support Me</button><br><br>
-  <button>Changelog / What's New</button><br><br>
-  <button>Open Source / Licenses</button><br><br>
+  <p>
+    <label>App Version</label><br>
+    <input type="text" value="v0.1" disabled><br><br>
+    <button>Report a Bug</button><br><br>
+    <button>Give Feedback</button><br><br>
+    <button>Developer Info</button><br><br>
+    <button>Donate / Support Me</button><br><br>
+    <button>Changelog / What's New</button><br><br>
+    <button>Open Source / Licenses</button><br><br>
+  </p>
 </body>
 </html>
