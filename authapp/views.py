@@ -72,29 +72,6 @@ def signup_page(request):
 
 
 @login_required
-def personal_data_view(request):
-    """
-    Example of reusing the SettingsForm to let users edit their
-    'preferred_name', 'b_day', 'gender' directly in the user model.
-    """
-    today = date.today()
-    user = request.user
-
-    if request.method == 'POST':
-        form = SettingsForm(request.POST, user_instance=user)
-        if form.is_valid():
-            form.save()
-            return redirect('main_page')
-    else:
-        form = SettingsForm(user_instance=user)
-
-    return render(request, 'authapp/personal_data.html', {
-        'form': form,
-        'date': today
-    })
-
-
-@login_required
 def settings_view(request):
     user = request.user
     if request.method == 'POST':

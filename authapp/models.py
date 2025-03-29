@@ -35,27 +35,3 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
-
-class PersonalData(models.Model):
-    GENDER_CHOICES = [
-        (1, 'Male'),
-        (2, 'Female'),
-    ]
-
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-    preferred_name = models.CharField(max_length=100, blank=True)
-    b_day = models.DateField(null=True, blank=True)
-
-    # Use an IntegerField with the above choices
-    gender = models.IntegerField(
-        choices=GENDER_CHOICES,
-        null=True,
-        blank=True
-    )
-
-    def __str__(self):
-        return f"{self.user.username}'s Personal Data"
