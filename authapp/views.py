@@ -1,13 +1,11 @@
-from datetime import date  # Import date
+from datetime import date
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
-# authapp/views.py
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
-from .forms import PersonalDataForm, SettingsForm
-from .models import PersonalData
+from .forms import SettingsForm
 
 User = get_user_model()
 
@@ -75,51 +73,35 @@ def signup_page(request):
 
 @login_required
 def personal_data_view(request):
-    today = date.today()  # Get the current date
-
-    try:
-        personal_data = PersonalData.objects.get(user=request.user)
-    except PersonalData.DoesNotExist:
-        personal_data = None
+    """
+    Example of reusing the SettingsForm to let users edit their
+    'preferred_name', 'b_day', 'gender' directly in the user model.
+    """
+    today = date.today()
+    user = request.user
 
     if request.method == 'POST':
-        form = PersonalDataForm(request.POST, instance=personal_data)
+        form = SettingsForm(request.POST, user_instance=user)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.user = request.user
-            obj.save()
-            return redirect('main_page')  # Redirect to main page after saving
-
+            form.save()
+            return redirect('main_page')
     else:
-        form = PersonalDataForm(instance=personal_data)
+        form = SettingsForm(user_instance=user)
 
     return render(request, 'authapp/personal_data.html', {
         'form': form,
-        'date': today  # Pass the current date to the template
+        'date': today
     })
 
 
 @login_required
 def settings_view(request):
-    # Get the user
     user = request.user
-
-    # Get or create the PersonalData object for this user
-    personal_data, created = PersonalData.objects.get_or_create(user=user)
-
     if request.method == 'POST':
-        form = SettingsForm(
-            request.POST,
-            user_instance=user,
-            personal_data_instance=personal_data
-        )
+        form = SettingsForm(request.POST, user_instance=user)
         if form.is_valid():
-            form.save()  # This updates both user + personal_data
-            return redirect('settings')  # or wherever you want to go
+            form.save()
+            return redirect('settings')
     else:
-        form = SettingsForm(
-            user_instance=user,
-            personal_data_instance=personal_data
-        )
-
+        form = SettingsForm(user_instance=user)
     return render(request, 'authapp/settings.html', {'form': form})
