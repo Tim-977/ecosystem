@@ -560,18 +560,16 @@ def delete_todo_task(request, task_id):
 
 @login_required
 def month_view(request, year, month):
-    """
-    Display a month-based page that shows daily data (mood, productivity,
-    habits completed, and a placeholder for sleep graph).
-    Allows user to pick a different month via vertical slider.
-    """
+    reverse = request.GET.get("reverse") == "1"
 
-    # 1) Collect all daily logs for the requested year/month
+    # Use descending or ascending order based on toggle
+    order = '-date' if reverse else 'date'
+
     daily_logs = DailyData.objects.filter(
         user_id=request.user.id,
         date__year=year,
         date__month=month
-    ).order_by('date')
+    ).order_by(order)
 
     # 2) Also retrieve the monthly-habits record (if any) for that year/month
     try:
@@ -643,6 +641,7 @@ def month_view(request, year, month):
         "monthly_obj": monthly_obj,
         "days_data": days_data,
         "current_view": "month_view",
+        "reverse": reverse,
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
