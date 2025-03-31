@@ -4,6 +4,15 @@
 
 
 {% block content %}
+
+<div class="toggle-order-btn">
+  {% if reverse %}
+    <a href="?reverse=0" class="button">Show Oldest → Newest</a>
+  {% else %}
+    <a href="?reverse=1" class="button">Show Newest → Oldest</a>
+  {% endif %}
+</div>
+
 <div class="stats-container">
   <!-- Left section: the table -->
   <section class="stats-table">

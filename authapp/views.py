@@ -1,12 +1,11 @@
-from datetime import date  # Import date
+from datetime import date
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
-from .forms import PersonalDataForm
-from .models import PersonalData
+from .forms import GeneralSettingsForm, PersonalizationForm
 
 User = get_user_model()
 
@@ -73,26 +72,37 @@ def signup_page(request):
 
 
 @login_required
-def personal_data_view(request):
-    today = date.today()  # Get the current date
-
-    try:
-        personal_data = PersonalData.objects.get(user=request.user)
-    except PersonalData.DoesNotExist:
-        personal_data = None
+def settings_view(request):
+    user = request.user
 
     if request.method == 'POST':
-        form = PersonalDataForm(request.POST, instance=personal_data)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.user = request.user
-            obj.save()
-            return redirect('main_page')  # Redirect to main page after saving
+        # Check which button was pressed:
+        if 'save_general' in request.POST:
+            # The user clicked "Save" in the General Settings section
+            general_form = GeneralSettingsForm(request.POST, user_instance=user)
+            personalization_form = PersonalizationForm(user_instance=user)  # unbound
+            if general_form.is_valid():
+                general_form.save()
+                return redirect('settings')
 
+        elif 'save_personalization' in request.POST:
+            # The user clicked "Save" in the Personalization section
+            personalization_form = PersonalizationForm(request.POST, user_instance=user)
+            general_form = GeneralSettingsForm(user_instance=user)  # unbound
+            if personalization_form.is_valid():
+                personalization_form.save()
+                return redirect('settings')
+
+        else:
+            # If neither button is recognized (or Cancel was clicked), just reload
+            general_form = GeneralSettingsForm(user_instance=user)
+            personalization_form = PersonalizationForm(user_instance=user)
     else:
-        form = PersonalDataForm(instance=personal_data)
+        # GET request: display forms with current user data
+        general_form = GeneralSettingsForm(user_instance=user)
+        personalization_form = PersonalizationForm(user_instance=user)
 
-    return render(request, 'authapp/personal_data.html', {
-        'form': form,
-        'date': today  # Pass the current date to the template
+    return render(request, 'authapp/settings.html', {
+        'general_form': general_form,
+        'personalization_form': personalization_form,
     })
