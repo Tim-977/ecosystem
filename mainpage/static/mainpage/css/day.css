@@ -43,10 +43,6 @@ header {
     color: #333;
 }
 
-.streak-info {
-    font-weight: bold;
-}
-
 /* Simple nav bar on the left or as needed */
 nav {
     background-color: #f8f8f8;

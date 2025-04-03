@@ -46,13 +46,13 @@ class DailyData(models.Model):
     class Meta:
         unique_together = ("user_id", "date")
 
+# REFUSED
+# class Streak(models.Model):
+#     user_id = models.IntegerField()
+#     streak_data = models.JSONField(default=dict)
 
-class Streak(models.Model):
-    user_id = models.IntegerField()
-    streak_data = models.JSONField(default=dict)
-
-    def __str__(self):
-        return f"Streak for user {self.user_id}"
+#     def __str__(self):
+#         return f"Streak for user {self.user_id}"
 
 
 class MonthlyHabits(models.Model):

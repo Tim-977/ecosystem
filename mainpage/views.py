@@ -8,22 +8,17 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
-from .models import ActivityMapping, DailyData, MonthlyHabits, Streak, UserTodo
+from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 
 @login_required
 def main_page_view(request):
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
-
-    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
-    streak_data = streak_obj.streak_data or {}
     server_time = now()
 
     context = {
         "all_data": all_data,
         "username": request.user.username,
-        "current_streak": streak_data.get("current_streak", 0),
-        "longest_streak": streak_data.get("longest_streak", 0),
         "server_time": server_time,
     }
     return render(request, 'mainpage/main.html', context)
@@ -53,13 +48,11 @@ def day_view(request, year, month, day):
             )
             day_to_fill += timedelta(days=1)
 
-    # Get or create today's DailyData
     daily_obj, _ = DailyData.objects.get_or_create(
         user_id=request.user.id,
         date=current_date
     )
 
-    # Get or create the MonthlyHabits
     monthly_obj, _ = MonthlyHabits.objects.get_or_create(
         user_id=request.user.id,
         year=year,
@@ -79,7 +72,6 @@ def day_view(request, year, month, day):
         monthly_obj.habit_10,
     ]
 
-    # Handle form submission
     if request.method == 'POST':
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
         daily_obj.productivity_score = request.POST.get('productivity_score') or None
@@ -100,38 +92,29 @@ def day_view(request, year, month, day):
             habit_completion_string += "1" if checkbox_val == "on" else "0"
         daily_obj.habits_completed = habit_completion_string
 
-        # Save the raw text from the hourly logging <textarea> or hidden input
         daily_obj.thoughts = request.POST.get('thoughts')
         daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.save()
 
-        # Update streak info
-        _update_streak(request.user.id, current_date)
-
         return redirect('day_view', year=year, month=month, day=day)
 
-    # On GET, parse the JSON for hourly activity
     try:
         hourly_data = json.loads(daily_obj.hourly_activity_logging) if daily_obj.hourly_activity_logging else []
     except:
         hourly_data = []
 
-    # Optionally sort by hour (if not already sorted)
     hourly_data.sort(key=lambda x: x.get('hour', 0))
 
     if not hourly_data:
         hourly_data = [{"hour": h, "activity": None} for h in range(24)]
     else:
-        # If you want to ensure it's always 24 hours in length, fill in missing hours:
         existing_hours = {item["hour"] for item in hourly_data}
         for h in range(24):
             if h not in existing_hours:
                 hourly_data.append({"hour": h, "activity": None})
-        # Sort by hour
         hourly_data.sort(key=lambda x: x["hour"])
 
-    # Prepare context
     sleep_data = daily_obj.sleep or ""
     splitted = sleep_data.split(',')
 
@@ -151,9 +134,6 @@ def day_view(request, year, month, day):
     habits_binary = habits_binary.ljust(10, '0')[:10]
     habits_status = list(zip(habits, habits_binary))
 
-    streak_obj, _ = Streak.objects.get_or_create(user_id=request.user.id)
-    streak_data = streak_obj.streak_data or {}
-
     context = {
         "daily_obj": daily_obj,
         "date": current_date,
@@ -163,51 +143,13 @@ def day_view(request, year, month, day):
         "habits_status": habits_status,
         "monthly_obj": monthly_obj,
         "hourly_data": hourly_data,
-        "current_streak": streak_data.get("current_streak", 0),
-        "longest_streak": streak_data.get("longest_streak", 0),
     }
     return render(request, 'mainpage/day.html', context)
 
 
-def _update_streak(user_id, logged_date):
-    streak_obj, created = Streak.objects.get_or_create(user_id=user_id)
-    streak_data = streak_obj.streak_data or {}
-
-    current_streak = streak_data.get("current_streak", 0)
-    longest_streak = streak_data.get("longest_streak", 0)
-    last_date_str = streak_data.get("last_activity_date", None)
-
-    if last_date_str:
-        y, m, d = map(int, last_date_str.split("-"))
-        last_activity_date = date(y, m, d)
-    else:
-        last_activity_date = None
-
-    if not last_activity_date:
-        current_streak = 1
-    else:
-        if logged_date == last_activity_date:
-            # Same day was already logged, do nothing
-            return
-        elif logged_date == last_activity_date + timedelta(days=1):
-            current_streak += 1
-        else:
-            current_streak = 1
-
-    if current_streak > longest_streak:
-        longest_streak = current_streak
-
-    streak_data["current_streak"] = current_streak
-    streak_data["longest_streak"] = longest_streak
-    streak_data["last_activity_date"] = logged_date.isoformat()
-
-    streak_obj.streak_data = streak_data
-    streak_obj.save()
-
-
 @login_required
 def set_habits_view(request):
-    today = date.today()  # Get the current date
+    today = date.today()
     this_year = today.year
     this_month = today.month
 
