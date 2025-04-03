@@ -15,14 +15,39 @@
     {% csrf_token %}
     <h2>General Settings</h2>
 
-    <!-- Render form fields from our GeneralSettingsForm -->
+    <!-- Show non-field (global) errors, if any -->
+    {% if general_form.non_field_errors %}
+      <ul class="form-errors">
+        {% for error in general_form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <!-- Username Field + Error -->
     <p>
       {{ general_form.username.label_tag }}
       {{ general_form.username }}
+      {% if general_form.username.errors %}
+        <ul class="field-errors">
+          {% for error in general_form.username.errors %}
+            <li style="color: red;">{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </p>
+
+    <!-- Email Field + Error -->
     <p>
       {{ general_form.email.label_tag }}
       {{ general_form.email }}
+      {% if general_form.email.errors %}
+        <ul class="field-errors">
+          {% for error in general_form.email.errors %}
+            <li style="color: red;">{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </p>
 
     <!-- The following are “coming soon,” so we disable them -->

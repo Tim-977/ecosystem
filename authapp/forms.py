@@ -1,20 +1,55 @@
+# authapp/forms.py
+
+import re
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
 class GeneralSettingsForm(forms.Form):
-    username = forms.CharField(label="Username / Display Name", max_length=150)
+    username = forms.CharField(
+        label="Username / Display Name",
+        max_length=12,          # match your model
+        min_length=3,           # match your model
+        required=True
+    )
     email = forms.EmailField(label="Email", required=False)
-    # (If you later want to store theme/language/time_format in DB, add fields here as well.)
 
     def __init__(self, *args, **kwargs):
         self.user_instance = kwargs.pop('user_instance', None)
         super().__init__(*args, **kwargs)
-        # Pre‐fill fields with the user’s current data
         if self.user_instance:
             self.fields['username'].initial = self.user_instance.username
             self.fields['email'].initial = self.user_instance.email
+
+    def clean_username(self):
+        username = self.cleaned_data['username'].strip()
+
+        if not re.match(r'^[A-Za-z0-9]{3,12}$', username):
+            raise ValidationError(
+                "Username must be 3–12 characters and contain only letters/digits."
+            )
+
+        # 2) If user changed their username, check if the new one is taken
+        if self.user_instance and username != self.user_instance.username:
+            if User.objects.filter(username=username).exists():
+                raise ValidationError("That username is already taken.")
+
+        return username
+
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+
+        if email:  # Only validate if user entered an email
+            # If user changed the email, make sure it's not taken
+            if self.user_instance and email != self.user_instance.email:
+                if User.objects.filter(email=email).exists():
+                    raise ValidationError("That email address is already in use.")
+        
+        return email
+
 
     def save(self):
         # Save form data to the user object

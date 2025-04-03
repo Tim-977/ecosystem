@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
@@ -48,25 +49,31 @@ def signup_page(request):
     error_message = None
 
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = request.POST.get('username', '').strip()
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
 
+        # 1) Password match
         if password != confirm_password:
             error_message = "Passwords do not match. Please try again."
+        
+        # 2) Letters/digits only + length check
+        elif not re.match(r'^[A-Za-z0-9]{3,12}$', username):
+            error_message = "Username must be 3–12 characters and contain only letters/digits."
+        
+        # 3) Already taken?
         elif User.objects.filter(username=username).exists():
             error_message = "Username already taken. Choose another."
+
+        # 4) Email check
         elif User.objects.filter(email=email).exists():
             error_message = "An account with this email already exists."
+
         else:
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
-            )
+            user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
-            return redirect('personal_data')
+            return redirect('personal_data')  # or wherever you want
 
     return render(request, 'authapp/signup.html', {'error_message': error_message})
 
@@ -76,27 +83,37 @@ def settings_view(request):
     user = request.user
 
     if request.method == 'POST':
-        # Check which button was pressed:
         if 'save_general' in request.POST:
-            # The user clicked "Save" in the General Settings section
             general_form = GeneralSettingsForm(request.POST, user_instance=user)
             personalization_form = PersonalizationForm(user_instance=user)  # unbound
+
             if general_form.is_valid():
                 general_form.save()
                 return redirect('settings')
+            else:
+                # Reset username and email to previous valid values
+                general_form.fields['username'].initial = user.username
+                general_form.fields['email'].initial = user.email
+
+                general_form.data = general_form.data.copy()
+                general_form.data['username'] = user.username
+                general_form.data['email'] = user.email
+
 
         elif 'save_personalization' in request.POST:
-            # The user clicked "Save" in the Personalization section
             personalization_form = PersonalizationForm(request.POST, user_instance=user)
             general_form = GeneralSettingsForm(user_instance=user)  # unbound
+
             if personalization_form.is_valid():
                 personalization_form.save()
                 return redirect('settings')
+            # Same idea: if invalid, let the code continue so errors show.
 
         else:
-            # If neither button is recognized (or Cancel was clicked), just reload
+            # If neither button is recognized, just reload with existing data
             general_form = GeneralSettingsForm(user_instance=user)
             personalization_form = PersonalizationForm(user_instance=user)
+
     else:
         # GET request: display forms with current user data
         general_form = GeneralSettingsForm(user_instance=user)
@@ -106,3 +123,4 @@ def settings_view(request):
         'general_form': general_form,
         'personalization_form': personalization_form,
     })
+
