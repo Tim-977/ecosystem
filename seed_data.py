@@ -11,22 +11,16 @@ django.setup()
 
 from mainpage.models import DailyData, MonthlyHabits
 
-# -------------------------------
-#     CONFIG: EDIT THESE
-# -------------------------------
-USER_ID = 6
-YEAR = 2025
-MONTH = 4
-END_DAY = 7
-
-# -------------------------------
-#  SETUP DJANGO (if needed)
-# -------------------------------
-# If running with "python manage.py shell < this_script.py", Django is already set up.
-# Otherwise, uncomment and adjust your project settings:
-#
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ecosystem.settings')
-# django.setup()
+# ----------------------------- #
+#          ~~ CONFIG ~~         #
+# ----------------------------- #
+USER_ID = 2                     #
+YEAR = 2025                     #
+MONTH = 4                       #
+END_DAY = 7                     #
+#                               #
+#                               #
+# ----------------------------- #
 
 from mainpage.models import DailyData, MonthlyHabits
 
@@ -37,14 +31,14 @@ def seed_data_for_user(user_id, year, month, end_day):
     if end_day == 0 or end_day > days_in_month:
         end_day = days_in_month
 
-    # 1) Clear existing DailyData for this user in [year-month]
+    # Clear existing DailyData for this user in [year-month]
     DailyData.objects.filter(
         user_id=user_id,
         date__year=year,
         date__month=month
     ).delete()
 
-    # 2) Create or update MonthlyHabits
+    # Create or update MonthlyHabits
     monthly_obj, _ = MonthlyHabits.objects.get_or_create(
         user_id=user_id,
         year=year,
@@ -64,7 +58,6 @@ def seed_data_for_user(user_id, year, month, end_day):
     monthly_obj.goal_text = "Focus"
     monthly_obj.save()
 
-    # 3) Generate daily entries for [start_day .. end_day] in the given month
     start_date = date(year, month, 1)
     thoughts_pool = [
         "Spent time coding and debugging.",
@@ -108,15 +101,15 @@ def seed_data_for_user(user_id, year, month, end_day):
         daily_obj.productivity_score = random.randint(3, 8)
 
         # Random bed/wake/alarm times
-        bed_hour = random.randint(22, 23)  # e.g., 10pm–11pm
+        bed_hour = random.randint(22, 23)
         bed_min = random.choice([0, 30])
         bed_time = time(bed_hour, bed_min)
 
-        wake_hour = random.randint(6, 9)   # e.g., 6am–9am
+        wake_hour = random.randint(6, 9)
         wake_min = random.choice([0, 30])
         wake_time = time(wake_hour, wake_min)
 
-        alarm_hour = random.randint(5, 7)  # e.g., 5am–7am
+        alarm_hour = random.randint(5, 7)
         alarm_min = random.choice([0, 30])
         alarm_time = time(alarm_hour, alarm_min)
 
@@ -133,8 +126,8 @@ def seed_data_for_user(user_id, year, month, end_day):
         # Hourly activity logging: random activity for each of 24 hours
         hour_list = []
         for h in range(24):
-            # act_id = random.choice(activity_ids)
-            act_id = 3 if h % 2 == 0 else 13
+            act_id = random.choice(activity_ids)
+            # act_id = 3 if h % 2 == 0 else 13
             hour_list.append({
                 "hour": h,
                 "activity": act_id
@@ -146,7 +139,4 @@ def seed_data_for_user(user_id, year, month, end_day):
     print(f"Generated data from {year}-{month:02d}-01 to {year}-{month:02d}-{end_day:02d} for user_id={user_id}.")
 
 
-# ---------------------------------
-# Actually run the seeding function
-# ---------------------------------
 seed_data_for_user(USER_ID, YEAR, MONTH, END_DAY)

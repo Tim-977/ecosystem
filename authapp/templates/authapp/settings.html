@@ -11,7 +11,7 @@
   <h1>Settings</h1>
 
   <!-- ==================== GENERAL SETTINGS ====================== -->
-  <form method="POST" action="">
+  <form id="general-settings-form"method="POST" action="">
     {% csrf_token %}
     <h2>General Settings</h2>
 
@@ -98,14 +98,26 @@
   </form>
 
 
-  <!-- ==================== DATA SECTION (placeholder) ============ -->
+  <!-- ==================== DATA SECTION (fully working version) ==== -->
   <h2>Data</h2>
   <p>
     <button>Export Data</button><br><br>
-    <button>Clear All Logs</button><br><br>
+
+    <!-- Fully working CLEAR ALL LOGS button -->
+    <form id="clear-logs-form" method="POST" action="{% url 'clear_logs' %}"
+          onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')">
+      {% csrf_token %}
+      <button type="submit">Clear All Logs</button>
+    </form>
+    <br><br>
+
     <button>Reset All Settings</button><br><br>
     <button>Download All Data (as JSON)</button><br><br>
   </p>
+
+
+
+
 
   <!-- ==================== PRIVACY & SECURITY (coming soon) ====== -->
   <h2>Privacy and Security (soon)</h2>

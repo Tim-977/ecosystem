@@ -1,10 +1,12 @@
 import re
 from datetime import date
 
+from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
+from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 from .forms import GeneralSettingsForm, PersonalizationForm
 
@@ -124,3 +126,22 @@ def settings_view(request):
         'personalization_form': personalization_form,
     })
 
+
+@login_required
+def clear_logs_view(request):
+    if request.method == 'POST':
+        # Delete from each model where user = request.user
+        # ActivityMapping uses user_id
+        ActivityMapping.objects.filter(user_id=request.user.id).delete()
+
+        # UserTodo is a OneToOne with 'user'
+        UserTodo.objects.filter(user=request.user).delete()
+
+        # DailyData uses user_id
+        DailyData.objects.filter(user_id=request.user.id).delete()
+
+        # MonthlyHabits uses user_id
+        MonthlyHabits.objects.filter(user_id=request.user.id).delete()
+
+        messages.success(request, "Your logs have been cleared.")
+    return redirect('settings')
