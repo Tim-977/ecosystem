@@ -612,10 +612,18 @@ def month_view(request, year, month):
         else:
             hour_list = []
 
+        from mainpage.models import ActivityMapping
+
+        activity_lookup = {
+            a.id: a.name for a in ActivityMapping.objects.filter(user_id=request.user.id)
+        }
+
         for hour_item in hour_list:
-            act_name = hour_item.get('activity')
-            if act_name:  # Only increment if there's an actual activity name
-                monthly_activity_aggregate[act_name] = monthly_activity_aggregate.get(act_name, 0) + 1
+            act_id = hour_item.get('activity')
+            if act_id in activity_lookup:
+                key = f"{activity_lookup[act_id]} (ID: {act_id})"
+                monthly_activity_aggregate[key] = monthly_activity_aggregate.get(key, 0) + 1
+
 
     # 4) Render the template
     context = {
