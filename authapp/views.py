@@ -75,7 +75,7 @@ def signup_page(request):
         else:
             user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
-            return redirect('settings')
+            return redirect('welcome')
 
     return render(request, 'authapp/signup.html', {'error_message': error_message})
 
@@ -145,3 +145,7 @@ def clear_logs_view(request):
 
         messages.success(request, "Your logs have been cleared.")
     return redirect('settings')
+
+@login_required
+def welcome_page(request):
+    return render(request, 'authapp/welcome.html')
