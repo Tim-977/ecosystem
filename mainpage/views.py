@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, datetime, time, timedelta
 
 from django.contrib import messages
@@ -232,36 +233,63 @@ def set_habits_view(request):
     return render(request, 'mainpage/set_habits.html', context)
 
 
-################################
-#          ACTIVITY CONFIG     #
-################################
+def is_valid_hex_color(color):
+    return bool(re.fullmatch(r'#([0-9a-fA-F]{6})', color))
+
+
 @login_required
 def activity_config_view(request):
-    """
-    View for managing user activity mappings (create, update, delete).
-    """
-    if request.method == 'POST':
+    edit_activity = None
+
+    if request.method == 'GET':
+        edit_id = request.GET.get('edit_id')
+        if edit_id:
+            edit_activity = ActivityMapping.objects.filter(user_id=request.user.id, id=edit_id).first()
+
+    elif request.method == 'POST':
         action = request.POST.get('action')
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '').strip()
+        activity_id = request.POST.get('activity_id')
+
+        if len(name) > 15:
+            messages.error(request, "Activity name must be 15 characters or fewer.")
+            return redirect('activity_config_view')
+
+        if not is_valid_hex_color(color):
+            messages.error(request, "Please enter a valid hex color (e.g. #00ff00).")
+            return redirect('activity_config_view')
+
         if action == 'create':
-            name = request.POST.get('name', '').strip()
-            color = request.POST.get('color', '#000000').strip()
-            if name:
-                ActivityMapping.objects.create(
-                    user_id=request.user.id,
-                    name=name,
-                    color=color
-                )
-        elif action == 'delete':
-            activity_id = request.POST.get('activity_id')
-            if activity_id:
-                ActivityMapping.objects.filter(
-                    user_id=request.user.id,
-                    id=activity_id
-                ).delete()
+            if ActivityMapping.objects.filter(user_id=request.user.id, name=name).exists():
+                messages.error(request, "You already have an activity with that name.")
+            elif ActivityMapping.objects.filter(user_id=request.user.id, color=color).exists():
+                messages.error(request, "You already have an activity with that color.")
+            else:
+                ActivityMapping.objects.create(user_id=request.user.id, name=name, color=color)
+
+        elif action == 'update' and activity_id:
+            activity = ActivityMapping.objects.filter(user_id=request.user.id, id=activity_id).first()
+            if activity:
+                if ActivityMapping.objects.filter(user_id=request.user.id, name=name).exclude(id=activity_id).exists():
+                    messages.error(request, "You already have an activity with that name.")
+                elif ActivityMapping.objects.filter(user_id=request.user.id, color=color).exclude(id=activity_id).exists():
+                    messages.error(request, "You already have an activity with that color.")
+                else:
+                    activity.name = name
+                    activity.color = color
+                    activity.save()
+
+        elif action == 'delete' and activity_id:
+            ActivityMapping.objects.filter(user_id=request.user.id, id=activity_id).delete()
+
         return redirect('activity_config_view')
 
     activities = ActivityMapping.objects.filter(user_id=request.user.id).order_by('id')
-    return render(request, 'mainpage/activity_config.html', {'activities': activities})
+    return render(request, 'mainpage/activity_config.html', {
+        'activities': activities,
+        'edit_activity': edit_activity
+    })
 
 
 @login_required

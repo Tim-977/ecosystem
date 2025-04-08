@@ -7,31 +7,59 @@
 <body>
   <h1>Activity Configuration</h1>
 
+  {% if messages %}
+    <ul style="color:red;">
+      {% for msg in messages %}
+        <li>{{ msg }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   <form method="POST">
     {% csrf_token %}
-    <input type="hidden" name="action" value="create" />
-    <label for="name">Activity Name:</label><br/>
-    <input type="text" name="name" required><br/><br/>
+    {% if edit_activity %}
+      <input type="hidden" name="action" value="update" />
+      <input type="hidden" name="activity_id" value="{{ edit_activity.id }}" />
+      <label for="name">Activity Name:</label><br/>
+      <input type="text" name="name" required maxlength="15" value="{{ edit_activity.name }}"><br/><br/>
 
-    <label for="color">Color (CSS name or #hex):</label><br/>
-    <input type="text" name="color" value="#0000ff" required><br/><br/>
+      <label for="color">Color (CSS name or #hex):</label><br/>
+      <input type="text" name="color" required value="{{ edit_activity.color }}"><br/><br/>
 
-    <button type="submit">Add Activity</button>
+      <button type="submit">Update Activity</button>
+    {% else %}
+      <input type="hidden" name="action" value="create" />
+      <label for="name">Activity Name:</label><br/>
+      <input type="text" name="name" required maxlength="15"><br/><br/>
+
+      <label for="color">Color (CSS name or #hex):</label><br/>
+      <input type="text" name="color" value="#0000ff" required><br/><br/>
+
+      <button type="submit">Add Activity</button>
+    {% endif %}
   </form>
 
   <hr/>
   <h2>Existing Activities</h2>
   <ul>
     {% for act in activities %}
-      <li style="color: '{{ act.color }}';">
+      <li>
         {{ act.name }} ({{ act.color }})
+
+        <!-- Edit button (GET request with edit_id) -->
+        <form method="GET" style="display:inline;">
+          <input type="hidden" name="edit_id" value="{{ act.id }}">
+          <button type="submit">Edit</button>
+        </form>
+
+        <!-- Delete button -->
         <form method="POST" style="display:inline;">
           {% csrf_token %}
           <input type="hidden" name="activity_id" value="{{ act.id }}">
           <input type="hidden" name="action" value="delete">
           <button type="submit">Delete</button>
         </form>
-      </li>
+      </li><br>
     {% endfor %}
   </ul>
 
