@@ -16,8 +16,8 @@ from mainpage.models import DailyData, MonthlyHabits
 # ----------------------------- #
 USER_ID = 2                     #
 YEAR = 2025                     #
-MONTH = 4                       #
-END_DAY = 7                     #
+MONTH = 1                       #
+END_DAY = 0                     #
 #                               #
 #                               #
 # ----------------------------- #
