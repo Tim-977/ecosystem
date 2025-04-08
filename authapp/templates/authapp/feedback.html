@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Give Feedback / Report a Bug</title>
+  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
+</head>
+<body>
+  <h1>💬 Feedback / Bug Report</h1>
+
+  <form method="POST" action="{% url 'feedback' %}">
+    {% csrf_token %}
+
+    <p>
+      <label for="feedback_type"><strong>Type:</strong></label><br>
+      <select id="feedback_type" name="feedback_type" required>
+        <option value="feedback">Feedback</option>
+        <option value="bug">Bug Report</option>
+      </select>
+    </p>
+
+    <p>
+      <label for="message"><strong>Your Message:</strong></label><br>
+      <textarea id="message" name="message" rows="6" cols="60" placeholder="Write your thoughts or report here..." required></textarea>
+    </p>
+
+    <button type="submit">Submit</button>
+    <a href="{% url 'settings' %}"><button type="button">Back to Settings</button></a>
+  </form>
+</body>
+</html>

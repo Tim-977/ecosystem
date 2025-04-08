@@ -125,32 +125,20 @@
     </form>
   </p>
 
-
-
-
-
-  <!-- ==================== PRIVACY & SECURITY (coming soon) ====== -->
-  <h2>Privacy and Security (soon)</h2>
-  <p>
-    <label>App Lock (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon"><br><br>
-    <label>Local-only Mode (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon"><br><br>
-    <label>Data Usage Disclaimer (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon">
-  </p>
-
   <!-- ==================== ABOUT / SUPPORT ======================== -->
   <h2>About / Support</h2>
   <p>
     <label>App Version</label><br>
     <input type="text" value="v0.1" disabled><br><br>
-    <button>Report a Bug</button><br><br>
-    <button>Give Feedback</button><br><br>
-    <button>Developer Info</button><br><br>
-    <button>Donate / Support Me</button><br><br>
-    <button>Changelog / What's New</button><br><br>
-    <button>Open Source / Licenses</button><br><br>
+    <a href="{% url 'feedback' %}"> <button type="button">Report a Bug</button></a><br><br>
+    <a href="{% url 'feedback' %}"> <button type="button">Give Feedback</button></a><br><br>
+    <a href="{% url 'developer_info' %}"> <button type="button">Developer Info</button></a><br><br>
+    <a href="{% url 'developer_info' %}"> <button type="button">Donate / Support Me</button></a><br><br>
+    <a href="{% url 'changelog' %}"> <button type="button"> Changelog / What's New</button></a><br><br>
+    <a href="{% url 'license' %}"> <button type="button">Open Source / Licenses</button></a><br><br>
   </p>
+
+  <a href="{% url 'month_view' now.year now.month %}"> Month Statistics</a><br><br>
+
 </body>
 </html>

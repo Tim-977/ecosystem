@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Developer Info</title>
+  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
+</head>
+<body>
+  <h1>Developer Information</h1>
+
+  <p><strong>Name:</strong> Tim</p>
+  <p><strong>Email:</strong> timo@email.com</p>
+  <p><strong>GitHub:</strong> <a href="https://github.com/Tim-977" target="_blank">Github</a></p>
+  <p><strong>About:</strong> Ending high-school in 4 weeks.</p>
+  <p><a href="javascript:void(0)"><strong>Support Me</strong></a></p>
+  <br>
+  <a href="{% url 'settings' %}"><button>Back to Settings</button></a>
+</body>
+</html>

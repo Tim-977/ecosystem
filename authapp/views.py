@@ -133,8 +133,8 @@ def settings_view(request):
     return render(request, 'authapp/settings.html', {
         'general_form': general_form,
         'personalization_form': personalization_form,
-    })
-
+        'now': date.today(),
+        })
 
 @login_required
 def clear_logs_view(request):
@@ -227,3 +227,23 @@ def confirm_password_before_download_view(request):
             error = "Incorrect password. Please try again."
 
     return render(request, 'authapp/confirm_download.html', {'error': error})
+
+
+@login_required
+def developer_info_view(request):
+    return render(request, 'authapp/developer_info.html')
+
+    
+@login_required
+def changelog_view(request):
+    return render(request, 'authapp/changelog.html')
+
+
+@login_required
+def license_view(request):
+    return render(request, 'authapp/license.html')
+
+
+@login_required
+def feedback_view(request):
+    return render(request, 'authapp/feedback.html')
