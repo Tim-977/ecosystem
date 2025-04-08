@@ -75,7 +75,7 @@ def signup_page(request):
         else:
             user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
-            return redirect('personal_data')  # or wherever you want
+            return redirect('settings')
 
     return render(request, 'authapp/signup.html', {'error_message': error_message})
 
