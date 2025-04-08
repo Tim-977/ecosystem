@@ -11,7 +11,7 @@
   <h1>Settings</h1>
 
   <!-- ==================== GENERAL SETTINGS ====================== -->
-  <form id="general-settings-form"method="POST" action="">
+  <form id="general-settings-form" method="POST" action="">
     {% csrf_token %}
     <h2>General Settings</h2>
 
@@ -74,7 +74,7 @@
 
 
   <!-- ==================== PERSONALIZATION ======================= -->
-  <form method="POST" action="">
+  <form id="personalization-form" method="POST" action="">
     {% csrf_token %}
     <h2>Personalization</h2>
 
@@ -98,36 +98,31 @@
   </form>
 
 
-  <!-- ==================== DATA SECTION (fully working version) ==== -->
+<!-- ==================== DATA SECTION (fully working version) ==== -->
   <h2>Data</h2>
   <p>
-    <button>Export Data</button><br><br>
-
-    <!-- Fully working CLEAR ALL LOGS button -->
+    <!-- Clear All Logs button -->
     <form id="clear-logs-form" method="POST" action="{% url 'clear_logs' %}"
           onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')">
       {% csrf_token %}
       <button type="submit">Clear All Logs</button>
     </form>
+
+    <br>
+      
+    <!-- Download All Data (as JSON) link -->
+    <a href="{% url 'confirm_password_download' %}">
+      <button type="button">Download All Data (as JSON)</button>
+    </a>
+    
     <br><br>
-
-    <button>Reset All Settings</button><br><br>
-    <button>Download All Data (as JSON)</button><br><br>
-  </p>
-
-
-
-
-
-  <!-- ==================== PRIVACY & SECURITY (coming soon) ====== -->
-  <h2>Privacy and Security (soon)</h2>
-  <p>
-    <label>App Lock (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon"><br><br>
-    <label>Local-only Mode (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon"><br><br>
-    <label>Data Usage Disclaimer (future)</label><br>
-    <input type="text" disabled placeholder="Coming soon">
+      
+    <!-- Delete Account button -->
+    <form method="POST" action="{% url 'delete_account' %}"
+          onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')">
+      {% csrf_token %}
+      <button type="submit">Delete Account</button>
+    </form>
   </p>
 
   <!-- ==================== ABOUT / SUPPORT ======================== -->
@@ -135,12 +130,15 @@
   <p>
     <label>App Version</label><br>
     <input type="text" value="v0.1" disabled><br><br>
-    <button>Report a Bug</button><br><br>
-    <button>Give Feedback</button><br><br>
-    <button>Developer Info</button><br><br>
-    <button>Donate / Support Me</button><br><br>
-    <button>Changelog / What's New</button><br><br>
-    <button>Open Source / Licenses</button><br><br>
+    <a href="{% url 'feedback' %}"> <button type="button">Report a Bug</button></a><br><br>
+    <a href="{% url 'feedback' %}"> <button type="button">Give Feedback</button></a><br><br>
+    <a href="{% url 'developer_info' %}"> <button type="button">Developer Info</button></a><br><br>
+    <a href="{% url 'developer_info' %}"> <button type="button">Donate / Support Me</button></a><br><br>
+    <a href="{% url 'changelog' %}"> <button type="button"> Changelog / What's New</button></a><br><br>
+    <a href="{% url 'license' %}"> <button type="button">Open Source / Licenses</button></a><br><br>
   </p>
+
+  <a href="{% url 'month_view' now.year now.month %}"> Month Statistics</a><br><br>
+
 </body>
 </html>
