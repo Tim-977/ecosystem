@@ -210,3 +210,20 @@ def download_user_data_view(request):
     response = HttpResponse(json_data, content_type='application/json')
     response['Content-Disposition'] = 'attachment; filename="user_data.json"'
     return response
+
+
+@login_required
+def confirm_password_before_download_view(request):
+    error = None
+
+    if request.method == 'POST':
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=request.user.username, password=password)
+        
+        if user:
+            return download_user_data_view(request)
+        else:
+            error = "Incorrect password. Please try again."
+
+    return render(request, 'authapp/confirm_download.html', {'error': error})
