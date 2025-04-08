@@ -1,7 +1,10 @@
+import calendar
 import json
+import os
 import re
 from datetime import date, datetime, time, timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -652,6 +655,53 @@ def month_view(request, year, month):
                 key = f"{activity_lookup[act_id]} (ID: {act_id})"
                 monthly_activity_aggregate[key] = monthly_activity_aggregate.get(key, 0) + 1
 
+
+    # *** Existing code above does not alter input.txt yet ***
+    # ----------------------------------------------------------------
+    #
+    #                      ADD THIS BLOCK
+    #
+    # ----------------------------------------------------------------
+
+    #  (A) Build an ID -> Color mapping
+    color_lookup = {
+        a.id: a.color for a in ActivityMapping.objects.filter(user_id=request.user.id)
+    }
+
+    #  (B) Create an empty 31×24 grid of "#000000"
+    day_hour_colors = [["#000000" for _ in range(24)] for _ in range(31)]
+
+    # (C) Fill day_hour_colors from each day's JSON
+    for log in daily_logs:
+        day_idx = log.date.day - 1
+        if log.hourly_activity_logging:
+            try:
+                hour_list = json.loads(log.hourly_activity_logging)
+            except:
+                hour_list = []
+            for hour_item in hour_list:
+                h = hour_item.get('hour', 0)
+                act_id = hour_item.get('activity')
+                if act_id in color_lookup:
+                    day_hour_colors[day_idx][h] = color_lookup[act_id]
+                else:
+                    day_hour_colors[day_idx][h] = "#000000"
+
+    # (D) Write the grid to activityredering/input.txt
+    base_dir = settings.BASE_DIR
+    input_path = os.path.join(base_dir, "activityredering", "input.txt")
+
+    lines = []
+    for day_idx in range(31):
+        line = " ".join(day_hour_colors[day_idx])
+        lines.append(line)
+
+    with open(input_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    # ----------------------------------------------------------------
+    # *** End of the newly added block ***
+    # ----------------------------------------------------------------
 
     # 4) Render the template
     context = {
