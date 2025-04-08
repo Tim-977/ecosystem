@@ -57,18 +57,11 @@
     
     <aside class="activity-graph">
       <h2>Activity Graph (Monthly Data)</h2>
-      <div class="graph-box">
-        {% if monthly_activity_aggregate %}
-          <p>Total Hours by Activity:</p>
-          <ul>
-          {% for activity_name, total_hours in monthly_activity_aggregate.items %}
-            <li>{{ activity_name }}: {{ total_hours }} hours</li>
-          {% endfor %}
-          </ul>
-        {% else %}
-          <p>No activity data for this month yet.</p>
-        {% endif %}
-      </div>
+      <div class="graph-box" style="height: 100%;">
+        <img src="{% static 'mainpage/images/activity_diagram.png' %}" 
+        alt="Activity Diagram"
+        style="width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);" />
+      </div>      
     </aside>
   </div>
 </div>
