@@ -146,6 +146,30 @@ def clear_logs_view(request):
         messages.success(request, "Your logs have been cleared.")
     return redirect('settings')
 
+
 @login_required
 def welcome_page(request):
     return render(request, 'authapp/welcome.html')
+
+
+@login_required
+def delete_account_view(request):
+    if request.method == 'POST':
+        user = request.user
+
+        # Delete user data from 'mainpage' tables
+        ActivityMapping.objects.filter(user_id=user.id).delete()
+        UserTodo.objects.filter(user=user).delete()
+        DailyData.objects.filter(user_id=user.id).delete()
+        MonthlyHabits.objects.filter(user_id=user.id).delete()
+
+        # Delete the actual user account
+        user.delete()
+
+        # Log the user out, just to be sure
+        logout(request)
+
+        return redirect('/')
+    else:
+        # If someone GETs this URL, just redirect them to the settings page
+        return redirect('settings')

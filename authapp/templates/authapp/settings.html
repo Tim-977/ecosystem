@@ -11,7 +11,7 @@
   <h1>Settings</h1>
 
   <!-- ==================== GENERAL SETTINGS ====================== -->
-  <form id="general-settings-form"method="POST" action="">
+  <form id="general-settings-form" method="POST" action="">
     {% csrf_token %}
     <h2>General Settings</h2>
 
@@ -74,7 +74,7 @@
 
 
   <!-- ==================== PERSONALIZATION ======================= -->
-  <form method="POST" action="">
+  <form id="personalization-form" method="POST" action="">
     {% csrf_token %}
     <h2>Personalization</h2>
 
@@ -98,23 +98,30 @@
   </form>
 
 
-  <!-- ==================== DATA SECTION (fully working version) ==== -->
+  <!-- ==================== DATA SECTION ===================== -->
   <h2>Data</h2>
   <p>
-    <button>Export Data</button><br><br>
-
-    <!-- Fully working CLEAR ALL LOGS button -->
+    <!-- Clear All Logs button -->
     <form id="clear-logs-form" method="POST" action="{% url 'clear_logs' %}"
           onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')">
       {% csrf_token %}
       <button type="submit">Clear All Logs</button>
     </form>
-    <br><br>
 
-    <button>Reset All Settings</button><br><br>
-    <button>Download All Data (as JSON)</button><br><br>
+    <br>
+      
+    <button>Download All Data (as JSON)</button>
+      
+    <br>
+    <br>
+      
+    <!-- DELETE ACCOUNT BUTTON -->
+    <form method="POST" action="{% url 'delete_account' %}"
+          onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')">
+      {% csrf_token %}
+      <button type="submit">Delete Account</button>
+    </form>
   </p>
-
 
 
 
