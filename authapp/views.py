@@ -1,9 +1,11 @@
+import json
 import re
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
@@ -13,14 +15,21 @@ from .forms import GeneralSettingsForm, PersonalizationForm
 User = get_user_model()
 
 
-@require_GET  # Ensure only GET requests are allowed
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        return super().default(obj)
+
+
+@require_GET
 def logout_view(request):
     logout(request)
-    request.session.flush()  # Clear session data
+    request.session.flush()
     return redirect('/auth/login/')
 
 
-def login_page(request): # Already logged in check
+def login_page(request):
     if request.user.is_authenticated:
         return redirect('/') 
 
@@ -29,24 +38,24 @@ def login_page(request): # Already logged in check
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        next_url = request.POST.get('next', '/')  # Default to gome page
+        next_url = request.POST.get('next', '/')
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect(next_url)  # Redirect if login is successful
+            return redirect(next_url)
         else:
             error_message = "Invalid username or password. Please try again."
 
     else:
-        next_url = request.GET.get('next', '/')  # For GET requests
+        next_url = request.GET.get('next', '/')
 
     return render(request, 'authapp/login.html', {'next': next_url, 'error_message': error_message})
 
 
 def signup_page(request):
     if request.user.is_authenticated:
-        return redirect('/')  # Redirect if already logged in
+        return redirect('/')
 
     error_message = None
 
@@ -173,3 +182,31 @@ def delete_account_view(request):
     else:
         # If someone GETs this URL, just redirect them to the settings page
         return redirect('settings')
+
+
+@login_required
+def download_user_data_view(request):
+    user = request.user
+
+    activity_mappings = ActivityMapping.objects.filter(user_id=user.id).values()
+    user_todo = UserTodo.objects.filter(user=user).values()
+    daily_data = DailyData.objects.filter(user_id=user.id).values()
+    monthly_habits = MonthlyHabits.objects.filter(user_id=user.id).values()
+
+    data = {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        },
+        "activity_mappings": list(activity_mappings),
+        "user_todo": list(user_todo),
+        "daily_data": list(daily_data),
+        "monthly_habits": list(monthly_habits),
+    }
+
+    json_data = json.dumps(data, indent=2, cls=EnhancedJSONEncoder)
+
+    response = HttpResponse(json_data, content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename="user_data.json"'
+    return response

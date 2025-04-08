@@ -98,7 +98,7 @@
   </form>
 
 
-  <!-- ==================== DATA SECTION ===================== -->
+<!-- ==================== DATA SECTION (fully working version) ==== -->
   <h2>Data</h2>
   <p>
     <!-- Clear All Logs button -->
@@ -110,18 +110,21 @@
 
     <br>
       
-    <button>Download All Data (as JSON)</button>
+    <!-- Download All Data (as JSON) link -->
+    <a href="{% url 'download_user_data' %}">
+      <button type="button">Download All Data (as JSON)</button>
+    </a>
+    
+    <br><br>
       
-    <br>
-    <br>
-      
-    <!-- DELETE ACCOUNT BUTTON -->
+    <!-- Delete Account button -->
     <form method="POST" action="{% url 'delete_account' %}"
           onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')">
       {% csrf_token %}
       <button type="submit">Delete Account</button>
     </form>
   </p>
+
 
 
 

@@ -1,16 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("#general-settings-form"); // ONLY general settings
+  function setupFormChangeDetection(form) {
+    if (!form) return;
 
-  if (form) {
     const inputs = form.querySelectorAll("input, select, textarea");
     const saveBtn = form.querySelector("button[type='submit']");
     const cancelBtn = form.querySelector("button[type='button']");
 
-    // Disable buttons initially
     if (saveBtn) saveBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
 
-    // Save initial state
     const initialValues = {};
     inputs.forEach((input) => {
       initialValues[input.name] = input.value;
@@ -18,7 +16,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     form.addEventListener("input", () => {
       let hasChanged = false;
-
       inputs.forEach((input) => {
         const initial = initialValues[input.name] || "";
         const current = input.value || "";
@@ -31,16 +28,16 @@ document.addEventListener("DOMContentLoaded", function () {
       if (cancelBtn) cancelBtn.disabled = !hasChanged;
     });
   }
-});
 
+  setupFormChangeDetection(document.querySelector("#general-settings-form"));
+  setupFormChangeDetection(document.querySelector("#personalization-form"));
 
-document.addEventListener('DOMContentLoaded', function() {
-  const clearLogsButton = document.getElementById('clearLogsButton');
+  const clearLogsButton = document.getElementById("clearLogsButton");
   if (clearLogsButton) {
-    clearLogsButton.addEventListener('click', function(event) {
-      const confirmed = confirm('Are you sure you want to clear all logs?');
+    clearLogsButton.addEventListener("click", function (event) {
+      const confirmed = confirm("Are you sure you want to clear all logs?");
       if (!confirmed) {
-        event.preventDefault(); // Stop form submission
+        event.preventDefault();
       }
     });
   }
