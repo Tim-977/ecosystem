@@ -65,7 +65,7 @@
   <ul class="nav-links">
     <li><a href="{% url 'main_page' %}">Return to Main Page</a></li>
     <li><a href="{% url 'settings' %}">Settings</a></li>
-    <li><a href="{% url 'activity_config_view' %}">Set Activities</a></li>
+    <li><a href="{% url 'activity_config_view' date.year date.month %}">Set Monthly Activities</a></li>
     <li><a href="{% url 'set_habits' %}">Set Monthly Habits</a></li>
     <li><a href="{% url 'logout' %}">Log out</a></li>
   </ul>

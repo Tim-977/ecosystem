@@ -72,7 +72,7 @@
         <button onclick="window.location.href='{% url 'month_view' year=year month=month %}'">Statistics</button>
         <button onclick="window.location.href='{% url 'diary_view' year=year month=month %}'">Diary</button>
         <button onclick="window.location.href='{% url 'set_habits' %}'">Set Habits</button>
-        <button onclick="window.location.href='{% url 'activity_config_view' %}'">Set Activities</button>
+        <button onclick="window.location.href='{% url 'activity_config_view' year=year month=month %}'">Set Activities</button>
         <button onclick="window.location.href='{% url 'settings' %}'">Settings</button>
         <button onclick="window.location.href='{% url 'logout' %}'">Log Out</button>
       </div>

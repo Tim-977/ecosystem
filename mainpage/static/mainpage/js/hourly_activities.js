@@ -9,13 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const dayForm = document.getElementById('dayForm');
 
   /*
-   *  1) FETCH THE USER'S ACTIVITIES
+   *  1) FETCH THE USER'S ACTIVITIES FOR THE CURRENT MONTH
    */
-  fetch('/api/activities/')
+  const year = document.getElementById("currentDate").dataset.year;
+  const month = document.getElementById("currentDate").dataset.month;
+
+  fetch(`/get_activities/?year=${year}&month=${month}`)
     .then(res => res.json())
     .then(data => {
       userActivities = data;
-      console.log("Fetched activities:", userActivities);
+      console.log("Fetched monthly activities:", userActivities);
 
       // Now that activities are loaded, apply colors
       applyColorsToSquares();

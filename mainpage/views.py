@@ -21,11 +21,14 @@ from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 def main_page_view(request):
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
     server_time = now()
+    today = date.today()
 
     context = {
         "all_data": all_data,
         "username": request.user.username,
         "server_time": server_time,
+        "year": today.year,
+        "month": today.month,
     }
     return render(request, 'mainpage/main.html', context)
 
@@ -243,72 +246,101 @@ def is_valid_hex_color(color):
 
 
 @login_required
-def activity_config_view(request):
+def activity_config_view(request, year, month):
     edit_activity = None
 
     if request.method == 'GET':
         edit_id = request.GET.get('edit_id')
         if edit_id:
-            edit_activity = ActivityMapping.objects.filter(user_id=request.user.id, id=edit_id).first()
+            edit_activity = ActivityMapping.objects.filter(
+                user_id=request.user.id, id=edit_id, year=year, month=month
+            ).first()
 
     elif request.method == 'POST':
-        action = request.POST.get('action')
-        name = request.POST.get('name', '').strip()
-        color = request.POST.get('color', '').strip()
         activity_id = request.POST.get('activity_id')
+        action = request.POST.get('action')
 
-        if len(name) > 15:
-            messages.error(request, "Activity name must be 15 characters or fewer.")
-            return redirect('activity_config_view')
+        if action in ['create', 'update']:
+            name = request.POST.get('name', '').strip()
+            color = request.POST.get('color', '').strip()
 
-        if not is_valid_hex_color(color):
-            messages.error(request, "Please enter a valid hex color (e.g. #00ff00).")
-            return redirect('activity_config_view')
+            if len(name) > 15:
+                messages.error(request, "Activity name must be 15 characters or fewer.")
+                return redirect('activity_config_view', year=year, month=month)
+
+            if not is_valid_hex_color(color):
+                messages.error(request, "Please enter a valid hex color (e.g. #00ff00).")
+                return redirect('activity_config_view', year=year, month=month)
 
         if action == 'create':
-            if ActivityMapping.objects.filter(user_id=request.user.id, name=name).exists():
-                messages.error(request, "You already have an activity with that name.")
-            elif ActivityMapping.objects.filter(user_id=request.user.id, color=color).exists():
-                messages.error(request, "You already have an activity with that color.")
+            if ActivityMapping.objects.filter(user_id=request.user.id, name=name, year=year, month=month).exists():
+                messages.error(request, "You already have an activity with that name this month.")
+            elif ActivityMapping.objects.filter(user_id=request.user.id, color=color, year=year, month=month).exists():
+                messages.error(request, "You already have an activity with that color this month.")
             else:
-                ActivityMapping.objects.create(user_id=request.user.id, name=name, color=color)
+                ActivityMapping.objects.create(
+                    user_id=request.user.id, name=name, color=color, year=year, month=month
+                )
 
         elif action == 'update' and activity_id:
-            activity = ActivityMapping.objects.filter(user_id=request.user.id, id=activity_id).first()
+            activity = ActivityMapping.objects.filter(
+                user_id=request.user.id, id=activity_id, year=year, month=month
+            ).first()
             if activity:
-                if ActivityMapping.objects.filter(user_id=request.user.id, name=name).exclude(id=activity_id).exists():
-                    messages.error(request, "You already have an activity with that name.")
-                elif ActivityMapping.objects.filter(user_id=request.user.id, color=color).exclude(id=activity_id).exists():
-                    messages.error(request, "You already have an activity with that color.")
+                if ActivityMapping.objects.filter(
+                    user_id=request.user.id, name=name, year=year, month=month
+                ).exclude(id=activity_id).exists():
+                    messages.error(request, "You already have an activity with that name this month.")
+                elif ActivityMapping.objects.filter(
+                    user_id=request.user.id, color=color, year=year, month=month
+                ).exclude(id=activity_id).exists():
+                    messages.error(request, "You already have an activity with that color this month.")
                 else:
                     activity.name = name
                     activity.color = color
                     activity.save()
 
         elif action == 'delete' and activity_id:
-            ActivityMapping.objects.filter(user_id=request.user.id, id=activity_id).delete()
+            ActivityMapping.objects.filter(
+                user_id=request.user.id, id=activity_id, year=year, month=month
+            ).delete()
 
-        return redirect('activity_config_view')
+        return redirect('activity_config_view', year=year, month=month)
 
-    activities = ActivityMapping.objects.filter(user_id=request.user.id).order_by('id')
+    activities = ActivityMapping.objects.filter(
+        user_id=request.user.id, year=year, month=month
+    ).order_by('id')
+
     return render(request, 'mainpage/activity_config.html', {
         'activities': activities,
-        'edit_activity': edit_activity
+        'edit_activity': edit_activity,
+        'year': year,
+        'month': month
     })
+
 
 
 @login_required
 def get_activities(request):
     """
-    Return a JSON list of the user's activities:
-    [
-      {"id": 1, "name": "Studying", "color": "red"},
-      {"id": 2, "name": "Sleeping", "color": "blue"},
-      ...
-    ]
+    Return the user's activities for the requested month, e.g.
+
+      /get_activities/?year=2025&month=4
     """
-    activities_qs = ActivityMapping.objects.filter(user_id=request.user.id)
-    data = list(activities_qs.values('id', 'name', 'color'))
+    try:
+        year  = int(request.GET.get("year"))
+        month = int(request.GET.get("month"))
+    except (TypeError, ValueError):
+        # If year/month missing ⇒ fallback to *all* activities (old behaviour)
+        qs = ActivityMapping.objects.filter(user_id=request.user.id)
+    else:
+        qs = ActivityMapping.objects.filter(
+            user_id=request.user.id,
+            year=year,
+            month=month,
+        )
+
+    data = list(qs.values("id", "name", "color"))
     return JsonResponse(data, safe=False)
 
 

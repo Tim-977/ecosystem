@@ -10,9 +10,15 @@ class ActivityMapping(models.Model):
     user_id = models.IntegerField()
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=50, default="#000000")
+    year = models.IntegerField()
+    month = models.IntegerField()
 
     def __str__(self):
         return f"[User {self.user_id}] {self.name} ({self.color})"
+
+    class Meta:
+        unique_together = ("user_id", "name", "year", "month")  # Optional: prevent duplicates in same month
+
 
 
 class UserTodo(models.Model):
