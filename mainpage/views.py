@@ -1,7 +1,12 @@
+import calendar
 import json
+import os
 import re
+import shutil
+import subprocess
 from datetime import date, datetime, time, timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -512,7 +517,7 @@ def month_view(request, year, month):
         date__month=month
     ).order_by(order)
 
-    # 2) Also retrieve the monthly-habits record (if any) for that year/month
+    # Retrieve the monthly-habits record (if any) for that year/month
     try:
         monthly_obj = MonthlyHabits.objects.get(
             user_id=request.user.id,
@@ -522,7 +527,7 @@ def month_view(request, year, month):
     except MonthlyHabits.DoesNotExist:
         monthly_obj = None
 
-    # 3) Prepare data for each day, including color gradients for mood/productivity
+    # Prepare data for each day, including color gradients for mood/productivity
     days_data = []
     for log in daily_logs:
         mood_val = log.mood_rating if log.mood_rating is not None else 0
@@ -574,7 +579,7 @@ def month_view(request, year, month):
     # NEW CODE FOR SLEEP & ACTIVITY
     ###############################
     
-    # We'll store a day-by-day list for sleep hours, plus a monthly aggregator for activities.
+    # I store a day-by-day list for sleep hours, plus a monthly aggregator for activities.
     monthly_sleep_data = []
     monthly_activity_aggregate = {}  # { activity_name -> total hours }
 
@@ -586,9 +591,9 @@ def month_view(request, year, month):
             return None
         # Remove any colon
         t_str = t_str.replace(':', '')
-        # Must be 3 or 4 digits now
+        # Must be 3 or 4 digits:
         if len(t_str) == 3:
-            # e.g. '730' => '07:30'
+            # '730' => '07:30'
             h = int(t_str[0])
             m = int(t_str[1:])
         elif len(t_str) == 4:
@@ -611,8 +616,8 @@ def month_view(request, year, month):
             bed_time_obj = parse_time_str(bed_str)
             wake_time_obj = parse_time_str(wake_str)
 
-            # For a quick approach: if both times are valid, compute difference
-            # If wake_time < bed_time, assume it crossed midnight by +1 day
+            # if both times are valid, compute difference
+            # if wake_time < bed_time, assume it crossed midnight by +1 day
             if bed_time_obj and wake_time_obj:
                 sleep_duration = (datetime.combine(log.date, wake_time_obj)
                                   - datetime.combine(log.date, bed_time_obj))
@@ -653,7 +658,60 @@ def month_view(request, year, month):
                 monthly_activity_aggregate[key] = monthly_activity_aggregate.get(key, 0) + 1
 
 
-    # 4) Render the template
+    # Build an ID -> Color mapping
+    color_lookup = {
+        a.id: a.color for a in ActivityMapping.objects.filter(user_id=request.user.id)
+    }
+
+    # Create an empty 31×24 grid of "#000000"
+    day_hour_colors = [["" for _ in range(24)] for _ in range(31)]
+
+
+    # Fill day_hour_colors from each day's JSON
+    for log in daily_logs:
+        day_idx = log.date.day - 1
+        if log.hourly_activity_logging:
+            try:
+                hour_list = json.loads(log.hourly_activity_logging)
+            except:
+                hour_list = []
+            for hour_item in hour_list:
+                h = hour_item.get('hour', 0)
+                act_id = hour_item.get('activity')
+                if act_id in color_lookup:
+                    day_hour_colors[day_idx][h] = color_lookup[act_id]
+                else:
+                    day_hour_colors[day_idx][h] = "#000000"
+
+    # Write the grid to activityredering/input.txt
+    base_dir = settings.BASE_DIR
+    input_path = os.path.join(base_dir, "activityredering", "input.txt")
+
+    lines = []
+    for day_idx in range(31):
+        line = " ".join(day_hour_colors[day_idx])
+        lines.append(line)
+
+    with open(input_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+    # Define paths to the C++ source, compiled binary, and output image
+    render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
+    render_bin = os.path.join(base_dir, "activityredering", "render")   # compiled output
+    output_png = os.path.join(base_dir, "activityredering", "activity_diagram.png")
+
+    # Compile render.cpp (if you want to skip re-compiling each time, remove this step)
+    subprocess.run([
+        "g++", render_cpp,
+        "-o", render_bin,
+        "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
+    ])
+
+    # Run the compiled binary. It should read input.txt and produce activity_diagram.png
+    subprocess.run([render_bin])
+
+    # Render the template
     context = {
         "year": year,
         "month": month,
@@ -661,8 +719,6 @@ def month_view(request, year, month):
         "days_data": days_data,
         "current_view": "month_view",
         "reverse": reverse,
-
-        # PASS THESE TO TEMPLATE
         "monthly_sleep_data": monthly_sleep_data,
         "monthly_activity_aggregate": monthly_activity_aggregate,
     }
