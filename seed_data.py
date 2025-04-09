@@ -16,8 +16,8 @@ from mainpage.models import DailyData, MonthlyHabits
 # ----------------------------- #
 USER_ID = 2                     #
 YEAR = 2025                     #
-MONTH = 4                       #
-END_DAY = 8                     #
+MONTH = 1                       #
+END_DAY = 0                     #
 #                               #
 #                               #
 # ----------------------------- #
@@ -76,7 +76,7 @@ def seed_data_for_user(user_id, year, month, end_day):
     
     from mainpage.models import ActivityMapping
 
-    activity_queryset = ActivityMapping.objects.filter(user_id=user_id)
+    activity_queryset = ActivityMapping.objects.filter(user_id=user_id, year=year, month=month)
     activity_ids = [a.id for a in activity_queryset]
 
     if not activity_ids:

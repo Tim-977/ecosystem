@@ -680,8 +680,11 @@ def month_view(request, year, month):
         from mainpage.models import ActivityMapping
 
         activity_lookup = {
-            a.id: a.name for a in ActivityMapping.objects.filter(user_id=request.user.id)
+            a.id: a.name for a in ActivityMapping.objects.filter(
+                user_id=request.user.id, year=year, month=month
+            )
         }
+
 
         for hour_item in hour_list:
             act_id = hour_item.get('activity')
@@ -692,8 +695,11 @@ def month_view(request, year, month):
 
     # Build an ID -> Color mapping
     color_lookup = {
-        a.id: a.color for a in ActivityMapping.objects.filter(user_id=request.user.id)
+        a.id: a.color for a in ActivityMapping.objects.filter(
+            user_id=request.user.id, year=year, month=month
+        )
     }
+
 
     # Create an empty 31×24 grid of "#000000"
     day_hour_colors = [["" for _ in range(24)] for _ in range(31)]
