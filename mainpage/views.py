@@ -315,7 +315,8 @@ def activity_config_view(request, year, month):
         'activities': activities,
         'edit_activity': edit_activity,
         'year': year,
-        'month': month
+        'month': month,
+        "current_view": "activity_config_view",
     })
 
 

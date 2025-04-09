@@ -51,8 +51,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const monthStr = chosenMonth.toString().padStart(2, "0");
 
     let redirectUrl = "/";
+
     if (currentView === "diary_view") {
       redirectUrl = `/diary/${dataYear}/${monthStr}/`;
+    } else if (currentView === "activity_config_view") {
+      redirectUrl = `/activities/${dataYear}/${monthStr}/`;
     } else {
       redirectUrl = `/month/${dataYear}/${monthStr}/`;
     }

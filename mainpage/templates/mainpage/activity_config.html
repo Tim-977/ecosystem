@@ -1,68 +1,64 @@
+{% extends "mainpage/base_month.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Manage Activities</title>
-</head>
-<body>
-  <h1>Activity Configuration</h1>
 
-  {% if messages %}
-    <ul style="color:red;">
-      {% for msg in messages %}
-        <li>{{ msg }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+{% block title %}Manage Activities{% endblock %}
 
-  <form method="POST">
-    {% csrf_token %}
-    {% if edit_activity %}
-      <input type="hidden" name="action" value="update" />
-      <input type="hidden" name="activity_id" value="{{ edit_activity.id }}" />
-      <label for="name">Activity Name:</label><br/>
-      <input type="text" name="name" required maxlength="15" value="{{ edit_activity.name }}"><br/><br/>
+{% block content %}
+<h2>Activity Configuration</h2>
 
-      <label for="color">Color (CSS name or #hex):</label><br/>
-      <input type="text" name="color" required value="{{ edit_activity.color }}"><br/><br/>
-
-      <button type="submit">Update Activity</button>
-    {% else %}
-      <input type="hidden" name="action" value="create" />
-      <label for="name">Activity Name:</label><br/>
-      <input type="text" name="name" required maxlength="15"><br/><br/>
-
-      <label for="color">Color (CSS name or #hex):</label><br/>
-      <input type="text" name="color" value="#0000ff" required><br/><br/>
-
-      <button type="submit">Add Activity</button>
-    {% endif %}
-  </form>
-
-  <hr/>
-  <h2>Existing Activities</h2>
-  <ul>
-    {% for act in activities %}
-      <li>
-        {{ act.name }} ({{ act.color }})
-
-        <!-- Edit button (GET request with edit_id) -->
-        <form method="GET" style="display:inline;">
-          <input type="hidden" name="edit_id" value="{{ act.id }}">
-          <button type="submit">Edit</button>
-        </form>
-
-        <!-- Delete button -->
-        <form method="POST" style="display:inline;">
-          {% csrf_token %}
-          <input type="hidden" name="activity_id" value="{{ act.id }}">
-          <input type="hidden" name="action" value="delete">
-          <button type="submit">Delete</button>
-        </form>
-      </li><br>
+{% if messages %}
+  <ul style="color:red;">
+    {% for msg in messages %}
+      <li>{{ msg }}</li>
     {% endfor %}
   </ul>
+{% endif %}
 
-  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
-</body>
-</html>
+<form method="POST" action="{% url 'activity_config_view' year month %}">
+  {% csrf_token %}
+  {% if edit_activity %}
+    <input type="hidden" name="action" value="update" />
+    <input type="hidden" name="activity_id" value="{{ edit_activity.id }}" />
+    <label for="name">Activity Name:</label><br/>
+    <input type="text" name="name" required maxlength="15" value="{{ edit_activity.name }}"><br/><br/>
+
+    <label for="color">Color (CSS name or #hex):</label><br/>
+    <input type="text" name="color" required value="{{ edit_activity.color }}"><br/><br/>
+
+    <button type="submit">Update Activity</button>
+  {% else %}
+    <input type="hidden" name="action" value="create" />
+    <label for="name">Activity Name:</label><br/>
+    <input type="text" name="name" required maxlength="15"><br/><br/>
+
+    <label for="color">Color (CSS name or #hex):</label><br/>
+    <input type="text" name="color" value="#0000ff" required><br/><br/>
+
+    <button type="submit">Add Activity</button>
+  {% endif %}
+</form>
+
+<hr/>
+<h3>Existing Activities</h3>
+<ul>
+  {% for act in activities %}
+    <li>
+      {{ act.name }} ({{ act.color }})
+
+      <!-- Edit button (GET request with edit_id) -->
+      <form method="GET" action="{% url 'activity_config_view' year month %}" style="display:inline;">
+        <input type="hidden" name="edit_id" value="{{ act.id }}">
+        <button type="submit">Edit</button>
+      </form>
+
+      <!-- Delete button -->
+      <form method="POST" action="{% url 'activity_config_view' year month %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="activity_id" value="{{ act.id }}">
+        <input type="hidden" name="action" value="delete">
+        <button type="submit">Delete</button>
+      </form>
+    </li><br>
+  {% endfor %}
+</ul>
+{% endblock %}
