@@ -90,7 +90,7 @@ int main() {
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("input.txt");
+        std::ifstream infile("/home/yhat/ecosystem/activityredering/input.txt");
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
@@ -106,8 +106,8 @@ int main() {
 
     sf::Font font;
     
-    if (!font.loadFromFile("fonts/ArialCE.ttf")) {
-        std::cerr << "Failed to load font arial.ttf." << std::endl;
+    if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
+        std::cerr << "Failed to load font" << std::endl;
         return -1;
     }
 
@@ -124,9 +124,9 @@ int main() {
                 cellShape.setFillColor(activityColors[index]);
                 cellShape.setOutlineThickness(0);
             } else {
-                cellShape.setFillColor(sf::Color::Transparent);
+                cellShape.setFillColor(sf::Color::White); // Fill empty with white
                 cellShape.setOutlineThickness(1.f);
-                cellShape.setOutlineColor(sf::Color(200, 200, 200));
+                cellShape.setOutlineColor(sf::Color(230, 230, 230)); // Lighter grid
             }
             renderTexture.draw(cellShape);
         }
@@ -162,7 +162,7 @@ int main() {
 
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
-    if (!finalImage.saveToFile("activity_diagram.png")) {
+    if (!finalImage.saveToFile("/home/yhat/ecosystem/mainpage/static/mainpage/images/activity_diagram.png")) {
         std::cerr << "Failed to save image." << std::endl;
         return -1;
     }
