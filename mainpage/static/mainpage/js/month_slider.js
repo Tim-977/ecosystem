@@ -56,6 +56,8 @@ document.addEventListener("DOMContentLoaded", function () {
       redirectUrl = `/diary/${dataYear}/${monthStr}/`;
     } else if (currentView === "activity_config_view") {
       redirectUrl = `/activities/${dataYear}/${monthStr}/`;
+    } else if (currentView === "set_habits") {
+      redirectUrl = `/habits/${dataYear}/${monthStr}/`;
     } else {
       redirectUrl = `/month/${dataYear}/${monthStr}/`;
     }

@@ -8,7 +8,7 @@ from .views import (activity_config_view, add_todo_task, day_view,
 urlpatterns = [
     path('', main_page_view, name='main_page'),
     path('day/<int:year>/<int:month>/<int:day>/', day_view, name='day_view'),
-    path('set-habits/', set_habits_view, name='set_habits'),
+    path('habits/<int:year>/<int:month>/', set_habits_view, name='set_habits'),
     path('api/todo/', get_todo_tasks, name='get_todo_tasks'),
     path('api/todo/add/', add_todo_task, name='add_todo_task'),
     path('api/todo/<int:task_id>/update/', update_todo_task, name='update_todo_task'),

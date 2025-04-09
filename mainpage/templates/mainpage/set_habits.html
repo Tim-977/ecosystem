@@ -1,69 +1,42 @@
-<!-- mainpage/templates/mainpage/set_habits.html -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Set or Update This Month's Habits</title>
-</head>
-<body>
-  <h1>Set or Update This Month's Habits</h1>
+{% extends "mainpage/base_month.html" %}
+{% load static %}
 
-  {% if messages %}
-    {% for msg in messages %}
-      <p style="color: green;">{{ msg }}</p>
-    {% endfor %}
-  {% endif %}
+{% block title %}Set Monthly Habits{% endblock %}
 
-  <!-- Main form: updates all habits + goals -->
-  <form method="POST">
-    {% csrf_token %}
+{% block content %}
+<h2>Set or Update This Month's Habits</h2>
 
-    <label for="goal_text">Monthly Goals:</label><br/>
-    <textarea name="goal_text" id="goal_text" rows="2" cols="50">{{ monthly_obj.goal_text }}</textarea>
-    <br/><br/>
-
-    <h3>Habits:</h3>
-
-    {% for idx, habit_value in habits_with_index %}
-      <label>Habit {{ idx }}:</label>
-      <input type="text" name="habit_{{ idx }}"
-             value="{{ habit_value|default_if_none:'' }}">
-      <br/>
-    {% endfor %}
-    <br/>
-    <button type="submit">Save All Habits</button>
-  </form>
-
-  <br>
-
-  {% for idx, habit_value in habits_with_index %}
-    <!-- Only show Clear button if there's actually a habit name -->
-    {% if habit_value %}
-      <form method="POST" style="display:inline;">
-        {% csrf_token %}
-        <input type="hidden" name="clear_habit_index" value="{{ idx }}">
-        <button type="submit">Clear Habit {{ idx }} ({{ habit_value }})</button>
-      </form>
-      <br/>
-    {% endif %}
+{% if messages %}
+  {% for msg in messages %}
+    <p style="color: green;">{{ msg }}</p>
   {% endfor %}
+{% endif %}
 
+<form method="POST" action="{% url 'set_habits' year month %}">
+  {% csrf_token %}
+  <label for="goal_text">Monthly Goals:</label><br/>
+  <textarea name="goal_text" id="goal_text" rows="2" cols="50">{{ monthly_obj.goal_text }}</textarea>
+  <br/><br/>
+
+  <h3>Habits:</h3>
+  {% for idx, habit_value in habits_with_index %}
+    <label>Habit {{ idx }}:</label>
+    <input type="text" name="habit_{{ idx }}" value="{{ habit_value|default_if_none:'' }}">
+    <br/>
+  {% endfor %}
   <br/>
-  <p><a href="{% url 'main_page' %}">Return to Main Page</a></p>
-  <p><a href="{% url 'month_view' date.year date.month %}">Go to Month View</a></p>
-  <div class="header-right">
-    <a id="log-today-link" href="#">Go to Today's View</a>
-  </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let today = new Date();
-        let year = today.getFullYear();
-        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
-        let day = String(today.getDate()).padStart(2, '0');
+  <button type="submit">Save All Habits</button>
+</form>
 
-        let logTodayUrl = `/day/${year}/${month}/${day}/`;
-
-        document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
-    });
-  </script>
-</body>
-</html>
+<br/>
+{% for idx, habit_value in habits_with_index %}
+  {% if habit_value %}
+    <form method="POST" action="{% url 'set_habits' year month %}" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="clear_habit_index" value="{{ idx }}">
+      <button type="submit">Clear Habit {{ idx }} ({{ habit_value }})</button>
+    </form>
+    <br/>
+  {% endif %}
+{% endfor %}
+{% endblock %}

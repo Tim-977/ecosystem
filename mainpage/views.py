@@ -157,17 +157,17 @@ def day_view(request, year, month, day):
 
 
 @login_required
-def set_habits_view(request):
-    today = date.today()
-    this_year = today.year
-    this_month = today.month
+def set_habits_view(request, year, month):
+    from .models import DailyData
 
+    # Load or create the MonthlyHabits object for the given year and month
     monthly_obj, _ = MonthlyHabits.objects.get_or_create(
         user_id=request.user.id,
-        year=this_year,
-        month=this_month
+        year=year,
+        month=month
     )
 
+    # Preload habits into index list for the form
     habits_with_index = [
         (1, monthly_obj.habit_1),
         (2, monthly_obj.habit_2),
@@ -182,63 +182,56 @@ def set_habits_view(request):
     ]
 
     if request.method == 'POST':
+        # --- Clear one habit ---
         clear_index_str = request.POST.get('clear_habit_index')
         if clear_index_str is not None:
             try:
                 clear_index = int(clear_index_str)
+                if 1 <= clear_index <= 10:
+                    habit_fields = [
+                        "habit_1", "habit_2", "habit_3", "habit_4", "habit_5",
+                        "habit_6", "habit_7", "habit_8", "habit_9", "habit_10"
+                    ]
+                    setattr(monthly_obj, habit_fields[clear_index - 1], "")
+                    monthly_obj.save()
+
+                    # Also reset that bit in daily logs
+                    daily_logs = DailyData.objects.filter(
+                        user_id=request.user.id,
+                        date__year=year,
+                        date__month=month
+                    )
+                    for log in daily_logs:
+                        hc = log.habits_completed or ""
+                        hc = hc.ljust(10, '0')[:10]
+                        hc_list = list(hc)
+                        hc_list[clear_index - 1] = '0'
+                        log.habits_completed = "".join(hc_list)
+                        log.save()
+
+                    messages.success(request, f"Habit {clear_index} cleared.")
             except ValueError:
                 messages.error(request, "Invalid habit index.")
-                return redirect('set_habits')
+            return redirect('set_habits', year=year, month=month)
 
-            habit_fields = [
-                "habit_1", "habit_2", "habit_3", "habit_4", "habit_5",
-                "habit_6", "habit_7", "habit_8", "habit_9", "habit_10"
-            ]
-            
-            if 1 <= clear_index <= 10:
-                setattr(monthly_obj, habit_fields[clear_index - 1], "")
-                monthly_obj.save()
-
-            from .models import DailyData
-            daily_logs = DailyData.objects.filter(
-                user_id=request.user.id,
-                date__year=this_year,
-                date__month=this_month
-            )
-            position = clear_index - 1
-            for log in daily_logs:
-                hc = log.habits_completed or ""
-                hc = hc.ljust(10, '0')[:10]
-                hc_list = list(hc)
-                hc_list[position] = '0'
-                log.habits_completed = "".join(hc_list)
-                log.save()
-
-            messages.success(request, f"Habit {clear_index} cleared, bits set to 0.")
-            return redirect('set_habits')
-
+        # --- Save/update all habits ---
         monthly_obj.goal_text = request.POST.get('goal_text', '')
-        monthly_obj.habit_1 = request.POST.get('habit_1', '')
-        monthly_obj.habit_2 = request.POST.get('habit_2', '')
-        monthly_obj.habit_3 = request.POST.get('habit_3', '')
-        monthly_obj.habit_4 = request.POST.get('habit_4', '')
-        monthly_obj.habit_5 = request.POST.get('habit_5', '')
-        monthly_obj.habit_6 = request.POST.get('habit_6', '')
-        monthly_obj.habit_7 = request.POST.get('habit_7', '')
-        monthly_obj.habit_8 = request.POST.get('habit_8', '')
-        monthly_obj.habit_9 = request.POST.get('habit_9', '')
-        monthly_obj.habit_10 = request.POST.get('habit_10', '')
+        for i in range(1, 11):
+            setattr(monthly_obj, f"habit_{i}", request.POST.get(f"habit_{i}", ''))
         monthly_obj.save()
-
         messages.success(request, "Monthly habits updated!")
-        return redirect('set_habits')
+        return redirect('set_habits', year=year, month=month)
 
+    # --- Regular GET request ---
     context = {
         "monthly_obj": monthly_obj,
         "habits_with_index": habits_with_index,
-        "date": today,  # Pass the date to the template
+        "year": year,
+        "month": month,
+        "current_view": "set_habits",
     }
-    return render(request, 'mainpage/set_habits.html', context)
+    return render(request, "mainpage/set_habits.html", context)
+
 
 
 def is_valid_hex_color(color):
