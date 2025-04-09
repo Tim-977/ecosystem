@@ -11,8 +11,6 @@ django.setup()
 
 from mainpage.models import DailyData, MonthlyHabits
 
-# checking web committing
-
 # ----------------------------- #
 #          ~~ CONFIG ~~         #
 # ----------------------------- #
