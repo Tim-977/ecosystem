@@ -70,14 +70,20 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
     return shape;
 }
 
-int main() {
+
+int main(int argc, char* argv[])
+{
+    std::string userIdStr = "unknown_user";
+    if (argc > 1) {
+        userIdStr = argv[1];
+    }
+
     const int numDays = 31;
     const int numHours = 24;
     const float cellWidth = 40.f;
     const float cellHeight = 40.f;
     const float gap = 5.f;
     const float cornerRadius = 5.f;
-
     const int leftMargin = 60;
     const int topMargin = 60;
     const int rightMargin = 20;
@@ -105,7 +111,6 @@ int main() {
     renderTexture.clear(sf::Color::White);
 
     sf::Font font;
-    
     if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
         std::cerr << "Failed to load font" << std::endl;
         return -1;
@@ -117,16 +122,18 @@ int main() {
             sf::Vector2f pos(leftMargin + day * (cellWidth + gap),
                              topMargin + hour * (cellHeight + gap));
 
-            sf::ConvexShape cellShape = createRoundedRectangle(sf::Vector2f(cellWidth, cellHeight), cornerRadius, 8);
+            sf::ConvexShape cellShape = createRoundedRectangle(
+                sf::Vector2f(cellWidth, cellHeight), cornerRadius, 8
+            );
             cellShape.setPosition(pos);
 
-            if (index < static_cast<int>(activityColors.size())) {
+            if (index < (int)activityColors.size()) {
                 cellShape.setFillColor(activityColors[index]);
-                cellShape.setOutlineThickness(0);
+                cellShape.setOutlineThickness(0.f);
             } else {
-                cellShape.setFillColor(sf::Color::White); // Fill empty with white
+                cellShape.setFillColor(sf::Color::White);
                 cellShape.setOutlineThickness(1.f);
-                cellShape.setOutlineColor(sf::Color(230, 230, 230)); // Lighter grid
+                cellShape.setOutlineColor(sf::Color(230, 230, 230));
             }
             renderTexture.draw(cellShape);
         }
@@ -155,18 +162,33 @@ int main() {
         hourText.setFillColor(sf::Color::Black);
         sf::FloatRect textRect = hourText.getLocalBounds();
         float x = leftMargin - textRect.width - 10;
-        float y = topMargin + hour * (cellHeight + gap) + cellHeight / 2 - textRect.height / 2;
+        float y = topMargin + hour * (cellHeight + gap) 
+                  + cellHeight / 2 - textRect.height / 2;
         hourText.setPosition(x, y);
         renderTexture.draw(hourText);
     }
 
+    {
+        sf::Text userText;
+        userText.setFont(font);
+        userText.setString("User ID: " + userIdStr);
+        userText.setCharacterSize(20);
+        userText.setFillColor(sf::Color::Blue);
+        userText.setPosition(10.f, 10.f);
+        renderTexture.draw(userText);
+    }
+
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
-    if (!finalImage.saveToFile("/home/yhat/ecosystem/mainpage/static/mainpage/images/activity_diagram.png")) {
-        std::cerr << "Failed to save image." << std::endl;
+
+    std::string filename = "/home/yhat/ecosystem/mainpage/static/mainpage/images/activity_diagram_"
+                           + userIdStr + ".png";
+
+    if (!finalImage.saveToFile(filename)) {
+        std::cerr << "Failed to save image to " << filename << std::endl;
         return -1;
     }
 
-    std::cout << "Activity diagram saved as activity_diagram.png" << std::endl;
+    std::cout << "Saved " << filename << std::endl;
     return 0;
 }

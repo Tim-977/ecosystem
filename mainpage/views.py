@@ -727,21 +727,21 @@ def month_view(request, year, month):
     with open(input_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-
-    # Define paths
     render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
     render_bin = os.path.join(base_dir, "activityredering", "render")
-    output_png = os.path.join(base_dir, "activityredering", "activity_diagram.png")
 
-    # Compile render.cpp
+    # If you rebuild each time:
     # subprocess.run([
     #     "g++", render_cpp,
     #     "-o", render_bin,
     #     "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
     # ])
 
-    # Run the compiled binary
-    subprocess.run([render_bin])
+    # Pass the user ID to the C++ render:
+    user_id_str = str(request.user.id)
+    subprocess.run([render_bin, user_id_str])
+
+    diagram_filename = f"activity_diagram_{user_id_str}.png"
 
     context = {
         "year": year,
@@ -752,6 +752,7 @@ def month_view(request, year, month):
         "reverse": reverse,
         "monthly_sleep_data": monthly_sleep_data,
         "monthly_activity_aggregate": monthly_activity_aggregate,
+        "diagram_filename": diagram_filename
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
