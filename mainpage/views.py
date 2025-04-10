@@ -728,22 +728,21 @@ def month_view(request, year, month):
         f.write("\n".join(lines) + "\n")
 
 
-    # Define paths to the C++ source, compiled binary, and output image
+    # Define paths
     render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
-    render_bin = os.path.join(base_dir, "activityredering", "render")   # compiled output
+    render_bin = os.path.join(base_dir, "activityredering", "render")
     output_png = os.path.join(base_dir, "activityredering", "activity_diagram.png")
 
-    # Compile render.cpp (if you want to skip re-compiling each time, remove this step)
-    subprocess.run([
-        "g++", render_cpp,
-        "-o", render_bin,
-        "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
-    ])
+    # Compile render.cpp
+    # subprocess.run([
+    #     "g++", render_cpp,
+    #     "-o", render_bin,
+    #     "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
+    # ])
 
-    # Run the compiled binary. It should read input.txt and produce activity_diagram.png
+    # Run the compiled binary
     subprocess.run([render_bin])
 
-    # Render the template
     context = {
         "year": year,
         "month": month,
