@@ -1,3 +1,4 @@
+import base64
 import calendar
 import json
 import os
@@ -13,6 +14,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
+from mainpage.models import MonthlyActivityDiagram
 
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
@@ -727,21 +729,35 @@ def month_view(request, year, month):
     with open(input_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-    render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
+    # Compile render.cpp if needed
+    # render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
     render_bin = os.path.join(base_dir, "activityredering", "render")
 
-    # If you rebuild each time:
-    # subprocess.run([
-    #     "g++", render_cpp,
-    #     "-o", render_bin,
-    #     "-lsfml-graphics", "-lsfml-window", "-lsfml-system"
-    # ])
-
-    # Pass the user ID to the C++ render:
+    # Run the renderer with user_id
     user_id_str = str(request.user.id)
     subprocess.run([render_bin, user_id_str])
 
+    # Get full path to generated image
     diagram_filename = f"activity_diagram_{user_id_str}.png"
+    image_path = os.path.join(base_dir, "mainpage", "static", "mainpage", "images", diagram_filename)
+
+    # Read the image into binary
+    with open(image_path, "rb") as img_file:
+        image_bytes = img_file.read()
+
+    # Save image into the DB
+    MonthlyActivityDiagram.objects.update_or_create(
+        user_id=request.user.id,
+        year=year,
+        month=month,
+        defaults={"image_data": image_bytes}
+    )
+
+    os.remove(image_path)
+
+    # Load it again for displaying (base64 encoded)
+    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+    diagram_base64 = f"data:image/png;base64,{encoded_image}"
 
     context = {
         "year": year,
@@ -752,7 +768,7 @@ def month_view(request, year, month):
         "reverse": reverse,
         "monthly_sleep_data": monthly_sleep_data,
         "monthly_activity_aggregate": monthly_activity_aggregate,
-        "diagram_filename": diagram_filename
+        "diagram_base64": diagram_base64,
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
