@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
-from mainpage.models import MonthlyActivityDiagram
+from mainpage.models import ActivityMapping, MonthlyActivityDiagram
 
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
@@ -672,8 +672,6 @@ def month_view(request, year, month):
                 hour_list = []
         else:
             hour_list = []
-
-        from mainpage.models import ActivityMapping
 
         activity_lookup = {
             a.id: a.name for a in ActivityMapping.objects.filter(
