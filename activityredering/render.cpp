@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <filesystem>  // <-- NEW
 
 sf::Color parseColor(const std::string &s) {
     std::string hex = s;
@@ -69,7 +70,6 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
 
     return shape;
 }
-
 
 int main(int argc, char* argv[])
 {
@@ -181,9 +181,10 @@ int main(int argc, char* argv[])
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
 
-    std::string filename = "/home/yhat/ecosystem/mainpage/static/mainpage/images/activity_diagram_"
-                           + userIdStr + ".png";
+    std::string outputDir = "/home/yhat/ecosystem/mainpage/static/mainpage/images";
+    std::filesystem::create_directories(outputDir);
 
+    std::string filename = outputDir + "/activity_diagram_" + userIdStr + ".png";
     if (!finalImage.saveToFile(filename)) {
         std::cerr << "Failed to save image to " << filename << std::endl;
         return -1;
