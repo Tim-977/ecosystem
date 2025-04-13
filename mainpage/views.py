@@ -788,7 +788,7 @@ def year_view(request, year):
             full_mapping[mapping.id] = mapping.color
 
     # Fill 366 x 24 matrix with color hexes
-    day_hour_colors = [["#000000" for _ in range(24)] for _ in range(366)]
+    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(366)]
 
     for log in all_logs:
         day_idx = log.date.timetuple().tm_yday - 1
