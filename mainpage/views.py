@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
-from mainpage.models import ActivityMapping, MonthlyActivityDiagram
+from mainpage.models import ActivityMapping, DailyData, MonthlyActivityDiagram, YearlyActivityDiagram
 
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
@@ -771,6 +771,78 @@ def month_view(request, year, month):
     return render(request, 'mainpage/month_statistics.html', context)
 
 
+@login_required
+def year_view(request, year):
+    user_id = request.user.id
+
+    # Get all DailyData entries for the year
+    all_logs = DailyData.objects.filter(
+        user_id=user_id,
+        date__year=year
+    )
+
+    # Merge all activity mappings (priority: later months overwrite earlier ones)
+    full_mapping = {}
+    for month in range(1, 13):
+        for mapping in ActivityMapping.objects.filter(user_id=user_id, year=year, month=month):
+            full_mapping[mapping.id] = mapping.color
+
+    # Fill 366 x 24 matrix with color hexes
+    day_hour_colors = [["#000000" for _ in range(24)] for _ in range(366)]
+
+    for log in all_logs:
+        day_idx = log.date.timetuple().tm_yday - 1
+        if log.hourly_activity_logging:
+            try:
+                hour_data = json.loads(log.hourly_activity_logging)
+            except:
+                hour_data = []
+
+            for hour_item in hour_data:
+                h = hour_item.get("hour", 0)
+                act_id = hour_item.get("activity")
+                color = full_mapping.get(act_id, "#000000")
+                if 0 <= day_idx < 366 and 0 <= h < 24:
+                    day_hour_colors[day_idx][h] = color
+
+    # Write to input file
+    input_path = os.path.join(settings.BASE_DIR, "activityredering", "year_input.txt")
+    with open(input_path, "w", encoding="utf-8") as f:
+        for day in day_hour_colors:
+            for color in day:
+                f.write(color + "\n")
+
+    # Call the renderer (it should read from year_input.txt and output year_diagram_<id>.png)
+    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_year")
+    subprocess.run([render_bin, str(user_id)])
+
+    # Load image
+    img_filename = f"year_diagram_{user_id}.png"
+    img_path = os.path.join(settings.BASE_DIR, "mainpage", "static", "mainpage", "images", img_filename)
+
+    with open(img_path, "rb") as img:
+        image_bytes = img.read()
+
+    # Store in DB
+    YearlyActivityDiagram.objects.update_or_create(
+        user_id=user_id,
+        year=year,
+        defaults={"image_data": image_bytes}
+    )
+
+    os.remove(img_path)
+
+    # Convert to base64 for template
+    encoded = base64.b64encode(image_bytes).decode("utf-8")
+    diagram_base64 = f"data:image/png;base64,{encoded}"
+
+    context = {
+        "year": year,
+        "diagram_base64": diagram_base64,
+    }
+    return render(request, "mainpage/year_statistics.html", context)
+
+
 def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
     lv, lc = low_tuple
     mv, mc = mid_tuple
@@ -824,3 +896,5 @@ def diary_view(request, year, month):
         "current_view": "diary_view",
     }
     return render(request, 'mainpage/month_diary.html', context)
+
+
