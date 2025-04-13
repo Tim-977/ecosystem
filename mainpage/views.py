@@ -11,10 +11,12 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models import Min
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
-from mainpage.models import ActivityMapping, DailyData, MonthlyActivityDiagram, YearlyActivityDiagram
+from mainpage.models import (ActivityMapping, DailyData,
+                             MonthlyActivityDiagram, YearlyActivityDiagram)
 
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
@@ -775,72 +777,88 @@ def month_view(request, year, month):
 def year_view(request, year):
     user_id = request.user.id
 
-    # Get all DailyData entries for the year
+    # Compute the oldest logged year from DailyData for this user.
+    # If no logs exist, fallback to current year.
+    oldest_data = DailyData.objects.filter(user_id=user_id).aggregate(Min('date'))
+    if oldest_data['date__min']:
+        year_min = oldest_data['date__min'].year
+    else:
+        year_min = datetime.now().year  # fallback if no data
+
+    # Set maximum year to current year.
+    year_max = datetime.now().year
+
+    # Get all DailyData entries for the entire year
     all_logs = DailyData.objects.filter(
         user_id=user_id,
         date__year=year
     )
 
-    # Merge all activity mappings (priority: later months overwrite earlier ones)
+    # Merge all activity mappings across months in that year (using mapping from each month)
     full_mapping = {}
     for month in range(1, 13):
         for mapping in ActivityMapping.objects.filter(user_id=user_id, year=year, month=month):
             full_mapping[mapping.id] = mapping.color
 
-    # Fill 366 x 24 matrix with color hexes
-    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(366)]
+    # Build a 366 x 24 grid; since we want a full circle, we reserve the last two segments as "empty" (black).
+    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(367)]  # default white for missing activity
 
     for log in all_logs:
+        # Get day index from the year; tm_yday gives 1-indexed day-of-year.
         day_idx = log.date.timetuple().tm_yday - 1
+        if day_idx < 0 or day_idx >= 365:
+            continue  # safeguard; we expect 0 to 364 for actual data.
         if log.hourly_activity_logging:
             try:
                 hour_data = json.loads(log.hourly_activity_logging)
             except:
                 hour_data = []
-
             for hour_item in hour_data:
                 h = hour_item.get("hour", 0)
                 act_id = hour_item.get("activity")
-                color = full_mapping.get(act_id, "#000000")
-                if 0 <= day_idx < 366 and 0 <= h < 24:
+                color = full_mapping.get(act_id, "#ffffff")
+                if 0 <= h < 24:
                     day_hour_colors[day_idx][h] = color
 
-    # Write to input file
+    # Write color values into "year_input.txt" (we only write for 365 days; last 2 segments remain white)
     input_path = os.path.join(settings.BASE_DIR, "activityredering", "year_input.txt")
     with open(input_path, "w", encoding="utf-8") as f:
-        for day in day_hour_colors:
-            for color in day:
+        # Write 365*24 color lines from day_hour_colors
+        for day in range(365):
+            for color in day_hour_colors[day]:
                 f.write(color + "\n")
 
-    # Call the renderer (it should read from year_input.txt and output year_diagram_<id>.png)
+    # Call the C++ renderer for the yearly graph.
     render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_year")
     subprocess.run([render_bin, str(user_id)])
 
-    # Load image
+    # Load the generated image.
     img_filename = f"year_diagram_{user_id}.png"
     img_path = os.path.join(settings.BASE_DIR, "mainpage", "static", "mainpage", "images", img_filename)
-
     with open(img_path, "rb") as img:
         image_bytes = img.read()
 
-    # Store in DB
+    # Store image in the DB
     YearlyActivityDiagram.objects.update_or_create(
         user_id=user_id,
         year=year,
         defaults={"image_data": image_bytes}
     )
-
     os.remove(img_path)
-
-    # Convert to base64 for template
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     diagram_base64 = f"data:image/png;base64,{encoded}"
 
+    img_size_kb = round(len(image_bytes) / 1024, 1)
+    
     context = {
         "year": year,
+        "year_min": year_min,
+        "year_max": year_max,
         "diagram_base64": diagram_base64,
+        "image_size_kb": img_size_kb,
     }
-    return render(request, "mainpage/year_statistics.html", context)
+
+    return render(request, "mainpage/year_view.html", context)
 
 
 def interpolate_color(value, low_tuple, mid_tuple, high_tuple):

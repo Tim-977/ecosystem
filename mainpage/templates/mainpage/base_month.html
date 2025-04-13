@@ -22,10 +22,13 @@
       {% endif %}
     </div>
 
-    <!-- Centered "Go to Today's View" -->
+    <!-- Centered "Go to Today's View" and "Go to Year's View" -->
     <div class="center-nav">
       <a id="log-today-link" href="#">Go to Today's View</a>
+      <span style="margin: 0 10px;">|</span>
+      <a id="log-year-link" href="{% url 'year_statistics' year=year %}">Go to Year's View</a>
     </div>
+
 
     <!-- Username or Streak Info -->
     <div class="header-right">
