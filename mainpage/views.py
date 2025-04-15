@@ -829,7 +829,7 @@ def year_view(request, year):
                 f.write(color + "\n")
 
     # Call the C++ renderer for the yearly graph.
-    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_year")
+    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_test")
     subprocess.run([render_bin, str(user_id)])
 
     # Load the generated image.
