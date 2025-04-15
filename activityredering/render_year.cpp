@@ -5,7 +5,6 @@
 #include <cmath>
 #include <string>
 
-// Data structures used for drawing
 struct point {
     double x, y;
     point() : x(0), y(0) {}
@@ -35,9 +34,9 @@ struct circle {
         center = _center - r;
     }
     
-    void draw(sf::Image &window) {
-        unsigned int w = window.getSize().x;
-        unsigned int h = window.getSize().y;
+    void draw(sf::Image &img) {
+        unsigned int w = img.getSize().x;
+        unsigned int h = img.getSize().y;
         int left   = std::max(0, (int)(center.x - r - 1));
         int right  = std::min((int)w - 1, (int)(center.x + r + 1));
         int top    = std::max(0, (int)(center.y - r - 1));
@@ -48,24 +47,23 @@ struct circle {
                 double dx = (center.x - i);
                 double dy = (center.y - j);
                 if ((dx * dx + dy * dy) <= (r * r)) {
-                    window.setPixel(i, j, clr);
+                    img.setPixel(i, j, clr);
                 }
             }
         }
     }
 };
 
-// Helper to parse color from a hex string like "#RRGGBB" or "#RRGGBBAA"
 sf::Color parseHexColor(const std::string &s) {
-    // Handle #RRGGBB
+    // #RRGGBB
     if (s.size() == 7 && s[0] == '#') {
         unsigned int val = std::stoul(s.substr(1), nullptr, 16);
         sf::Uint8 r = (val >> 16) & 0xFF;
         sf::Uint8 g = (val >> 8)  & 0xFF;
         sf::Uint8 b =  val        & 0xFF;
         return sf::Color(r, g, b, 255);
-    } 
-    // Handle #RRGGBBAA
+    }
+    // #RRGGBBAA
     else if (s.size() == 9 && s[0] == '#') {
         unsigned int val = std::stoul(s.substr(1), nullptr, 16);
         sf::Uint8 r = (val >> 24) & 0xFF;
@@ -74,279 +72,274 @@ sf::Color parseHexColor(const std::string &s) {
         sf::Uint8 a =  val        & 0xFF;
         return sf::Color(r, g, b, a);
     }
-    // If invalid, default to white
+    // fallback
     return sf::Color::White;
 }
 
 int main(int argc, char* argv[]) {
-    // We expect 4 arguments: username, year, input_path, output_path
-    if (argc < 5) {
+    // Expect 5 args:
+    //  argv[1] -> username
+    //  argv[2] -> year
+    //  argv[3] -> inputPath (colors)
+    //  argv[4] -> outputPath (PNG)
+    //  argv[5] -> legendPath (#RRGGBB\tNAME lines)
+    if (argc < 6) {
         std::cerr << "Usage: " << argv[0]
-                  << " <username> <year> <input_path> <output_path>\n";
+                  << " <username> <year> <input_path> <output_path> <legend_path>\n";
         return 1;
     }
-    std::string userName  = argv[1];  // e.g. "myuser42"
-    std::string yearStr   = argv[2];  // e.g. "2025"
-    std::string inputPath = argv[3];  // e.g. "/.../year_input.txt"
-    std::string outPath   = argv[4];  // e.g. "/.../year_diagram_5.png"
+    std::string userName   = argv[1];
+    std::string yearStr    = argv[2];
+    std::string inputPath  = argv[3];
+    std::string outPath    = argv[4];
+    std::string legendPath = argv[5];
 
-    // Large canvas
+    // Canvas size
     const int WD = 5000;
     const int HT = 5000;
 
-    // Radii for circles
+    // Radii for the day/hour circles
     const double r = 1500; // inner radius
     const double R = 2000; // outer radius
+    const int seg  = 367;  // 365 + 2 black filler
+    const int pt   = 24;   // hours
+    const double mn_r = 9; // radius of each small circle
 
-    // We'll draw 367 "day segments" (365 days + 2 black segments)
-    // Each segment has 24 sub-segments (hours).
-    const int seg = 367;
-    const int pt = 24;
+    // Create an image for pixel-based circle drawing
+    sf::Image image;
+    image.create(WD, HT, sf::Color::Black);
 
-    // Radius of each small circle
-    const double mn_r = 9;
+    // Center
+    double cx = WD / 2.0;
+    double cy = HT / 2.0;
 
-    // Create an SFML image that we will fill at the pixel level for the circles
-    sf::Image window;
-    window.create(WD, HT, sf::Color::Black);
-
-    point center(WD / 2.0, HT / 2.0);
-
-    // Read color data lines from inputPath
-    std::ifstream infile(inputPath);
-    if (!infile.is_open()) {
+    // 1) Read the color data
+    std::ifstream inFile(inputPath);
+    if (!inFile.is_open()) {
         std::cerr << "Failed to open " << inputPath << "\n";
         return 1;
     }
     std::vector<std::string> colorLines;
-    std::string line;
-    while (std::getline(infile, line)) {
-        colorLines.push_back(line);
+    {
+        std::string ln;
+        while (std::getline(inFile, ln)) {
+            colorLines.push_back(ln);
+        }
     }
-    infile.close();
+    inFile.close();
 
-    // For 365 days, we expect (seg - 2) * pt color lines => 365 * 24
-    const int required_lines = (seg - 2) * pt;
-    if ((int)colorLines.size() < required_lines) {
-        std::cerr << "Expected at least " << required_lines
-                  << " color lines, but got " << colorLines.size() << "\n";
+    if ((int)colorLines.size() < (seg - 2) * pt) {
+        std::cerr << "Not enough color lines in " << inputPath << "\n";
         return 1;
     }
 
-    // Precompute circle positions + colors
-    std::vector<std::vector<circle>> v(seg, std::vector<circle>(pt));
+    // 2) Build circles
     int colorIndex = 0;
-
-    // st -> shift for starting day
-    const int st = 0;
     for (int i = 0; i < seg; i++) {
-        double ang = -M_PI / 2.0 + double(i + st) * 2.0 * M_PI / seg;
+        double ang = -M_PI / 2.0 + (i * 2.0 * M_PI / seg);
         for (int j = 0; j < pt; j++) {
             sf::Color c;
-            // The last 2 segments are black "filler"
             if (i < seg - 2) {
                 c = parseHexColor(colorLines[colorIndex++]);
             } else {
-                c = sf::Color::Black;
+                c = sf::Color::Black; // filler
             }
             double ringRadius = r + (double)(R - r) / pt * j;
-            point pos = point(std::cos(ang), std::sin(ang)) * ringRadius + center;
-            v[i][j] = circle(pos, mn_r, c);
+            double px = cx + std::cos(ang) * ringRadius;
+            double py = cy + std::sin(ang) * ringRadius;
+            circle cir(point(px, py), mn_r, c);
+            cir.draw(image);
         }
     }
 
-    // Paint each small circle into the SFML image
-    for (auto &row : v) {
-        for (auto &c : row) {
-            c.draw(window);
-        }
-    }
-
-    // Convert that pixel data into an SFML texture
+    // Convert to texture so we can layer additional shapes & text
     sf::Texture circleTexture;
-    if (!circleTexture.loadFromImage(window)) {
+    if (!circleTexture.loadFromImage(image)) {
         std::cerr << "Failed to create texture from image.\n";
         return 1;
     }
 
-    // We'll now create a "RenderTexture" for everything else (orbit outline, text, etc.)
-    sf::RenderTexture renderTexture;
-    if (!renderTexture.create(WD, HT)) {
+    sf::RenderTexture rTex;
+    if (!rTex.create(WD, HT)) {
         std::cerr << "Failed to create render texture.\n";
         return 1;
     }
-    renderTexture.clear(sf::Color::Black);
+    rTex.clear(sf::Color::Black);
 
-    // Draw the sprite containing all circles
-    sf::Sprite sprite(circleTexture);
-    renderTexture.draw(sprite);
+    // Draw the circles (sprite)
+    sf::Sprite sp(circleTexture);
+    rTex.draw(sp);
 
-    // Load a font (update the path if needed!)
+    // Load font
     sf::Font font;
     if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
-        std::cerr << "Failed to load font!\n";
+        std::cerr << "Failed to load font.\n";
         return 1;
     }
 
-    // Draw the outer orbit circle
-    float orbitOffset      = 50.f;
-    float envelopeRadius   = float(R + mn_r) + orbitOffset;
-    sf::CircleShape envelope(envelopeRadius);
-    envelope.setPointCount(360);
-    envelope.setOrigin(envelopeRadius, envelopeRadius);
-    envelope.setPosition(float(center.x), float(center.y));
-    envelope.setFillColor(sf::Color::Transparent);
-    envelope.setOutlineColor(sf::Color::White);
-    envelope.setOutlineThickness(4.f);
-    renderTexture.draw(envelope);
-
-    // Optional gap at top of orbit
-    float gapArcLength = 90.f; // 90 px wide gap
-    float gapAngleRad  = gapArcLength / envelopeRadius;
-    float gapCenterDeg = -91.73f; // center near the top
-    float gapCenterRad = gapCenterDeg * 3.14159265f / 180.f;
-
-    float gapCenterX = float(center.x + envelopeRadius * std::cos(gapCenterRad));
-    float gapCenterY = float(center.y + envelopeRadius * std::sin(gapCenterRad) + 10);
-
-    sf::RectangleShape gapRect(sf::Vector2f(gapArcLength, -20.f));
-    gapRect.setFillColor(sf::Color::Black);
-    gapRect.setOrigin(gapArcLength / 2.f, 4.f / 2.f);
-    gapRect.setPosition(gapCenterX, gapCenterY);
-    gapRect.setRotation(gapCenterDeg + 90.f);
-    renderTexture.draw(gapRect);
-
-    // Label the months
-    std::vector<std::string> months = {
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    };
-    int monthDays[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
-    int dayOffset = 0;
-
-    float labelExtraOffset = 20.f;
-    float arcOffset        = 100.f;
-    int   monthFont        = 70;
-
-    for (int m = 0; m < 12; m++) {
-        double angle = -M_PI / 2.0 + double(dayOffset) * 2.0 * M_PI / (seg - 2);
-        dayOffset += monthDays[m];
-
-        float baseRadius   = envelopeRadius + labelExtraOffset;
-        float deltaAngle   = arcOffset / baseRadius;
-        double shiftedAngle= angle + deltaAngle;
-
-        float x = float(center.x + std::cos(shiftedAngle) * baseRadius);
-        float y = float(center.y + std::sin(shiftedAngle) * baseRadius);
-
-        sf::Text monthText(months[m], font, monthFont);
-        monthText.setFillColor(sf::Color::White);
-
-        sf::FloatRect lb = monthText.getLocalBounds();
-        monthText.setOrigin(lb.width / 2.f, lb.height + lb.top);
-
-        float angleDeg = float(shiftedAngle * 180.f / 3.14159265358979323846);
-        monthText.setRotation(angleDeg + 90.f);
-        monthText.setPosition(x, y);
-
-        renderTexture.draw(monthText);
+    // Outer orbit circle
+    float orbitOffset    = 50.f;
+    float envelopeRadius = float(R + mn_r) + orbitOffset;
+    {
+        sf::CircleShape envelope(envelopeRadius);
+        envelope.setPointCount(360);
+        envelope.setOrigin(envelopeRadius, envelopeRadius);
+        envelope.setPosition(float(cx), float(cy));
+        envelope.setFillColor(sf::Color::Transparent);
+        envelope.setOutlineColor(sf::Color::White);
+        envelope.setOutlineThickness(4.f);
+        rTex.draw(envelope);
     }
 
-    // Info near the top explaining outer/inner ring
+    // Optional gap at top
+    {
+        float gapArcLength = 90.f;
+        float gapCenterDeg = -91.73f;
+        float rad = gapCenterDeg * 3.14159265f / 180.f;
+        float gapX = float(cx + envelopeRadius * std::cos(rad));
+        float gapY = float(cy + envelopeRadius * std::sin(rad) + 10);
+
+        sf::RectangleShape gapRect(sf::Vector2f(gapArcLength, -20.f));
+        gapRect.setFillColor(sf::Color::Black);
+        gapRect.setOrigin(gapArcLength / 2.f, 4.f / 2.f);
+        gapRect.setPosition(gapX, gapY);
+        gapRect.setRotation(gapCenterDeg + 90.f);
+        rTex.draw(gapRect);
+    }
+
+    // Month labels
+    {
+        std::vector<std::string> months = {
+            "January","February","March","April","May","June",
+            "July","August","September","October","November","December"
+        };
+        int monthDays[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+        int dayOffset = 0;
+        float labelExtraOffset = 20.f;
+        float arcOffset        = 100.f;
+        int   monthFont        = 70;
+
+        for (int m=0; m<12; m++){
+            double angle = -M_PI / 2.0 + double(dayOffset)*(2.0*M_PI/(seg-2));
+            dayOffset += monthDays[m];
+
+            float baseRadius   = envelopeRadius + labelExtraOffset;
+            float deltaAngle   = arcOffset / baseRadius;
+            double shiftedAngle= angle + deltaAngle;
+
+            float x = float(cx + std::cos(shiftedAngle)*baseRadius);
+            float y = float(cy + std::sin(shiftedAngle)*baseRadius);
+
+            sf::Text txt(months[m], font, monthFont);
+            txt.setFillColor(sf::Color::White);
+
+            sf::FloatRect lb = txt.getLocalBounds();
+            txt.setOrigin(lb.width/2.f, lb.height+lb.top);
+
+            float angleDeg = float(shiftedAngle*180.f/3.1415926535f);
+            txt.setRotation(angleDeg+90.f);
+            txt.setPosition(x,y);
+
+            rTex.draw(txt);
+        }
+    }
+
+    // Info near the top
     {
         sf::Text hourInfo("Outer ring = 23:00, Inner ring = 00:00", font, 40);
         hourInfo.setFillColor(sf::Color::White);
-        float textX = float(center.x);
-        float textY = float(center.y - (R + 200));
-        hourInfo.setOrigin(hourInfo.getLocalBounds().width / 2.f,
-                           hourInfo.getLocalBounds().height / 2.f);
+        float textX = float(cx);
+        float textY = float(cy - (R+200));
+        sf::FloatRect iB = hourInfo.getLocalBounds();
+        hourInfo.setOrigin(iB.width/2.f, iB.height/2.f);
         hourInfo.setPosition(textX, textY);
-        renderTexture.draw(hourInfo);
+        rTex.draw(hourInfo);
     }
 
-    // Central titles
+    // Center titles
     {
-        // Main title
         sf::Text mainTitle("My Year in Data", font, 300);
         mainTitle.setFillColor(sf::Color::White);
-        mainTitle.setOrigin(mainTitle.getLocalBounds().width / 2.f,
-                            mainTitle.getLocalBounds().height / 2.f);
-        mainTitle.setPosition(float(center.x), float(center.y) - 200.f);
-        renderTexture.draw(mainTitle);
+        auto mb = mainTitle.getLocalBounds();
+        mainTitle.setOrigin(mb.width/2.f, mb.height/2.f);
+        mainTitle.setPosition(float(cx), float(cy)-200.f);
+        rTex.draw(mainTitle);
 
-        // Sub-title (dates)
         sf::Text dateTitle("1 Jan ~ 31 Dec", font, 190);
         dateTitle.setFillColor(sf::Color::White);
-        dateTitle.setOrigin(dateTitle.getLocalBounds().width / 2.f,
-                            dateTitle.getLocalBounds().height / 2.f);
-        dateTitle.setPosition(float(center.x), float(center.y) + 100.f);
-        renderTexture.draw(dateTitle);
+        auto dbb = dateTitle.getLocalBounds();
+        dateTitle.setOrigin(dbb.width/2.f, dbb.height/2.f);
+        dateTitle.setPosition(float(cx), float(cy)+100.f);
+        rTex.draw(dateTitle);
 
-        // The year from argv[2]
         sf::Text yearTitle(yearStr, font, 150);
         yearTitle.setFillColor(sf::Color::White);
-        yearTitle.setOrigin(yearTitle.getLocalBounds().width / 2.f,
-                            yearTitle.getLocalBounds().height / 2.f);
-        yearTitle.setPosition(float(center.x), float(center.y) + 350.f);
-        renderTexture.draw(yearTitle);
+        auto yb = yearTitle.getLocalBounds();
+        yearTitle.setOrigin(yb.width/2.f, yb.height/2.f);
+        yearTitle.setPosition(float(cx), float(cy)+350.f);
+        rTex.draw(yearTitle);
     }
 
-    // Example legend items (customize or remove as you wish)
-    std::vector<std::pair<sf::Color, std::string>> legendItems = {
-        { sf::Color(0, 150, 255),   "Sleep" },
-        { sf::Color(255, 200, 0),   "Passive" },
-        { sf::Color(100, 255, 100), "Recreation" },
-        { sf::Color(255, 100, 150), "Friends" },
-        { sf::Color(255, 150, 0),   "Exercising" },
-        { sf::Color(150, 100, 255), "Productive" },
-        { sf::Color(100, 200, 100), "Studying" },
-        { sf::Color(200, 0, 255),   "Reading" },
-        { sf::Color(255, 200, 200), "Social Media" },
-        { sf::Color(200, 200, 100), "Other" }
-    };
+    // 3) Read the legend from legendPath
+    std::ifstream lf(legendPath);
+    std::vector<std::pair<sf::Color, std::string>> legendItems;
+    if (lf.is_open()) {
+        std::string line;
+        while(std::getline(lf, line)) {
+            // Format: "#RRGGBB\tActivity Name"
+            auto tabPos = line.find('\t');
+            if (tabPos != std::string::npos) {
+                std::string hexColor = line.substr(0, tabPos);
+                std::string actName  = line.substr(tabPos+1);
+                sf::Color col = parseHexColor(hexColor);
+                legendItems.push_back({col, actName});
+            }
+        }
+        lf.close();
+    } else {
+        std::cerr << "Warning: Could not open legend file " << legendPath << "\n";
+    }
 
-    float startX    = 80.f;
-    float startY    = 3800.f;
-    float boxSize   = 85.f;
-    float spacing   = 120.f;
+    // 4) Draw the legend near bottom-left
+    float startX  = 80.f;
+    float startY  = 3500.f;
+    float boxSize = 85.f;
+    float spacing = 120.f;
     unsigned int legendFontSize = 85;
 
     for (int i = 0; i < (int)legendItems.size(); i++) {
-        float rowY = startY + i * spacing;
+        float rowY = startY + i*spacing;
+        sf::RectangleShape box(sf::Vector2f(boxSize, boxSize));
+        box.setFillColor(legendItems[i].first);
+        box.setPosition(startX, rowY);
+        rTex.draw(box);
 
-        sf::RectangleShape colorBox(sf::Vector2f(boxSize, boxSize));
-        colorBox.setFillColor(legendItems[i].first);
-        colorBox.setPosition(startX, rowY);
-        renderTexture.draw(colorBox);
-
-        sf::Text label(legendItems[i].second, font, legendFontSize);
-        label.setFillColor(sf::Color::White);
-        label.setPosition(startX + boxSize + 20.f, rowY - 5.f);
-        renderTexture.draw(label);
+        sf::Text lbl(legendItems[i].second, font, legendFontSize);
+        lbl.setFillColor(sf::Color::White);
+        lbl.setPosition(startX + boxSize + 20.f, rowY - 5.f);
+        rTex.draw(lbl);
     }
 
-    // Draw "@username" near the bottom-right corner
+    // 5) Draw "@username" near bottom-right
     {
-        std::string handle = "@" + userName;
+        std::string handle = "@"+userName;
         sf::Text userTag(handle, font, 120);
-        userTag.setFillColor(sf::Color(80, 80, 80)); // dark gray
+        userTag.setFillColor(sf::Color(80,80,80));
+        auto tagB = userTag.getLocalBounds();
 
-        sf::FloatRect tagBounds = userTag.getLocalBounds();
         float margin = 80.f;
         userTag.setPosition(
-            WD - tagBounds.width - margin,
-            HT - tagBounds.height - margin
+            WD - tagB.width - margin,
+            HT - tagB.height - margin
         );
-        renderTexture.draw(userTag);
+        rTex.draw(userTag);
     }
 
-    // Finalize and export
-    renderTexture.display();
-    sf::Image finalImage = renderTexture.getTexture().copyToImage();
-
-    // Save to outPath
-    if (!finalImage.saveToFile(outPath)) {
-        std::cerr << "Failed to save image to " << outPath << "\n";
+    // Finalize and save
+    rTex.display();
+    sf::Image finalImg = rTex.getTexture().copyToImage();
+    if(!finalImg.saveToFile(outPath)){
+        std::cerr << "Failed to save " << outPath << "\n";
         return 1;
     }
     std::cout << "Saved image to " << outPath << std::endl;

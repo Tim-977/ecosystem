@@ -1,0 +1,12 @@
+#00ffff	activity_2
+#ffff00	school
+#0000ff	schiol
+#ff0000	sleep
+#ff00ff	something else
+#0000ff	1
+#00ffff	2
+#ffff00	3
+#ff00ff	4
+#00ff00	FIVE
+#ff0000	6
+#0000ff	something

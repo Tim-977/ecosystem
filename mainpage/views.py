@@ -777,36 +777,46 @@ def month_view(request, year, month):
 def year_view(request, year):
     user_id = request.user.id
 
-    # Compute the oldest logged year from DailyData for this user (for UI range)
+    # 1) Min/Max year for user interface
     oldest_data = DailyData.objects.filter(user_id=user_id).aggregate(Min('date'))
     if oldest_data['date__min']:
         year_min = oldest_data['date__min'].year
     else:
-        year_min = datetime.now().year  # fallback if no data
-
+        year_min = datetime.now().year
     year_max = datetime.now().year
 
-    # Gather all logs for the requested year
-    all_logs = DailyData.objects.filter(
-        user_id=user_id,
-        date__year=year
-    )
+    # 2) All logs for requested year
+    all_logs = DailyData.objects.filter(user_id=user_id, date__year=year)
 
-    # Collect color mappings from each month in that year
+    # 3) Build color mapping for each activity (ID -> color), 
+    #    plus gather (name, color) pairs for the legend.
+    #    We'll fetch the user's Activities for *all months* of that year.
+    #    Then we remove exact duplicates if name+color match.
     full_mapping = {}
-    for month in range(1, 13):
-        for mapping in ActivityMapping.objects.filter(user_id=user_id, year=year, month=month):
-            full_mapping[mapping.id] = mapping.color
+    legend_list  = []
 
-    # 367 rows, each with 24 hours: day_hour_colors[day_idx][hour_idx]
-    # We'll only fill the first 365 rows with actual data; last 2 remain black.
-    # default "#ffffff" for missing activity
+    # Order by "id" so we preserve the creation order
+    mapping_qs = ActivityMapping.objects.filter(
+        user_id=user_id,
+        year=year
+    ).order_by('id')  # user created them in ascending ID
+
+    seen = set()  # keep track of (name, color) we’ve already added
+    for m in mapping_qs:
+        full_mapping[m.id] = m.color
+        # Only add to the legend if we haven't seen this exact (name, color) yet
+        pair = (m.name, m.color)
+        if pair not in seen:
+            seen.add(pair)
+            legend_list.append(pair)  # preserves creation order
+
+    # 4) Prepare a 367×24 matrix of color codes (#RRGGBB). 
+    #    We only fill days [0..364], last 2 are “black filler.”
     day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(367)]
 
-    # Fill from the user's logs
+    # Fill from the daily logs
     for log in all_logs:
-        # day_idx = 0..364 for Jan1..Dec31
-        day_idx = log.date.timetuple().tm_yday - 1  # 0-based
+        day_idx = log.date.timetuple().tm_yday - 1  # 0..364
         if 0 <= day_idx < 365:
             try:
                 hour_data = json.loads(log.hourly_activity_logging or "[]")
@@ -819,36 +829,43 @@ def year_view(request, year):
                 if 0 <= h < 24:
                     day_hour_colors[day_idx][h] = color
 
-    # Write color data for first 365 days to the input file
-    input_path = os.path.join(settings.BASE_DIR, "activityredering", "year_input.txt")
+    # 5) Write 365×24 color lines into year_input.txt
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    input_path = os.path.join(base_dir, "activityredering", "year_input.txt")
     with open(input_path, "w", encoding="utf-8") as f:
-        # 365 * 24 lines
         for day in range(365):
             for color in day_hour_colors[day]:
                 f.write(color + "\n")
 
-    # Prepare the output path. We'll use user_id in the filename.
+    # 6) Build a separate legend file: one line per unique (name, color),
+    #    in creation order. Format:  "#RRGGBB\tActivity Name"
+    legend_path = os.path.join(base_dir, "activityredering", "year_legend.txt")
+    with open(legend_path, "w", encoding="utf-8") as lf:
+        for (activity_name, hex_color) in legend_list:
+            # NOTE: your condition #1 states "if the name & color matches, no duplication," 
+            # so each line is truly unique
+            lf.write(f"{hex_color}\t{activity_name}\n")
+
+    # 7) Output path for the final PNG
     output_filename = f"year_diagram_{user_id}.png"
-    output_path = os.path.join(settings.BASE_DIR, "mainpage", "static", 
+    output_path = os.path.join(base_dir, "mainpage", "static", 
                                "mainpage", "images", output_filename)
 
-    # Path to the compiled C++ binary
-    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_year")
-
-    # Call it with the 4 arguments: username, year, input_path, output_path
+    # 8) Call the C++ renderer with 5 arguments
+    render_bin = os.path.join(base_dir, "activityredering", "render_year")
     subprocess.run([
         render_bin,
-        request.user.username,  # argv[1]
-        str(year),              # argv[2]
-        input_path,            # argv[3]
-        output_path            # argv[4]
+        request.user.username,   # argv[1] => used for @username label
+        str(year),               # argv[2] => "2024", "2025", etc.
+        input_path,             # argv[3] => year_input.txt path
+        output_path,            # argv[4] => final PNG
+        legend_path             # argv[5] => dynamic legend lines
     ])
 
-    # Now load the resulting PNG from disk
+    # 9) Read the PNG from disk, store in DB, then remove it
     with open(output_path, "rb") as img:
         image_bytes = img.read()
 
-    # Save the image data into the DB, then delete the file from disk
     YearlyActivityDiagram.objects.update_or_create(
         user_id=user_id,
         year=year,
@@ -856,12 +873,12 @@ def year_view(request, year):
     )
     os.remove(output_path)
 
-    # Base64-encode for display
+    # 10) Convert to base64 for inline display
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     diagram_base64 = f"data:image/png;base64,{encoded}"
-
     img_size_kb = round(len(image_bytes) / 1024, 1)
 
+    # 11) Render the response
     context = {
         "year": year,
         "year_min": year_min,
@@ -870,6 +887,7 @@ def year_view(request, year):
         "image_size_kb": img_size_kb,
     }
     return render(request, "mainpage/year_view.html", context)
+
 
 
 
