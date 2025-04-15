@@ -777,40 +777,39 @@ def month_view(request, year, month):
 def year_view(request, year):
     user_id = request.user.id
 
-    # Compute the oldest logged year from DailyData for this user.
-    # If no logs exist, fallback to current year.
+    # Compute the oldest logged year from DailyData for this user (for UI range)
     oldest_data = DailyData.objects.filter(user_id=user_id).aggregate(Min('date'))
     if oldest_data['date__min']:
         year_min = oldest_data['date__min'].year
     else:
         year_min = datetime.now().year  # fallback if no data
 
-    # Set maximum year to current year.
     year_max = datetime.now().year
 
-    # Get all DailyData entries for the entire year
+    # Gather all logs for the requested year
     all_logs = DailyData.objects.filter(
         user_id=user_id,
         date__year=year
     )
 
-    # Merge all activity mappings across months in that year (using mapping from each month)
+    # Collect color mappings from each month in that year
     full_mapping = {}
     for month in range(1, 13):
         for mapping in ActivityMapping.objects.filter(user_id=user_id, year=year, month=month):
             full_mapping[mapping.id] = mapping.color
 
-    # Build a 366 x 24 grid; since we want a full circle, we reserve the last two segments as "empty" (black).
-    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(367)]  # default white for missing activity
+    # 367 rows, each with 24 hours: day_hour_colors[day_idx][hour_idx]
+    # We'll only fill the first 365 rows with actual data; last 2 remain black.
+    # default "#ffffff" for missing activity
+    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(367)]
 
+    # Fill from the user's logs
     for log in all_logs:
-        # Get day index from the year; tm_yday gives 1-indexed day-of-year.
-        day_idx = log.date.timetuple().tm_yday - 1
-        if day_idx < 0 or day_idx >= 365:
-            continue  # safeguard; we expect 0 to 364 for actual data.
-        if log.hourly_activity_logging:
+        # day_idx = 0..364 for Jan1..Dec31
+        day_idx = log.date.timetuple().tm_yday - 1  # 0-based
+        if 0 <= day_idx < 365:
             try:
-                hour_data = json.loads(log.hourly_activity_logging)
+                hour_data = json.loads(log.hourly_activity_logging or "[]")
             except:
                 hour_data = []
             for hour_item in hour_data:
@@ -820,36 +819,49 @@ def year_view(request, year):
                 if 0 <= h < 24:
                     day_hour_colors[day_idx][h] = color
 
-    # Write color values into "year_input.txt" (we only write for 365 days; last 2 segments remain white)
+    # Write color data for first 365 days to the input file
     input_path = os.path.join(settings.BASE_DIR, "activityredering", "year_input.txt")
     with open(input_path, "w", encoding="utf-8") as f:
-        # Write 365*24 color lines from day_hour_colors
+        # 365 * 24 lines
         for day in range(365):
             for color in day_hour_colors[day]:
                 f.write(color + "\n")
 
-    # Call the C++ renderer for the yearly graph.
-    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_test")
-    subprocess.run([render_bin, str(user_id)])
+    # Prepare the output path. We'll use user_id in the filename.
+    output_filename = f"year_diagram_{user_id}.png"
+    output_path = os.path.join(settings.BASE_DIR, "mainpage", "static", 
+                               "mainpage", "images", output_filename)
 
-    # Load the generated image.
-    img_filename = f"year_diagram_{user_id}.png"
-    img_path = os.path.join(settings.BASE_DIR, "mainpage", "static", "mainpage", "images", img_filename)
-    with open(img_path, "rb") as img:
+    # Path to the compiled C++ binary
+    render_bin = os.path.join(settings.BASE_DIR, "activityredering", "render_year")
+
+    # Call it with the 4 arguments: username, year, input_path, output_path
+    subprocess.run([
+        render_bin,
+        request.user.username,  # argv[1]
+        str(year),              # argv[2]
+        input_path,            # argv[3]
+        output_path            # argv[4]
+    ])
+
+    # Now load the resulting PNG from disk
+    with open(output_path, "rb") as img:
         image_bytes = img.read()
 
-    # Store image in the DB
+    # Save the image data into the DB, then delete the file from disk
     YearlyActivityDiagram.objects.update_or_create(
         user_id=user_id,
         year=year,
         defaults={"image_data": image_bytes}
     )
-    os.remove(img_path)
+    os.remove(output_path)
+
+    # Base64-encode for display
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     diagram_base64 = f"data:image/png;base64,{encoded}"
 
     img_size_kb = round(len(image_bytes) / 1024, 1)
-    
+
     context = {
         "year": year,
         "year_min": year_min,
@@ -857,8 +869,8 @@ def year_view(request, year):
         "diagram_base64": diagram_base64,
         "image_size_kb": img_size_kb,
     }
-
     return render(request, "mainpage/year_view.html", context)
+
 
 
 def interpolate_color(value, low_tuple, mid_tuple, high_tuple):
