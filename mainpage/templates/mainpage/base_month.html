@@ -22,10 +22,13 @@
       {% endif %}
     </div>
 
-    <!-- Centered "Go to Today's View" -->
+    <!-- Centered "Go to Today's View" and "Go to Year's View" -->
     <div class="center-nav">
       <a id="log-today-link" href="#">Go to Today's View</a>
+      <span style="margin: 0 10px;">|</span>
+      <a id="log-year-link" href="{% url 'year_statistics' year=year %}">Go to Year's View</a>
     </div>
+
 
     <!-- Username or Streak Info -->
     <div class="header-right">
@@ -69,10 +72,12 @@
 
       <div class="menu-buttons">
         <button onclick="window.location.href='{% url 'main_page' %}'">Home</button>
-        <button onclick="window.location.href='{% url 'month_view' year=year month=month %}'">Statistics</button>
-        <button onclick="window.location.href='{% url 'diary_view' year=year month=month %}'">Diary</button>
-        <button onclick="window.location.href='{% url 'set_habits' year=year month=month %}'">Set Habits</button>
-        <button onclick="window.location.href='{% url 'activity_config_view' year=year month=month %}'">Set Activities</button>
+        {% if month %}
+          <button onclick="window.location.href='{% url 'month_view' year=year month=month %}'">Statistics</button>
+          <button onclick="window.location.href='{% url 'diary_view' year=year month=month %}'">Diary</button>
+          <button onclick="window.location.href='{% url 'set_habits' year=year month=month %}'">Set Habits</button>
+          <button onclick="window.location.href='{% url 'activity_config_view' year=year month=month %}'">Set Activities</button>
+        {% endif %}
         <button onclick="window.location.href='{% url 'settings' %}'">Settings</button>
         <button onclick="window.location.href='{% url 'logout' %}'">Log Out</button>
       </div>

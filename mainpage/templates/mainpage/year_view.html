@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Yearly Overview: {{ year }}</title>
+  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
+  <link rel="stylesheet" href="{% static 'mainpage/css/year.css' %}">
+</head>
+<body>
+  <!-- ========== HEADER ========== -->
+  <header>
+    <div class="header-left">
+      <h1 id="currentYear" data-year="{{ year }}">
+        {{ year }}
+      </h1>
+    </div>
+    <div class="center-nav">
+      <a id="log-today-link" href="#">Go to Today's View</a>
+      <span style="margin: 0 10px;">|</span>
+      <a id="log-month-link" href="#">Go to Month View</a>
+    </div>
+    <div class="header-right">
+      <span class="username">{{ user.username }}</span>
+    </div>
+  </header>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let today = new Date();
+      let year = today.getFullYear();
+      let month = today.getMonth() + 1;
+      let day = today.getDate();
+
+      document.getElementById("log-today-link").href = `/day/${year}/${month}/${day}/`;
+      document.getElementById("log-month-link").href = `/month/${year}/${month}/`;
+    });
+  </script>
+
+  <div class="content-container" style="display: flex; flex-direction: column;">
+    <main class="main-content" style="padding: 10px; flex: 1;">
+      <!-- Year Slider Section -->
+      <div class="year-slider-container">
+        <label for="yearSlider">Select Year:</label>
+        <input type="range" id="yearSlider" name="yearSlider"
+               min="{{ year_min }}" max="{{ year_max }}" value="{{ year }}">
+        <span id="sliderYearLabel">Current: {{ year }}</span>
+      </div>
+
+      <!-- Download Button and Graph Display -->
+      <div style="text-align: center;">
+        <a download="year_activity_graph_{{ year }}.png" href="{{ diagram_base64 }}">
+          <button class="download-btn">
+            Download Yearly Graph ({{ image_size_kb }} KB)
+          </button>
+        </a>
+      </div>      
+      <div style="max-width: 100%; text-align: center; margin-top: 20px;">
+        <img src="{{ diagram_base64 }}" alt="Yearly Circular Activity Graph"
+             style="width: 100%; max-width: 900px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3);" />
+      </div>
+    </main>
+  </div>
+
+  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
+  <script>
+    const yearSlider = document.getElementById('yearSlider');
+    yearSlider.addEventListener('input', function() {
+      document.getElementById('sliderYearLabel').innerText = 'Current: ' + this.value;
+    });
+    yearSlider.addEventListener('change', function() {
+      let selectedYear = this.value;
+      window.location.href = '/year/' + selectedYear + '/';
+    });
+  </script>
+</body>
+</html>

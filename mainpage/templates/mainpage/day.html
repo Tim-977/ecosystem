@@ -28,10 +28,10 @@
 
     <!-- Centered Go to Month View Button -->
     <div class="center-nav">
-        <a href="{% url 'month_view' date.year date.month %}" class="month-view-link">
-            Go to Month View
-        </a>
-    </div>
+        <a href="{% url 'month_view' date.year date.month %}" class="month-view-link">Go to Month View</a>
+        <span style="margin: 0 10px;">|</span>
+        <a id="log-year-link" href="{% url 'year_statistics' year=date.year %}">Go to Year's View</a>
+      </div>
 
     <div class="right-info">
         <span class="username">{{ user.username }}</span>

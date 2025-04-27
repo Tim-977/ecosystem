@@ -96,3 +96,16 @@ class MonthlyActivityDiagram(models.Model):
 
     def __str__(self):
         return f"Diagram for user {self.user_id} ({self.year}-{self.month:02d})"
+
+
+class YearlyActivityDiagram(models.Model):
+    user_id = models.IntegerField()
+    year = models.IntegerField()
+    image_data = models.BinaryField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user_id", "year")
+
+    def __str__(self):
+        return f"Yearly Diagram for user {self.user_id} ({self.year})"
