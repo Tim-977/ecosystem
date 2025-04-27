@@ -14,9 +14,9 @@ from mainpage.models import DailyData, MonthlyHabits, ActivityMapping
 #          ~~ CONFIG ~~         #
 # ----------------------------- #
 USER_ID = 2                     #
-YEAR = 2024                     #
+YEAR = 2025                     #
 MONTH_START = 1                 #
-MONTH_END = 12                  #
+MONTH_END = 4                  #
 END_DAY = 0                     #
                                 #
 # ----------------------------- #

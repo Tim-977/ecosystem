@@ -8,7 +8,7 @@ django.setup()
 from mainpage.models import ActivityMapping
 
 USER_ID = 2
-YEAR = 2024
+YEAR = 2025
 MONTH_START = 1
 MONTH_END = 12
 ACTIVITY_COUNT = 8
