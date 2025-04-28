@@ -86,6 +86,12 @@ def day_view(request, year, month, day):
     ]
 
     if request.method == 'POST':
+        # ── Tiny-reflection limit (115 chars) ──
+        thoughts_input = request.POST.get('thoughts', '') or ''
+        if len(thoughts_input) > 115:
+            messages.error(request, "Thoughts cannot exceed 115 characters.")
+            return redirect('day_view', year=year, month=month, day=day)
+
         daily_obj.mood_rating = request.POST.get('mood_rating') or None
         daily_obj.productivity_score = request.POST.get('productivity_score') or None
 
@@ -105,7 +111,7 @@ def day_view(request, year, month, day):
             habit_completion_string += "1" if checkbox_val == "on" else "0"
         daily_obj.habits_completed = habit_completion_string
 
-        daily_obj.thoughts = request.POST.get('thoughts')
+        daily_obj.thoughts = thoughts_input
         daily_obj.self_reflection = request.POST.get('self_reflection')
         daily_obj.hourly_activity_logging = request.POST.get('hourly_activity_logging')
         daily_obj.save()
@@ -118,7 +124,6 @@ def day_view(request, year, month, day):
         hourly_data = []
 
     hourly_data.sort(key=lambda x: x.get('hour', 0))
-
     if not hourly_data:
         hourly_data = [{"hour": h, "activity": None} for h in range(24)]
     else:
@@ -270,9 +275,24 @@ def activity_config_view(request, year, month):
                 return redirect('activity_config_view', year=year, month=month)
 
         if action == 'create':
-            if ActivityMapping.objects.filter(user_id=request.user.id, name=name, year=year, month=month).exists():
+            # ── Enforce max 15 activities/month ──
+            existing_count = ActivityMapping.objects.filter(
+                user_id=request.user.id, year=year, month=month
+            ).count()
+            if existing_count >= 15:
+                messages.error(
+                    request,
+                    "You can only have up to 15 activities per month."
+                )
+                return redirect('activity_config_view', year=year, month=month)
+
+            if ActivityMapping.objects.filter(
+                user_id=request.user.id, name=name, year=year, month=month
+            ).exists():
                 messages.error(request, "You already have an activity with that name this month.")
-            elif ActivityMapping.objects.filter(user_id=request.user.id, color=color, year=year, month=month).exists():
+            elif ActivityMapping.objects.filter(
+                user_id=request.user.id, color=color, year=year, month=month
+            ).exists():
                 messages.error(request, "You already have an activity with that color this month.")
             else:
                 ActivityMapping.objects.create(
@@ -315,7 +335,6 @@ def activity_config_view(request, year, month):
         'month': month,
         "current_view": "activity_config_view",
     })
-
 
 
 @login_required
@@ -453,6 +472,12 @@ def add_todo_task(request):
 
         usertodo, _ = UserTodo.objects.get_or_create(user=request.user)
         tasks = usertodo.tasks or []
+
+        # ── Enforce max 30 total tasks ──
+        if len(tasks) >= 30:
+            return JsonResponse({
+                "error": "You can have at most 30 tasks. Delete some old ones to add more."
+            }, status=400)
 
         new_id = max([t.get('id', 0) for t in tasks], default=0) + 1
 

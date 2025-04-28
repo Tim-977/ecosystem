@@ -98,7 +98,15 @@
           <div class="thoughts-box">
             <h2>Write a thought...</h2>
             <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
+            {% if messages %}
+              <div class="messages">
+                {% for message in messages %}
+                  <div class="message {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
+          
 
           <!-- TODO List (right, spans two rows) -->
           <div class="todo-box">
@@ -223,6 +231,8 @@
   <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
   <script src="{% static 'mainpage/js/todo.js' %}"></script>
   <script src="{% static 'mainpage/js/localtime.js' %}"></script>
+  <script src="{% static 'mainpage/js/thoughts.js' %}"></script>
+
 
   <!-- New script for the date slider logic -->
   <script src="{% static 'mainpage/js/date_slider.js' %}"></script>

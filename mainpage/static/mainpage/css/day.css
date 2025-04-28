@@ -131,3 +131,25 @@ main {
     display: flex;
     justify-content: space-evenly;
 }
+
+.messages {
+    margin: 20px;
+    padding: 10px;
+}
+
+.message {
+padding: 10px;
+border-radius: 5px;
+margin-bottom: 10px;
+font-weight: bold;
+}
+
+.message.error {
+background-color: #ffdddd;
+color: #aa0000;
+}
+
+.message.success {
+background-color: #ddffdd;
+color: #007700;
+}
