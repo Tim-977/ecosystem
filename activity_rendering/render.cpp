@@ -115,8 +115,9 @@ int main(int argc, char* argv[])
     // a hard coded absolute path.  This makes the binary portable as it can be
     // executed from any checkout directory.
     std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
-    std::filesystem::path fontPath = execDir / "../fonts/ArialCE.ttf";
-    if (!font.loadFromFile(fontPath.string())) {
+    // The fonts directory lives alongside the binary, so join "fonts" directly
+    // instead of climbing one directory up.
+    std::filesystem::path fontPath = execDir / "fonts/ArialCE.ttf";    if (!font.loadFromFile(fontPath.string())) {
         std::cerr << "Failed to load font from " << fontPath << std::endl;
         return -1;
     }

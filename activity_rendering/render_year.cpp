@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <filesystem>
 
 struct point {
     double x, y;
@@ -175,8 +176,9 @@ int main(int argc, char* argv[]) {
     // Resolve the font relative to the executable to avoid a hard coded path.
     // This allows running the binary from any environment or directory.
     std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
-    std::filesystem::path fontPath = execDir / "../fonts/ArialCE.ttf";
-    if (!font.loadFromFile(fontPath.string())) {
+    // Fonts are stored next to the executable, so do not step out of the
+    // directory when constructing the path.
+    std::filesystem::path fontPath = execDir / "fonts/ArialCE.ttf";    if (!font.loadFromFile(fontPath.string())) {
         std::cerr << "Failed to load font from " << fontPath << "\n";
         return 1;
     }
