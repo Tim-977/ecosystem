@@ -1,0 +1,5 @@
+#!/bin/bash
+# Usage: ./render <user_id> <year> <output_path>
+# Create a dummy PNG file
+mkdir -p "$(dirname "$3")"
+echo -n "DUMMY PNG" > "$3"
