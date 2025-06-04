@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authapp',  # Login app
     'mainpage',  # Main page app
+    'tracker',
 ]
 
 LOGIN_URL = '/auth/login/'
@@ -133,6 +134,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Include your app's static directory
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'mainpage/static'),
+    os.path.join(BASE_DIR, 'project/cpp_server/static'),
 ]
 
 
