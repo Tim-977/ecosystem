@@ -111,8 +111,13 @@ int main(int argc, char* argv[])
     renderTexture.clear(sf::Color::White);
 
     sf::Font font;
-    if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
-        std::cerr << "Failed to load font" << std::endl;
+    // Load the font relative to the executable location instead of relying on
+    // a hard coded absolute path.  This makes the binary portable as it can be
+    // executed from any checkout directory.
+    std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
+    std::filesystem::path fontPath = execDir / "../fonts/ArialCE.ttf";
+    if (!font.loadFromFile(fontPath.string())) {
+        std::cerr << "Failed to load font from " << fontPath << std::endl;
         return -1;
     }
 

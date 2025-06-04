@@ -172,8 +172,12 @@ int main(int argc, char* argv[]) {
 
     // Load font
     sf::Font font;
-    if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
-        std::cerr << "Failed to load font.\n";
+    // Resolve the font relative to the executable to avoid a hard coded path.
+    // This allows running the binary from any environment or directory.
+    std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
+    std::filesystem::path fontPath = execDir / "../fonts/ArialCE.ttf";
+    if (!font.loadFromFile(fontPath.string())) {
+        std::cerr << "Failed to load font from " << fontPath << "\n";
         return 1;
     }
 
