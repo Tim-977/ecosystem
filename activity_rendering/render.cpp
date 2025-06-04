@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("/home/yhat/ecosystem/activityredering/input.txt");
+        std::ifstream infile("/home/yhat/ecosystem/activity_rendering/input.txt");
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     renderTexture.clear(sf::Color::White);
 
     sf::Font font;
-    if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
+    if (!font.loadFromFile("/home/yhat/ecosystem/activity_rendering/fonts/ArialCE.ttf")) {
         std::cerr << "Failed to load font" << std::endl;
         return -1;
     }
