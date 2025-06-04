@@ -844,7 +844,7 @@ def year_view(request, year):
             legend_list.append(pair)  # preserves creation order
 
     # 4) Prepare a 367×24 matrix of color codes (#RRGGBB). 
-    #    We only fill days [0..364], last 2 are “black filler.”
+    #    We only fill days [0..364], last 2 are “white filler.”
     day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(367)]
 
     # Fill from the daily logs
