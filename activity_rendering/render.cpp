@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("/home/yhat/ecosystem/activityredering/input.txt");
+        std::ifstream infile("/home/yhat/ecosystem/activity_rendering/input.txt");
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
