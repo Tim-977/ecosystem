@@ -742,9 +742,9 @@ def month_view(request, year, month):
                 else:
                     day_hour_colors[day_idx][h] = "#000000"
 
-    # Write the grid to activityredering/input.txt
+    # Write the grid to activity_rendering/input.txt
     base_dir = settings.BASE_DIR
-    input_path = os.path.join(base_dir, "activityredering", "input.txt")
+    input_path = os.path.join(base_dir, "activity_rendering", "input.txt")
 
     lines = []
     for day_idx in range(31):
@@ -755,8 +755,8 @@ def month_view(request, year, month):
         f.write("\n".join(lines) + "\n")
 
     # Compile render.cpp if needed
-    # render_cpp = os.path.join(base_dir, "activityredering", "render.cpp")
-    render_bin = os.path.join(base_dir, "activityredering", "render")
+    # render_cpp = os.path.join(base_dir, "activity_rendering", "render.cpp")
+    render_bin = os.path.join(base_dir, "activity_rendering", "render")
 
     # Run the renderer with user_id
     user_id_str = str(request.user.id)
@@ -856,7 +856,7 @@ def year_view(request, year):
 
     # 5) Write 365×24 color lines into year_input.txt
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    input_path = os.path.join(base_dir, "activityredering", "year_input.txt")
+    input_path = os.path.join(base_dir, "activity_rendering", "year_input.txt")
     with open(input_path, "w", encoding="utf-8") as f:
         for day in range(365):
             for color in day_hour_colors[day]:
@@ -864,7 +864,7 @@ def year_view(request, year):
 
     # 6) Build a separate legend file: one line per unique (name, color),
     #    in creation order. Format:  "#RRGGBB\tActivity Name"
-    legend_path = os.path.join(base_dir, "activityredering", "year_legend.txt")
+    legend_path = os.path.join(base_dir, "activity_rendering", "year_legend.txt")
     with open(legend_path, "w", encoding="utf-8") as lf:
         for (activity_name, hex_color) in legend_list:
             # NOTE: your condition #1 states "if the name & color matches, no duplication," 
@@ -877,7 +877,7 @@ def year_view(request, year):
                                "mainpage", "images", output_filename)
 
     # 8) Call the C++ renderer with 5 arguments
-    render_bin = os.path.join(base_dir, "activityredering", "render_year")
+    render_bin = os.path.join(base_dir, "activity_rendering", "render_year")
     subprocess.run([
         render_bin,
         request.user.username,   # argv[1] => used for @username label

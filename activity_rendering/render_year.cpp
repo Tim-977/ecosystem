@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
 
     // Load font
     sf::Font font;
-    if (!font.loadFromFile("/home/yhat/ecosystem/activityredering/fonts/ArialCE.ttf")) {
+    if (!font.loadFromFile("/home/yhat/ecosystem/activity_rendering/fonts/ArialCE.ttf")) {
         std::cerr << "Failed to load font.\n";
         return 1;
     }
