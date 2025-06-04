@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import stat
 from datetime import date, datetime, time, timedelta
 
 from django.conf import settings
@@ -757,6 +758,13 @@ def month_view(request, year, month):
     # Compile render.cpp if needed
     # render_cpp = os.path.join(base_dir, "activity_rendering", "render.cpp")
     render_bin = os.path.join(base_dir, "activity_rendering", "render")
+    # Ensure the binary is executable. This is important when the repository
+    # is freshly cloned or the binary was created without the execute bit set.
+    if os.path.exists(render_bin):
+        st = os.stat(render_bin)
+        # Check the execute bit and set it if needed
+        if not (st.st_mode & stat.S_IXUSR):
+            os.chmod(render_bin, st.st_mode | stat.S_IXUSR)
 
     # Run the renderer with user_id
     user_id_str = str(request.user.id)
@@ -878,6 +886,10 @@ def year_view(request, year):
 
     # 8) Call the C++ renderer with 5 arguments
     render_bin = os.path.join(base_dir, "activity_rendering", "render_year")
+    if os.path.exists(render_bin):
+        st = os.stat(render_bin)
+        if not (st.st_mode & stat.S_IXUSR):
+            os.chmod(render_bin, st.st_mode | stat.S_IXUSR)
     subprocess.run([
         render_bin,
         request.user.username,   # argv[1] => used for @username label
