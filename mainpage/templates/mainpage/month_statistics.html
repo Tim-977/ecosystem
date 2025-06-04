@@ -58,14 +58,14 @@
     <aside class="activity-graph">
       <h2>Activity Graph (Monthly Data)</h2>
       <div class="graph-box" style="height: 100%;">
-        {% if diagram_base64 %}
-          <img src="{{ diagram_base64 }}"
+        {% if image_path %}
+          <img src="{{ image_path }}"
               alt="Activity Diagram"
               style="width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);" />
         {% else %}
           <p>No activity diagram available.</p>
         {% endif %}
-      </div>           
+      </div>
     </aside>
   </div>
 </div>
