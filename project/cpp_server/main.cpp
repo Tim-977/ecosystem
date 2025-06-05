@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cstdlib>
+#include <cstdio>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,36 +29,99 @@ std::string handle_request(const std::string& request_buffer) {
 
     int user_id = request_json.value("user_id", -1);
     int year = request_json.value("year", 0);
+    std::string mode = request_json.value("mode", "month");
+    int month = request_json.value("month", 0);
+
     if (user_id < 0 || year == 0) {
-        json error_resp = {
-            {"status", "error"},
-            {"message", "Missing user_id or year"}
-        };
-        return error_resp.dump();
+        json err = {{"success", false}, {"error", "Missing user_id or year"}};
+        return err.dump();
     }
 
-    system("mkdir -p static/rendered");
-
-    std::ostringstream oss;
-    oss << "static/rendered/" << user_id << "_" << year << ".png";
-    std::string image_path = oss.str();
-
-    std::ofstream outfile(image_path, std::ios::binary);
-    if (!outfile) {
-        json error_resp = {
-            {"status", "error"},
-            {"message", "Failed to create image file"}
-        };
-        return error_resp.dump();
+    if (mode == "month" && month == 0) {
+        json err = {{"success", false}, {"error", "Missing month"}};
+        return err.dump();
     }
-    outfile << "DUMMY PNG CONTENT";
-    outfile.close();
 
-    json success_resp = {
-        {"status", "ok"},
-        {"image_path", "/" + image_path}
-    };
-    return success_resp.dump();
+    std::string baseDir = "project/cpp_server";
+    std::string inputFile;
+    std::string legendFile;
+    std::string outputFile;
+    if (mode == "year") {
+        inputFile = baseDir + "/year_input_" + std::to_string(user_id) + "_" + std::to_string(year) + ".txt";
+        legendFile = baseDir + "/year_legend_" + std::to_string(user_id) + "_" + std::to_string(year) + ".txt";
+        outputFile = baseDir + "/static/rendered/" + std::to_string(user_id) + "_" + std::to_string(year) + ".png";
+    } else {
+        inputFile = baseDir + "/input_" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".txt";
+        legendFile = baseDir + "/legend_" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".txt";
+        outputFile = baseDir + "/static/rendered/" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".png";
+    }
+
+    system(("mkdir -p " + baseDir + "/static/rendered").c_str());
+
+    try {
+        std::ofstream inF(inputFile);
+        if (!inF) throw std::runtime_error("input");
+        if (mode == "year") {
+            for (const auto& row : request_json["activity_log"]) {
+                for (const auto& col : row) {
+                    inF << col.get<std::string>() << "\n";
+                }
+            }
+        } else {
+            for (const auto& row : request_json["activity_log"]) {
+                for (size_t i = 0; i < row.size(); ++i) {
+                    inF << row[i].get<std::string>();
+                    if (i + 1 < row.size()) inF << ' ';
+                }
+                inF << '\n';
+            }
+        }
+        inF.close();
+
+        std::ofstream lf(legendFile);
+        if (lf) {
+            if (request_json.contains("color_map")) {
+                for (auto it = request_json["color_map"].begin(); it != request_json["color_map"].end(); ++it) {
+                    lf << it.value().get<std::string>() << '\t' << it.key() << '\n';
+                }
+            } else if (request_json.contains("legend")) {
+                for (const auto& item : request_json["legend"]) {
+                    if (item.size() >= 2)
+                        lf << item[1].get<std::string>() << '\t' << item[0].get<std::string>() << '\n';
+                }
+            }
+            lf.close();
+        }
+    } catch (...) {
+        json err = {{"success", false}, {"error", "Failed to write input files"}};
+        return err.dump();
+    }
+
+    std::string cmd;
+    if (mode == "year") {
+        cmd = "activity_rendering/render_year --input-file " + inputFile + " --legend-file " + legendFile + " --output-file " + outputFile;
+    } else {
+        cmd = "activity_rendering/render --input-file " + inputFile + " --legend-file " + legendFile + " --output-file " + outputFile;
+    }
+
+    int ret = system(cmd.c_str());
+    std::remove(inputFile.c_str());
+    std::remove(legendFile.c_str());
+
+    if (ret != 0) {
+        json err = {{"success", false}, {"error", "Failed to launch renderer"}};
+        return err.dump();
+    }
+
+    std::string publicPath;
+    size_t pos = outputFile.find("static/");
+    if (pos != std::string::npos)
+        publicPath = "/" + outputFile.substr(pos);
+    else
+        publicPath = "/" + outputFile;
+
+    json resp = {{"success", true}, {"image_path", publicPath}};
+    return resp.dump();
 }
 
 int main() {

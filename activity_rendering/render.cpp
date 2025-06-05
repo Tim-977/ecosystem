@@ -74,8 +74,30 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
 int main(int argc, char* argv[])
 {
     std::string userIdStr = "unknown_user";
-    if (argc > 1) {
-        userIdStr = argv[1];
+    std::string inputFile  = "activity_rendering/input.txt";
+    std::string legendFile = "";
+    std::string outputFile = "";
+
+    int argIndex = 1;
+    if (argc > argIndex && argv[argIndex][0] != '-') {
+        userIdStr = argv[argIndex++];
+    }
+
+    for (int i = argIndex; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--input-file" && i + 1 < argc) {
+            inputFile = argv[++i];
+        } else if (arg == "--legend-file" && i + 1 < argc) {
+            legendFile = argv[++i];
+        } else if (arg == "--output-file" && i + 1 < argc) {
+            outputFile = argv[++i];
+        }
+    }
+
+    if (outputFile.empty()) {
+        std::string outputDir = "mainpage/static/mainpage/images";
+        std::filesystem::create_directories(outputDir);
+        outputFile = outputDir + "/activity_diagram_" + userIdStr + ".png";
     }
 
     const int numDays = 31;
@@ -96,7 +118,7 @@ int main(int argc, char* argv[])
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("/home/yhat/ecosystem/activity_rendering/input.txt");
+        std::ifstream infile(inputFile);
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
@@ -187,15 +209,11 @@ int main(int argc, char* argv[])
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
 
-    std::string outputDir = "/home/yhat/ecosystem/mainpage/static/mainpage/images";
-    std::filesystem::create_directories(outputDir);
-
-    std::string filename = outputDir + "/activity_diagram_" + userIdStr + ".png";
-    if (!finalImage.saveToFile(filename)) {
-        std::cerr << "Failed to save image to " << filename << std::endl;
+    if (!finalImage.saveToFile(outputFile)) {
+        std::cerr << "Failed to save image to " << outputFile << std::endl;
         return -1;
     }
 
-    std::cout << "Saved " << filename << std::endl;
+    std::cout << "Saved " << outputFile << std::endl;
     return 0;
 }
