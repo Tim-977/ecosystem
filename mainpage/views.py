@@ -1,25 +1,16 @@
-import base64
 import calendar
 import json
-import os
 import re
-import shutil
-import subprocess
-import stat
 from datetime import date, datetime, time, timedelta
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.db.models import Min
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
-from mainpage.models import (ActivityMapping, DailyData,
-                             MonthlyActivityDiagram, YearlyActivityDiagram)
-
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
+from tracker.utils.socket_client import send_render_request
 
 
 @login_required
@@ -743,54 +734,21 @@ def month_view(request, year, month):
                 else:
                     day_hour_colors[day_idx][h] = "#000000"
 
-    # Write the grid to activity_rendering/input.txt
-    base_dir = settings.BASE_DIR
-    input_path = os.path.join(base_dir, "activity_rendering", "input.txt")
-
-    lines = []
-    for day_idx in range(31):
-        line = " ".join(day_hour_colors[day_idx])
-        lines.append(line)
-
-    with open(input_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-
-    # Compile render.cpp if needed
-    # render_cpp = os.path.join(base_dir, "activity_rendering", "render.cpp")
-    render_bin = os.path.join(base_dir, "activity_rendering", "render")
-    # Ensure the binary is executable. This is important when the repository
-    # is freshly cloned or the binary was created without the execute bit set.
-    if os.path.exists(render_bin):
-        st = os.stat(render_bin)
-        # Check the execute bit and set it if needed
-        if not (st.st_mode & stat.S_IXUSR):
-            os.chmod(render_bin, st.st_mode | stat.S_IXUSR)
-
-    # Run the renderer with user_id
-    user_id_str = str(request.user.id)
-    subprocess.run([render_bin, user_id_str])
-
-    # Get full path to generated image
-    diagram_filename = f"activity_diagram_{user_id_str}.png"
-    image_path = os.path.join(base_dir, "mainpage", "static", "mainpage", "images", diagram_filename)
-
-    # Read the image into binary
-    with open(image_path, "rb") as img_file:
-        image_bytes = img_file.read()
-
-    # Save image into the DB
-    MonthlyActivityDiagram.objects.update_or_create(
-        user_id=request.user.id,
-        year=year,
-        month=month,
-        defaults={"image_data": image_bytes}
-    )
-
-    os.remove(image_path)
-
-    # Load it again for displaying (base64 encoded)
-    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
-    diagram_base64 = f"data:image/png;base64,{encoded_image}"
+    image_path = None
+    try:
+        payload = {
+            "user_id": request.user.id,
+            "year": year,
+            "month": month,
+            "mode": "month",
+            "activity_log": day_hour_colors,
+            "color_map": color_lookup,
+        }
+        response = send_render_request(payload)
+        if isinstance(response, dict):
+            image_path = response.get("image_path")
+    except Exception:
+        image_path = None
 
     context = {
         "year": year,
@@ -801,7 +759,7 @@ def month_view(request, year, month):
         "reverse": reverse,
         "monthly_sleep_data": monthly_sleep_data,
         "monthly_activity_aggregate": monthly_activity_aggregate,
-        "diagram_base64": diagram_base64,
+        "image_path": image_path,
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
@@ -862,66 +820,28 @@ def year_view(request, year):
                 if 0 <= h < 24:
                     day_hour_colors[day_idx][h] = color
 
-    # 5) Write 365×24 color lines into year_input.txt
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    input_path = os.path.join(base_dir, "activity_rendering", "year_input.txt")
-    with open(input_path, "w", encoding="utf-8") as f:
-        for day in range(365):
-            for color in day_hour_colors[day]:
-                f.write(color + "\n")
-
-    # 6) Build a separate legend file: one line per unique (name, color),
-    #    in creation order. Format:  "#RRGGBB\tActivity Name"
-    legend_path = os.path.join(base_dir, "activity_rendering", "year_legend.txt")
-    with open(legend_path, "w", encoding="utf-8") as lf:
-        for (activity_name, hex_color) in legend_list:
-            # NOTE: your condition #1 states "if the name & color matches, no duplication," 
-            # so each line is truly unique
-            lf.write(f"{hex_color}\t{activity_name}\n")
-
-    # 7) Output path for the final PNG
-    output_filename = f"year_diagram_{user_id}.png"
-    output_path = os.path.join(base_dir, "mainpage", "static", 
-                               "mainpage", "images", output_filename)
-
-    # 8) Call the C++ renderer with 5 arguments
-    render_bin = os.path.join(base_dir, "activity_rendering", "render_year")
-    if os.path.exists(render_bin):
-        st = os.stat(render_bin)
-        if not (st.st_mode & stat.S_IXUSR):
-            os.chmod(render_bin, st.st_mode | stat.S_IXUSR)
-    subprocess.run([
-        render_bin,
-        request.user.username,   # argv[1] => used for @username label
-        str(year),               # argv[2] => "2024", "2025", etc.
-        input_path,             # argv[3] => year_input.txt path
-        output_path,            # argv[4] => final PNG
-        legend_path             # argv[5] => dynamic legend lines
-    ])
-
-    # 9) Read the PNG from disk, store in DB, then remove it
-    with open(output_path, "rb") as img:
-        image_bytes = img.read()
-
-    YearlyActivityDiagram.objects.update_or_create(
-        user_id=user_id,
-        year=year,
-        defaults={"image_data": image_bytes}
-    )
-    os.remove(output_path)
-
-    # 10) Convert to base64 for inline display
-    encoded = base64.b64encode(image_bytes).decode("utf-8")
-    diagram_base64 = f"data:image/png;base64,{encoded}"
-    img_size_kb = round(len(image_bytes) / 1024, 1)
+    image_path = None
+    try:
+        payload = {
+            "user_id": user_id,
+            "year": year,
+            "mode": "year",
+            "activity_log": day_hour_colors,
+            "color_map": full_mapping,
+            "legend": legend_list,
+        }
+        response = send_render_request(payload)
+        if isinstance(response, dict):
+            image_path = response.get("image_path")
+    except Exception:
+        image_path = None
 
     # 11) Render the response
     context = {
         "year": year,
         "year_min": year_min,
         "year_max": year_max,
-        "diagram_base64": diagram_base64,
-        "image_size_kb": img_size_kb,
+        "image_path": image_path,
     }
     return render(request, "mainpage/year_view.html", context)
 

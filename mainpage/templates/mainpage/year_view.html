@@ -49,15 +49,19 @@
 
       <!-- Download Button and Graph Display -->
       <div style="text-align: center;">
-        <a download="year_activity_graph_{{ year }}.png" href="{{ diagram_base64 }}">
-          <button class="download-btn">
-            Download Yearly Graph ({{ image_size_kb }} KB)
-          </button>
+        {% if image_path %}
+        <a download="year_activity_graph_{{ year }}.png" href="{{ image_path }}">
+          <button class="download-btn">Download Yearly Graph</button>
         </a>
-      </div>      
+        {% endif %}
+      </div>
       <div style="max-width: 100%; text-align: center; margin-top: 20px;">
-        <img src="{{ diagram_base64 }}" alt="Yearly Circular Activity Graph"
+        {% if image_path %}
+        <img src="{{ image_path }}" alt="Yearly Circular Activity Graph"
              style="width: 100%; max-width: 900px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3);" />
+        {% else %}
+        <p>No yearly diagram available.</p>
+        {% endif %}
       </div>
     </main>
   </div>

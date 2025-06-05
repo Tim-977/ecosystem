@@ -78,22 +78,31 @@ sf::Color parseHexColor(const std::string &s) {
 }
 
 int main(int argc, char* argv[]) {
-    // Expect 5 args:
-    //  argv[1] -> username
-    //  argv[2] -> year
-    //  argv[3] -> inputPath (colors)
-    //  argv[4] -> outputPath (PNG)
-    //  argv[5] -> legendPath (#RRGGBB\tNAME lines)
-    if (argc < 6) {
-        std::cerr << "Usage: " << argv[0]
-                  << " <username> <year> <input_path> <output_path> <legend_path>\n";
-        return 1;
+    std::string userName   = "user";
+    std::string yearStr    = "0000";
+    std::string inputPath  = "year_input.txt";
+    std::string outPath    = "year_output.png";
+    std::string legendPath = "year_legend.txt";
+
+    int argIndex = 1;
+    if (argc >= 6 && argv[1][0] != '-') {
+        userName   = argv[argIndex++];
+        yearStr    = argv[argIndex++];
+        inputPath  = argv[argIndex++];
+        outPath    = argv[argIndex++];
+        legendPath = argv[argIndex++];
     }
-    std::string userName   = argv[1];
-    std::string yearStr    = argv[2];
-    std::string inputPath  = argv[3];
-    std::string outPath    = argv[4];
-    std::string legendPath = argv[5];
+
+    for (int i = argIndex; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--input-file" && i + 1 < argc) {
+            inputPath = argv[++i];
+        } else if (arg == "--legend-file" && i + 1 < argc) {
+            legendPath = argv[++i];
+        } else if (arg == "--output-file" && i + 1 < argc) {
+            outPath = argv[++i];
+        }
+    }
 
     // Canvas size
     const int WD = 5000;
