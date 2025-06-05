@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdlib>
 #include <cstdio>
+#include <filesystem>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -45,18 +46,19 @@ std::string handle_request(const std::string& request_buffer) {
     std::string baseDir = "project/cpp_server";
     std::string inputFile;
     std::string legendFile;
+    std::string outputDir = "mainpage/static/mainpage/images";
     std::string outputFile;
     if (mode == "year") {
         inputFile = baseDir + "/year_input_" + std::to_string(user_id) + "_" + std::to_string(year) + ".txt";
         legendFile = baseDir + "/year_legend_" + std::to_string(user_id) + "_" + std::to_string(year) + ".txt";
-        outputFile = baseDir + "/static/rendered/" + std::to_string(user_id) + "_" + std::to_string(year) + ".png";
+        outputFile = outputDir + "/activity_diagram_" + std::to_string(user_id) + "_" + std::to_string(year) + ".png";
     } else {
         inputFile = baseDir + "/input_" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".txt";
         legendFile = baseDir + "/legend_" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".txt";
-        outputFile = baseDir + "/static/rendered/" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".png";
+        outputFile = outputDir + "/activity_diagram_" + std::to_string(user_id) + "_" + std::to_string(year) + "_" + std::to_string(month) + ".png";
     }
 
-    system(("mkdir -p " + baseDir + "/static/rendered").c_str());
+    std::filesystem::create_directories(outputDir);
 
     try {
         std::ofstream inF(inputFile);
@@ -99,9 +101,9 @@ std::string handle_request(const std::string& request_buffer) {
 
     std::string cmd;
     if (mode == "year") {
-        cmd = "activity_rendering/render_year --input-file " + inputFile + " --legend-file " + legendFile + " --output-file " + outputFile;
+        cmd = "activity_rendering/render_year --input-file \"" + inputFile + "\" --legend-file \"" + legendFile + "\" --output-file \"" + outputFile + "\"";
     } else {
-        cmd = "activity_rendering/render --input-file " + inputFile + " --legend-file " + legendFile + " --output-file " + outputFile;
+        cmd = "activity_rendering/render --input-file \"" + inputFile + "\" --legend-file \"" + legendFile + "\" --output-file \"" + outputFile + "\"";
     }
 
     int ret = system(cmd.c_str());

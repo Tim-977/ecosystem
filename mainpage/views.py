@@ -740,6 +740,7 @@ def month_view(request, year, month):
             "user_id": request.user.id,
             "year": year,
             "month": month,
+            "mode": "month",
             "activity_log": day_hour_colors,
             "color_map": color_lookup,
         }
@@ -824,6 +825,7 @@ def year_view(request, year):
         payload = {
             "user_id": user_id,
             "year": year,
+            "mode": "year",
             "activity_log": day_hour_colors,
             "color_map": full_mapping,
             "legend": legend_list,
