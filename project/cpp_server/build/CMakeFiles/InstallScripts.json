@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/yhat/ecosystem/project/cpp_server/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

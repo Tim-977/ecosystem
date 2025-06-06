@@ -4,7 +4,8 @@
 #include <vector>
 #include <cmath>
 #include <string>
-#include <filesystem>
+
+#define Uint8 uint8_t
 
 struct point {
     double x, y;
@@ -22,7 +23,7 @@ struct circle {
     double r;
     sf::Color clr;
     int thickness;
-    
+
     circle() {
         thickness = 1;
         r = 0;
@@ -34,7 +35,7 @@ struct circle {
         clr = _clr;
         center = _center - r;
     }
-    
+
     void draw(sf::Image &img) {
         unsigned int w = img.getSize().x;
         unsigned int h = img.getSize().y;
@@ -42,13 +43,13 @@ struct circle {
         int right  = std::min((int)w - 1, (int)(center.x + r + 1));
         int top    = std::max(0, (int)(center.y - r - 1));
         int bottom = std::min((int)h - 1, (int)(center.y + r + 1));
-        
+
         for (int i = left; i <= right; i++) {
             for (int j = top; j <= bottom; j++) {
                 double dx = (center.x - i);
                 double dy = (center.y - j);
                 if ((dx * dx + dy * dy) <= (r * r)) {
-                    img.setPixel(i, j, clr);
+                    img.setPixel(sf::Vector2u(i, j), clr);
                 }
             }
         }
@@ -59,18 +60,18 @@ sf::Color parseHexColor(const std::string &s) {
     // #RRGGBB
     if (s.size() == 7 && s[0] == '#') {
         unsigned int val = std::stoul(s.substr(1), nullptr, 16);
-        sf::Uint8 r = (val >> 16) & 0xFF;
-        sf::Uint8 g = (val >> 8)  & 0xFF;
-        sf::Uint8 b =  val        & 0xFF;
+        Uint8 r = (val >> 16) & 0xFF;
+        Uint8 g = (val >> 8)  & 0xFF;
+        Uint8 b =  val        & 0xFF;
         return sf::Color(r, g, b, 255);
     }
     // #RRGGBBAA
     else if (s.size() == 9 && s[0] == '#') {
         unsigned int val = std::stoul(s.substr(1), nullptr, 16);
-        sf::Uint8 r = (val >> 24) & 0xFF;
-        sf::Uint8 g = (val >> 16) & 0xFF;
-        sf::Uint8 b = (val >> 8)  & 0xFF;
-        sf::Uint8 a =  val        & 0xFF;
+        Uint8 r = (val >> 24) & 0xFF;
+        Uint8 g = (val >> 16) & 0xFF;
+        Uint8 b = (val >> 8)  & 0xFF;
+        Uint8 a =  val        & 0xFF;
         return sf::Color(r, g, b, a);
     }
     // fallback
@@ -78,31 +79,22 @@ sf::Color parseHexColor(const std::string &s) {
 }
 
 int main(int argc, char* argv[]) {
-    std::string userName   = "user";
-    std::string yearStr    = "0000";
-    std::string inputPath  = "year_input.txt";
-    std::string outPath    = "year_output.png";
-    std::string legendPath = "year_legend.txt";
-
-    int argIndex = 1;
-    if (argc >= 6 && argv[1][0] != '-') {
-        userName   = argv[argIndex++];
-        yearStr    = argv[argIndex++];
-        inputPath  = argv[argIndex++];
-        outPath    = argv[argIndex++];
-        legendPath = argv[argIndex++];
+    // Expect 5 args:
+    //  argv[1] -> username
+    //  argv[2] -> year
+    //  argv[3] -> inputPath (colors)
+    //  argv[4] -> outputPath (PNG)
+    //  argv[5] -> legendPath (#RRGGBB\tNAME lines)
+    if (argc < 6) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <username> <year> <input_path> <output_path> <legend_path>\n";
+        return 1;
     }
-
-    for (int i = argIndex; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--input-file" && i + 1 < argc) {
-            inputPath = argv[++i];
-        } else if (arg == "--legend-file" && i + 1 < argc) {
-            legendPath = argv[++i];
-        } else if (arg == "--output-file" && i + 1 < argc) {
-            outPath = argv[++i];
-        }
-    }
+    std::string userName   = argv[1];
+    std::string yearStr    = argv[2];
+    std::string inputPath  = argv[3];
+    std::string outPath    = argv[4];
+    std::string legendPath = argv[5];
 
     // Canvas size
     const int WD = 5000;
@@ -116,8 +108,7 @@ int main(int argc, char* argv[]) {
     const double mn_r = 9; // radius of each small circle
 
     // Create an image for pixel-based circle drawing
-    sf::Image image;
-    image.create(WD, HT, sf::Color::Black);
+    sf::Image image(sf::Vector2u(WD, HT), sf::Color::Black);
 
     // Center
     double cx = WD / 2.0;
@@ -169,11 +160,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    sf::RenderTexture rTex;
+    sf::RenderTexture rTex(sf::Vector2u(WD, HT));
+    /* WTF
     if (!rTex.create(WD, HT)) {
         std::cerr << "Failed to create render texture.\n";
         return 1;
     }
+    */
     rTex.clear(sf::Color::Black);
 
     // Draw the circles (sprite)
@@ -182,13 +175,8 @@ int main(int argc, char* argv[]) {
 
     // Load font
     sf::Font font;
-    // Resolve the font relative to the executable to avoid a hard coded path.
-    // This allows running the binary from any environment or directory.
-    std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
-    // Fonts are stored next to the executable, so do not step out of the
-    // directory when constructing the path.
-    std::filesystem::path fontPath = execDir / "fonts/ArialCE.ttf";    if (!font.loadFromFile(fontPath.string())) {
-        std::cerr << "Failed to load font from " << fontPath << "\n";
+    if (!font.openFromFile("/home/yhat/ecosystem/fonts/ArialCE.ttf")) {
+        std::cerr << "Failed to load font.\n";
         return 1;
     }
 
@@ -198,8 +186,8 @@ int main(int argc, char* argv[]) {
     {
         sf::CircleShape envelope(envelopeRadius);
         envelope.setPointCount(360);
-        envelope.setOrigin(envelopeRadius, envelopeRadius);
-        envelope.setPosition(float(cx), float(cy));
+        envelope.setOrigin(sf::Vector2f(envelopeRadius, envelopeRadius));
+        envelope.setPosition(sf::Vector2f(float(cx), float(cy)));
         envelope.setFillColor(sf::Color::Transparent);
         envelope.setOutlineColor(sf::Color::White);
         envelope.setOutlineThickness(4.f);
@@ -216,9 +204,9 @@ int main(int argc, char* argv[]) {
 
         sf::RectangleShape gapRect(sf::Vector2f(gapArcLength, -20.f));
         gapRect.setFillColor(sf::Color::Black);
-        gapRect.setOrigin(gapArcLength / 2.f, 4.f / 2.f);
-        gapRect.setPosition(gapX, gapY);
-        gapRect.setRotation(gapCenterDeg + 90.f);
+        gapRect.setOrigin(sf::Vector2f(gapArcLength / 2.f, 4.f / 2.f));
+        gapRect.setPosition(sf::Vector2f(gapX, gapY));
+        gapRect.setRotation(sf::degrees(gapCenterDeg + 90.f));                       // !!!!!!!!!!!
         rTex.draw(gapRect);
     }
 
@@ -245,15 +233,15 @@ int main(int argc, char* argv[]) {
             float x = float(cx + std::cos(shiftedAngle)*baseRadius);
             float y = float(cy + std::sin(shiftedAngle)*baseRadius);
 
-            sf::Text txt(months[m], font, monthFont);
+            sf::Text txt(font, months[m], monthFont);
             txt.setFillColor(sf::Color::White);
 
             sf::FloatRect lb = txt.getLocalBounds();
-            txt.setOrigin(lb.width/2.f, lb.height+lb.top);
+            txt.setOrigin(sf::Vector2f(lb.size.x/2.f, lb.size.y+lb.position.x)); //           !!!!!!!!!!!!!!
 
             float angleDeg = float(shiftedAngle*180.f/3.1415926535f);
-            txt.setRotation(angleDeg+90.f);
-            txt.setPosition(x,y);
+            txt.setRotation(sf::degrees(angleDeg+90.f));
+            txt.setPosition(sf::Vector2f(x,y));
 
             rTex.draw(txt);
         }
@@ -261,37 +249,37 @@ int main(int argc, char* argv[]) {
 
     // Info near the top
     {
-        sf::Text hourInfo("Outer ring = 23:00, Inner ring = 00:00", font, 40);
+        sf::Text hourInfo(font, "Outer ring = 23:00, Inner ring = 00:00", 40);
         hourInfo.setFillColor(sf::Color::White);
         float textX = float(cx);
         float textY = float(cy - (R+200));
         sf::FloatRect iB = hourInfo.getLocalBounds();
-        hourInfo.setOrigin(iB.width/2.f, iB.height/2.f);
-        hourInfo.setPosition(textX, textY);
+        hourInfo.setOrigin(sf::Vector2f(iB.size.x/2.f, iB.size.y/2.f)); //              !!!!!!!!!!!!!!!!
+        hourInfo.setPosition(sf::Vector2f(textX, textY));
         rTex.draw(hourInfo);
     }
 
     // Center titles
     {
-        sf::Text mainTitle("My Year in Data", font, 300);
+        sf::Text mainTitle(font, "My Year in Data", 300);
         mainTitle.setFillColor(sf::Color::White);
         auto mb = mainTitle.getLocalBounds();
-        mainTitle.setOrigin(mb.width/2.f, mb.height/2.f);
-        mainTitle.setPosition(float(cx), float(cy)-200.f);
+        mainTitle.setOrigin(sf::Vector2f(mb.size.x/2.f, mb.size.y/2.f)); //                 !!!!!!!!!!!!
+        mainTitle.setPosition(sf::Vector2f(float(cx), float(cy)-200.f));
         rTex.draw(mainTitle);
 
-        sf::Text dateTitle("1 Jan ~ 31 Dec", font, 190);
+        sf::Text dateTitle(font, "1 Jan ~ 31 Dec", 190);
         dateTitle.setFillColor(sf::Color::White);
         auto dbb = dateTitle.getLocalBounds();
-        dateTitle.setOrigin(dbb.width/2.f, dbb.height/2.f);
-        dateTitle.setPosition(float(cx), float(cy)+100.f);
+        dateTitle.setOrigin(sf::Vector2f(dbb.size.x/2.f, dbb.size.y/2.f)); //               !!!!!!!!!!
+        dateTitle.setPosition(sf::Vector2f(float(cx), float(cy)+100.f));
         rTex.draw(dateTitle);
 
-        sf::Text yearTitle(yearStr, font, 150);
+        sf::Text yearTitle(font, yearStr, 150);
         yearTitle.setFillColor(sf::Color::White);
         auto yb = yearTitle.getLocalBounds();
-        yearTitle.setOrigin(yb.width/2.f, yb.height/2.f);
-        yearTitle.setPosition(float(cx), float(cy)+350.f);
+        yearTitle.setOrigin(sf::Vector2f(yb.size.x/2.f, yb.size.y/2.f)); //                 !!!!!!!!!!!!!
+        yearTitle.setPosition(sf::Vector2f(float(cx), float(cy)+350.f));
         rTex.draw(yearTitle);
     }
 
@@ -326,27 +314,24 @@ int main(int argc, char* argv[]) {
         float rowY = startY + i*spacing;
         sf::RectangleShape box(sf::Vector2f(boxSize, boxSize));
         box.setFillColor(legendItems[i].first);
-        box.setPosition(startX, rowY);
+        box.setPosition(sf::Vector2f(startX, rowY));
         rTex.draw(box);
 
-        sf::Text lbl(legendItems[i].second, font, legendFontSize);
+        sf::Text lbl(font, legendItems[i].second, legendFontSize);
         lbl.setFillColor(sf::Color::White);
-        lbl.setPosition(startX + boxSize + 20.f, rowY - 5.f);
+        lbl.setPosition(sf::Vector2f(startX + boxSize + 20.f, rowY - 5.f));
         rTex.draw(lbl);
     }
 
     // 5) Draw "@username" near bottom-right
     {
         std::string handle = "@"+userName;
-        sf::Text userTag(handle, font, 120);
+        sf::Text userTag(font, handle, 120);
         userTag.setFillColor(sf::Color(80,80,80));
         auto tagB = userTag.getLocalBounds();
 
         float margin = 80.f;
-        userTag.setPosition(
-            WD - tagB.width - margin,
-            HT - tagB.height - margin
-        );
+        userTag.setPosition(sf::Vector2f(WD - tagB.size.x - margin, HT - tagB.size.y - margin)); //       !!!!!!!!!!!!
         rTex.draw(userTag);
     }
 
