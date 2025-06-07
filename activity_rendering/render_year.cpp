@@ -175,7 +175,9 @@ int main(int argc, char* argv[]) {
 
     // Load font
     sf::Font font;
-    if (!font.openFromFile("/home/yhat/ecosystem/fonts/ArialCE.ttf")) {
+    std::filesystem::path fontPath = std::filesystem::path("activity_rendering") /
+                                   "fonts" / "ArialCE.ttf";
+    if (!font.openFromFile(fontPath.string())) {
         std::cerr << "Failed to load font.\n";
         return 1;
     }

@@ -116,7 +116,9 @@ int main(int argc, char* argv[]) {
     renderTexture.clear(sf::Color::White);
 
     sf::Font font;
-    if (!font.openFromFile("/home/yhat/ecosystem/fonts/ArialCE.ttf")) {
+    std::filesystem::path fontPath = std::filesystem::path("activity_rendering") /
+                                   "fonts" / "ArialCE.ttf";
+    if (!font.openFromFile(fontPath.string())) {
         std::cerr << "Failed to load font" << std::endl;
         return -1;
     }
