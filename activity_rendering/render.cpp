@@ -5,7 +5,9 @@
 #include <string>
 #include <sstream>
 #include <cmath>
-#include <filesystem>  // <-- NEW
+#include <filesystem>
+
+#define Uint8 uint8_t
 
 sf::Color parseColor(const std::string &s) {
     std::string hex = s;
@@ -15,16 +17,16 @@ sf::Color parseColor(const std::string &s) {
         hex = hex.substr(1);
     if(hex.length() == 6) {
         unsigned int colorInt = std::stoul(hex, nullptr, 16);
-        sf::Uint8 r = (colorInt >> 16) & 0xFF;
-        sf::Uint8 g = (colorInt >> 8)  & 0xFF;
-        sf::Uint8 b = colorInt & 0xFF;
+        Uint8 r = (colorInt >> 16) & 0xFF;
+        Uint8 g = (colorInt >> 8)  & 0xFF;
+        Uint8 b = colorInt & 0xFF;
         return sf::Color(r, g, b, 255);
     } else if(hex.length() == 8) {
         unsigned int colorInt = std::stoul(hex, nullptr, 16);
-        sf::Uint8 r = (colorInt >> 24) & 0xFF;
-        sf::Uint8 g = (colorInt >> 16) & 0xFF;
-        sf::Uint8 b = (colorInt >> 8)  & 0xFF;
-        sf::Uint8 a = colorInt & 0xFF;
+        Uint8 r = (colorInt >> 24) & 0xFF;
+        Uint8 g = (colorInt >> 16) & 0xFF;
+        Uint8 b = (colorInt >> 8)  & 0xFF;
+        Uint8 a = colorInt & 0xFF;
         return sf::Color(r, g, b, a);
     } else {
         std::cerr << "Invalid color format: " << s << std::endl;
@@ -71,33 +73,10 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
     return shape;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     std::string userIdStr = "unknown_user";
-    std::string inputFile  = "activity_rendering/input.txt";
-    std::string legendFile = "";
-    std::string outputFile = "";
-
-    int argIndex = 1;
-    if (argc > argIndex && argv[argIndex][0] != '-') {
-        userIdStr = argv[argIndex++];
-    }
-
-    for (int i = argIndex; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--input-file" && i + 1 < argc) {
-            inputFile = argv[++i];
-        } else if (arg == "--legend-file" && i + 1 < argc) {
-            legendFile = argv[++i];
-        } else if (arg == "--output-file" && i + 1 < argc) {
-            outputFile = argv[++i];
-        }
-    }
-
-    if (outputFile.empty()) {
-        std::string outputDir = "mainpage/static/mainpage/images";
-        std::filesystem::create_directories(outputDir);
-        outputFile = outputDir + "/activity_diagram_" + userIdStr + ".png";
+    if (argc > 1) {
+        userIdStr = argv[1];
     }
 
     const int numDays = 31;
@@ -118,29 +97,29 @@ int main(int argc, char* argv[])
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile(inputFile);
+        std::ifstream infile("input.txt");
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
         }
     }
 
-    sf::RenderTexture renderTexture;
-    if (!renderTexture.create(totalWidth, totalHeight)) {
+    sf::RenderTexture renderTexture({(unsigned int) totalWidth, (unsigned int) totalHeight});
+
+    /* WTF
+    if (!renderTexture) {
         std::cerr << "Failed to create render texture." << std::endl;
         return -1;
     }
+    */
+
     renderTexture.clear(sf::Color::White);
 
     sf::Font font;
-    // Load the font relative to the executable location instead of relying on
-    // a hard coded absolute path.  This makes the binary portable as it can be
-    // executed from any checkout directory.
-    std::filesystem::path execDir = std::filesystem::path(argv[0]).parent_path();
-    // The fonts directory lives alongside the binary, so join "fonts" directly
-    // instead of climbing one directory up.
-    std::filesystem::path fontPath = execDir / "fonts/ArialCE.ttf";    if (!font.loadFromFile(fontPath.string())) {
-        std::cerr << "Failed to load font from " << fontPath << std::endl;
+    std::filesystem::path fontPath = std::filesystem::path("activity_rendering") /
+                                   "fonts" / "ArialCE.ttf";
+    if (!font.openFromFile(fontPath.string())) {
+        std::cerr << "Failed to load font" << std::endl;
         return -1;
     }
 
@@ -168,52 +147,50 @@ int main(int argc, char* argv[])
     }
 
     for (int day = 0; day < numDays; day++) {
-        sf::Text dayText;
-        dayText.setFont(font);
-        dayText.setString(std::to_string(day + 1));
-        dayText.setCharacterSize(16);
+        sf::Text dayText(font, std::to_string(day + 1), 16);
         dayText.setFillColor(sf::Color::Black);
         sf::FloatRect textRect = dayText.getLocalBounds();
-        float x = leftMargin + day * (cellWidth + gap) + cellWidth / 2 - textRect.width / 2;
+        float x = leftMargin + day * (cellWidth + gap) + cellWidth / 2 - textRect.size.x / 2;
         float y = topMargin - 30;
-        dayText.setPosition(x, y);
+        //dayText.setPosition(x, y);
+        dayText.setPosition(sf::Vector2f(x, y));
         renderTexture.draw(dayText);
     }
 
     for (int hour = 0; hour < numHours; hour++) {
-        sf::Text hourText;
-        hourText.setFont(font);
+        sf::Text hourText(font);
         char buf[6];
         std::snprintf(buf, sizeof(buf), "%02d:00", hour);
         hourText.setString(buf);
         hourText.setCharacterSize(16);
         hourText.setFillColor(sf::Color::Black);
         sf::FloatRect textRect = hourText.getLocalBounds();
-        float x = leftMargin - textRect.width - 10;
+        float x = leftMargin - textRect.size.x - 10;
         float y = topMargin + hour * (cellHeight + gap) 
-                  + cellHeight / 2 - textRect.height / 2;
-        hourText.setPosition(x, y);
+                  + cellHeight / 2 - textRect.size.y / 2;
+        hourText.setPosition(sf::Vector2f(x, y));
         renderTexture.draw(hourText);
     }
 
     {
-        sf::Text userText;
-        userText.setFont(font);
-        userText.setString("User ID: " + userIdStr);
-        userText.setCharacterSize(20);
+        sf::Text userText(font, "User ID: " + userIdStr, 20);
         userText.setFillColor(sf::Color::Blue);
-        userText.setPosition(10.f, 10.f);
+        userText.setPosition(sf::Vector2f(10.f, 10.f));
         renderTexture.draw(userText);
     }
 
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
 
-    if (!finalImage.saveToFile(outputFile)) {
-        std::cerr << "Failed to save image to " << outputFile << std::endl;
+    std::string outputDir = "mainpage/static/mainpage/images";
+    std::filesystem::create_directories(outputDir);
+
+    std::string filename = outputDir + "/activity_diagram_" + userIdStr + ".png";
+    if (!finalImage.saveToFile(filename)) {
+        std::cerr << "Failed to save image to " << filename << std::endl;
         return -1;
     }
 
-    std::cout << "Saved " << outputFile << std::endl;
+    std::cout << "Saved " << filename << std::endl;
     return 0;
 }
