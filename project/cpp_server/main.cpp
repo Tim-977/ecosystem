@@ -101,14 +101,23 @@ std::string handle_request(const std::string& request_buffer) {
 
     std::string cmd;
     if (mode == "year") {
-        cmd = "activity_rendering/render_year --input-file \"" + inputFile + "\" --legend-file \"" + legendFile + "\" --output-file \"" + outputFile + "\"";
+    cmd = "activity_rendering/render_year " + std::to_string(user_id) + " " + std::to_string(year) + " " + inputFile + " " + outputFile + " " + legendFile;
     } else {
-        cmd = "activity_rendering/render --input-file \"" + inputFile + "\" --legend-file \"" + legendFile + "\" --output-file \"" + outputFile + "\"";
+        cmd = "activity_rendering/render " + std::to_string(user_id) + " " + inputFile + " " + outputFile + " " + legendFile;
     }
 
     int ret = system(cmd.c_str());
     std::remove(inputFile.c_str());
     std::remove(legendFile.c_str());
+
+    if (ret == 0 && mode == "month") {
+        std::string defaultOut = "mainpage/static/mainpage/images/activity_diagram_" +
+                                 std::to_string(user_id) + ".png";
+        if (std::filesystem::exists(defaultOut)) {
+            std::error_code ec;
+            std::filesystem::rename(defaultOut, outputFile, ec);
+        }
+    }
 
     if (ret != 0) {
         json err = {{"success", false}, {"error", "Failed to launch renderer"}};
