@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <filesystem>
 
 #define Uint8 uint8_t
 
@@ -49,7 +50,7 @@ struct circle {
                 double dx = (center.x - i);
                 double dy = (center.y - j);
                 if ((dx * dx + dy * dy) <= (r * r)) {
-                    img.setPixel(sf::Vector2u(i, j), clr);
+                    img.setPixel(i, j, clr);
                 }
             }
         }
@@ -108,7 +109,8 @@ int main(int argc, char* argv[]) {
     const double mn_r = 9; // radius of each small circle
 
     // Create an image for pixel-based circle drawing
-    sf::Image image(sf::Vector2u(WD, HT), sf::Color::Black);
+    sf::Image image;
+    image.create(WD, HT, sf::Color::Black);
 
     // Center
     double cx = WD / 2.0;
@@ -160,7 +162,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    sf::RenderTexture rTex(sf::Vector2u(WD, HT));
+    sf::RenderTexture rTex;
+    rTex.create(WD, HT);
     /* WTF
     if (!rTex.create(WD, HT)) {
         std::cerr << "Failed to create render texture.\n";
@@ -177,7 +180,7 @@ int main(int argc, char* argv[]) {
     sf::Font font;
     std::filesystem::path fontPath = std::filesystem::path("activity_rendering") /
                                    "fonts" / "ArialCE.ttf";
-    if (!font.openFromFile(fontPath.string())) {
+    if (!font.loadFromFile(fontPath.string())) {
         std::cerr << "Failed to load font.\n";
         return 1;
     }
@@ -208,7 +211,7 @@ int main(int argc, char* argv[]) {
         gapRect.setFillColor(sf::Color::Black);
         gapRect.setOrigin(sf::Vector2f(gapArcLength / 2.f, 4.f / 2.f));
         gapRect.setPosition(sf::Vector2f(gapX, gapY));
-        gapRect.setRotation(sf::degrees(gapCenterDeg + 90.f));                       // !!!!!!!!!!!
+        gapRect.setRotation(gapCenterDeg + 90.f);                       // !!!!!!!!!!!
         rTex.draw(gapRect);
     }
 
@@ -235,14 +238,14 @@ int main(int argc, char* argv[]) {
             float x = float(cx + std::cos(shiftedAngle)*baseRadius);
             float y = float(cy + std::sin(shiftedAngle)*baseRadius);
 
-            sf::Text txt(font, months[m], monthFont);
+            sf::Text txt(months[m], font, monthFont);
             txt.setFillColor(sf::Color::White);
 
             sf::FloatRect lb = txt.getLocalBounds();
-            txt.setOrigin(sf::Vector2f(lb.size.x/2.f, lb.size.y+lb.position.x)); //           !!!!!!!!!!!!!!
+            txt.setOrigin(sf::Vector2f(lb.width/2.f, lb.height + lb.top));
 
             float angleDeg = float(shiftedAngle*180.f/3.1415926535f);
-            txt.setRotation(sf::degrees(angleDeg+90.f));
+            txt.setRotation(angleDeg+90.f);
             txt.setPosition(sf::Vector2f(x,y));
 
             rTex.draw(txt);
@@ -251,36 +254,36 @@ int main(int argc, char* argv[]) {
 
     // Info near the top
     {
-        sf::Text hourInfo(font, "Outer ring = 23:00, Inner ring = 00:00", 40);
+        sf::Text hourInfo("Outer ring = 23:00, Inner ring = 00:00", font, 40);
         hourInfo.setFillColor(sf::Color::White);
         float textX = float(cx);
         float textY = float(cy - (R+200));
         sf::FloatRect iB = hourInfo.getLocalBounds();
-        hourInfo.setOrigin(sf::Vector2f(iB.size.x/2.f, iB.size.y/2.f)); //              !!!!!!!!!!!!!!!!
+        hourInfo.setOrigin(sf::Vector2f(iB.width/2.f, iB.height/2.f)); //              !!!!!!!!!!!!!!!!
         hourInfo.setPosition(sf::Vector2f(textX, textY));
         rTex.draw(hourInfo);
     }
 
     // Center titles
     {
-        sf::Text mainTitle(font, "My Year in Data", 300);
+        sf::Text mainTitle("My Year in Data", font, 300);
         mainTitle.setFillColor(sf::Color::White);
         auto mb = mainTitle.getLocalBounds();
-        mainTitle.setOrigin(sf::Vector2f(mb.size.x/2.f, mb.size.y/2.f)); //                 !!!!!!!!!!!!
+        mainTitle.setOrigin(sf::Vector2f(mb.width/2.f, mb.height/2.f)); //                 !!!!!!!!!!!!
         mainTitle.setPosition(sf::Vector2f(float(cx), float(cy)-200.f));
         rTex.draw(mainTitle);
 
-        sf::Text dateTitle(font, "1 Jan ~ 31 Dec", 190);
+        sf::Text dateTitle("1 Jan ~ 31 Dec", font, 190);
         dateTitle.setFillColor(sf::Color::White);
         auto dbb = dateTitle.getLocalBounds();
-        dateTitle.setOrigin(sf::Vector2f(dbb.size.x/2.f, dbb.size.y/2.f)); //               !!!!!!!!!!
+        dateTitle.setOrigin(sf::Vector2f(dbb.width/2.f, dbb.height/2.f)); //               !!!!!!!!!!
         dateTitle.setPosition(sf::Vector2f(float(cx), float(cy)+100.f));
         rTex.draw(dateTitle);
 
-        sf::Text yearTitle(font, yearStr, 150);
+        sf::Text yearTitle(yearStr, font, 150);
         yearTitle.setFillColor(sf::Color::White);
         auto yb = yearTitle.getLocalBounds();
-        yearTitle.setOrigin(sf::Vector2f(yb.size.x/2.f, yb.size.y/2.f)); //                 !!!!!!!!!!!!!
+        yearTitle.setOrigin(sf::Vector2f(yb.width/2.f, yb.height/2.f)); //                 !!!!!!!!!!!!!
         yearTitle.setPosition(sf::Vector2f(float(cx), float(cy)+350.f));
         rTex.draw(yearTitle);
     }
@@ -319,7 +322,7 @@ int main(int argc, char* argv[]) {
         box.setPosition(sf::Vector2f(startX, rowY));
         rTex.draw(box);
 
-        sf::Text lbl(font, legendItems[i].second, legendFontSize);
+        sf::Text lbl(legendItems[i].second, font, legendFontSize);
         lbl.setFillColor(sf::Color::White);
         lbl.setPosition(sf::Vector2f(startX + boxSize + 20.f, rowY - 5.f));
         rTex.draw(lbl);
@@ -328,12 +331,12 @@ int main(int argc, char* argv[]) {
     // 5) Draw "@username" near bottom-right
     {
         std::string handle = "@"+userName;
-        sf::Text userTag(font, handle, 120);
+        sf::Text userTag(handle, font, 120);
         userTag.setFillColor(sf::Color(80,80,80));
         auto tagB = userTag.getLocalBounds();
 
         float margin = 80.f;
-        userTag.setPosition(sf::Vector2f(WD - tagB.size.x - margin, HT - tagB.size.y - margin)); //       !!!!!!!!!!!!
+        userTag.setPosition(sf::Vector2f(WD - tagB.width - margin, HT - tagB.height - margin)); //       !!!!!!!!!!!!
         rTex.draw(userTag);
     }
 

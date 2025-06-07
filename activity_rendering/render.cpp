@@ -74,10 +74,16 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
 }
 
 int main(int argc, char* argv[]) {
-    std::string userIdStr = "unknown_user";
-    if (argc > 1) {
-        userIdStr = argv[1];
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <user_id> <input_path> <output_path> [legend_path]" << std::endl;
+        return 1;
     }
+
+    std::string userIdStr = argv[1];
+    std::string inputPath = argv[2];
+    std::string outPath   = argv[3];
+    std::string legendPath = (argc > 4) ? argv[4] : ""; // unused but kept for parity
 
     const int numDays = 31;
     const int numHours = 24;
@@ -97,14 +103,15 @@ int main(int argc, char* argv[]) {
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("input.txt");
+        std::ifstream infile(inputPath);
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
         }
     }
 
-    sf::RenderTexture renderTexture({(unsigned int) totalWidth, (unsigned int) totalHeight});
+    sf::RenderTexture renderTexture;
+    renderTexture.create((unsigned int)totalWidth, (unsigned int)totalHeight);
 
     /* WTF
     if (!renderTexture) {
@@ -118,7 +125,7 @@ int main(int argc, char* argv[]) {
     sf::Font font;
     std::filesystem::path fontPath = std::filesystem::path("activity_rendering") /
                                    "fonts" / "ArialCE.ttf";
-    if (!font.openFromFile(fontPath.string())) {
+    if (!font.loadFromFile(fontPath.string())) {
         std::cerr << "Failed to load font" << std::endl;
         return -1;
     }
@@ -147,10 +154,10 @@ int main(int argc, char* argv[]) {
     }
 
     for (int day = 0; day < numDays; day++) {
-        sf::Text dayText(font, std::to_string(day + 1), 16);
+        sf::Text dayText(std::to_string(day + 1), font, 16);
         dayText.setFillColor(sf::Color::Black);
         sf::FloatRect textRect = dayText.getLocalBounds();
-        float x = leftMargin + day * (cellWidth + gap) + cellWidth / 2 - textRect.size.x / 2;
+        float x = leftMargin + day * (cellWidth + gap) + cellWidth / 2 - textRect.width / 2;
         float y = topMargin - 30;
         //dayText.setPosition(x, y);
         dayText.setPosition(sf::Vector2f(x, y));
@@ -158,22 +165,21 @@ int main(int argc, char* argv[]) {
     }
 
     for (int hour = 0; hour < numHours; hour++) {
-        sf::Text hourText(font);
+        sf::Text hourText("", font, 16);
         char buf[6];
         std::snprintf(buf, sizeof(buf), "%02d:00", hour);
         hourText.setString(buf);
-        hourText.setCharacterSize(16);
         hourText.setFillColor(sf::Color::Black);
         sf::FloatRect textRect = hourText.getLocalBounds();
-        float x = leftMargin - textRect.size.x - 10;
-        float y = topMargin + hour * (cellHeight + gap) 
-                  + cellHeight / 2 - textRect.size.y / 2;
+        float x = leftMargin - textRect.width - 10;
+        float y = topMargin + hour * (cellHeight + gap)
+                  + cellHeight / 2 - textRect.height / 2;
         hourText.setPosition(sf::Vector2f(x, y));
         renderTexture.draw(hourText);
     }
 
     {
-        sf::Text userText(font, "User ID: " + userIdStr, 20);
+        sf::Text userText("User ID: " + userIdStr, font, 20);
         userText.setFillColor(sf::Color::Blue);
         userText.setPosition(sf::Vector2f(10.f, 10.f));
         renderTexture.draw(userText);
@@ -182,15 +188,14 @@ int main(int argc, char* argv[]) {
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
 
-    std::string outputDir = "mainpage/static/mainpage/images";
-    std::filesystem::create_directories(outputDir);
+    std::filesystem::path outP(outPath);
+    std::filesystem::create_directories(outP.parent_path());
 
-    std::string filename = outputDir + "/activity_diagram_" + userIdStr + ".png";
-    if (!finalImage.saveToFile(filename)) {
-        std::cerr << "Failed to save image to " << filename << std::endl;
+    if (!finalImage.saveToFile(outP.string())) {
+        std::cerr << "Failed to save image to " << outP << std::endl;
         return -1;
     }
 
-    std::cout << "Saved " << filename << std::endl;
+    std::cout << "Saved " << outP << std::endl;
     return 0;
 }

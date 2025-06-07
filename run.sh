@@ -20,9 +20,14 @@ pkill -f "$CPP_EXEC" 2>/dev/null || true
 echo "🛠  Building C++ server..."
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
+
 cmake .. > /dev/null
 make -j > /dev/null
 cd "$SCRIPT_DIR"
+
+# ─── 3. Build rendering helpers ─────────────────────────────────────
+echo "🖼  Building rendering utilities..."
+make -C activity_rendering > /dev/null
 
 # ─── 3. Start C++ server in background ──────────────────────────────
 echo "🚀 Starting C++ server in background..."
