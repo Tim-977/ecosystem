@@ -74,11 +74,21 @@ sf::ConvexShape createRoundedRectangle(sf::Vector2f size, float radius, int corn
 }
 
 int main(int argc, char* argv[]) {
-    std::string userIdStr = "unknown_user";
-    if (argc > 1) {
-        userIdStr = argv[1];
+    // Expect 5 args:
+    //   argv[1] -> user_id
+    //   argv[2] -> input path
+    //   argv[3] -> output path
+    //   argv[4] -> legend path (unused but kept for compatibility)
+    if (argc < 5) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <user_id> <input_path> <output_path> <legend_path>\n";
+        return 1;
     }
 
+    std::string userIdStr = argv[1];
+    std::string inputPath = argv[2];
+    std::string outputPath = argv[3];
+    
     const int numDays = 31;
     const int numHours = 24;
     const float cellWidth = 40.f;
@@ -97,7 +107,7 @@ int main(int argc, char* argv[]) {
 
     std::vector<sf::Color> activityColors;
     {
-        std::ifstream infile("input.txt");
+        std::ifstream infile(inputPath);
         std::string token;
         while (infile >> token) {
             activityColors.push_back(parseColor(token));
@@ -182,15 +192,14 @@ int main(int argc, char* argv[]) {
     renderTexture.display();
     sf::Image finalImage = renderTexture.getTexture().copyToImage();
 
-    std::string outputDir = "mainpage/static/mainpage/images";
-    std::filesystem::create_directories(outputDir);
+    std::filesystem::path outPath(outputPath);
+    std::filesystem::create_directories(outPath.parent_path());
 
-    std::string filename = outputDir + "/activity_diagram_" + userIdStr + ".png";
-    if (!finalImage.saveToFile(filename)) {
-        std::cerr << "Failed to save image to " << filename << std::endl;
+    if (!finalImage.saveToFile(outPath.string())) {
+        std::cerr << "Failed to save image to " << outPath << std::endl;
         return -1;
     }
 
-    std::cout << "Saved " << filename << std::endl;
+    std::cout << "Saved " << outPath.string() << std::endl;
     return 0;
 }
