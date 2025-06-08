@@ -1,4 +1,7 @@
-**/__pycache__/
 *.pyc
+__pycache__/
+
+logs/
+
 activity_rendering/year_input.txt
 activity_rendering/input.txt
