@@ -1,9 +1,0 @@
-[2025-06-08 00:11:41 -0400] [64333] [INFO] Starting gunicorn 23.0.0
-[2025-06-08 00:11:41 -0400] [64333] [INFO] Listening at: http://0.0.0.0:8000 (64333)
-[2025-06-08 00:11:41 -0400] [64333] [INFO] Using worker: sync
-[2025-06-08 00:11:41 -0400] [64334] [INFO] Booting worker with pid: 64334
-[2025-06-08 00:11:41 -0400] [64335] [INFO] Booting worker with pid: 64335
-[2025-06-08 00:14:21 -0400] [64333] [INFO] Handling signal: int
-[2025-06-08 04:14:21 +0000] [64334] [INFO] Worker exiting (pid: 64334)
-[2025-06-08 04:14:21 +0000] [64335] [INFO] Worker exiting (pid: 64335)
-[2025-06-08 00:14:22 -0400] [64333] [INFO] Shutting down: Master
