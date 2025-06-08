@@ -714,8 +714,9 @@ def month_view(request, year, month):
     }
 
 
-    # Create an empty 31×24 grid of "#000000"
-    day_hour_colors = [["" for _ in range(24)] for _ in range(31)]
+    # Create an empty 31×24 grid of white cells so missing days
+    # are preserved in the monthly activity diagram
+    day_hour_colors = [["#ffffff" for _ in range(24)] for _ in range(31)]
 
 
     # Fill day_hour_colors from each day's JSON
