@@ -194,7 +194,7 @@
               <div class="hour-square"
                    data-hour="{{ entry.hour }}"
                    data-activity="{{ entry.activity }}">
-                {{ entry.hour }}
+                {{ entry.hour|add:"1" }}
               </div>
             {% endfor %}
           </div>
