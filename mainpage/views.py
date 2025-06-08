@@ -653,6 +653,7 @@ def month_view(request, year, month):
             return None
         return time(h, m)
 
+    sleep_map = {}
     for log in daily_logs:
         # --- Sleep data ---
         if log.sleep:
@@ -677,10 +678,7 @@ def month_view(request, year, month):
         else:
             sleep_hours = 0
 
-        monthly_sleep_data.append({
-            "date_obj": log.date,
-            "sleep_hours": sleep_hours
-        })
+        sleep_map[log.date] = sleep_hours
 
         # --- Activity data ---
         # hourly_activity_logging is JSON of [{"hour": 0, "activity": "Sleeping"}, ...]
@@ -704,6 +702,15 @@ def month_view(request, year, month):
             if act_id in activity_lookup:
                 key = f"{activity_lookup[act_id]} (ID: {act_id})"
                 monthly_activity_aggregate[key] = monthly_activity_aggregate.get(key, 0) + 1
+
+    # Fill monthly_sleep_data for every day of the month so gaps appear in the chart
+    num_days = calendar.monthrange(year, month)[1]
+    for day in range(1, num_days + 1):
+        d_obj = date(year, month, day)
+        monthly_sleep_data.append({
+            "date_obj": d_obj,
+            "sleep_hours": sleep_map.get(d_obj, 0)
+        })
 
 
     # Build an ID -> Color mapping
