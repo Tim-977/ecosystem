@@ -95,7 +95,7 @@
           <!-- Quick thought (middle top) -->
           <div class="thoughts-box">
             <h2>Write a thought...</h2>
-            <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
+            <textarea name="thoughts" id="thoughts" rows="2" cols="40" class="form-control">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
             {% if messages %}
               {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -163,21 +163,21 @@
           <!-- Self Reflection (middle bottom) -->
           <div class="reflection-box">
             <h2>Detailed Thoughts (Self-Reflection)</h2>
-            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
+            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40" class="form-control">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
           </div>
           <!-- Sleep Tracker (left bottom) -->
           <div class="sleep-tracker">
             <h2>Sleep Tracker</h2>
-            <label for="bed_time">Bed Time:</label><br/>
-            <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" />
+            <label for="bed_time" class="form-label">Bed Time:</label>
+            <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" class="form-control" />
             <br/><br/>
 
-            <label for="wake_up_time">Wake Up Time:</label><br/>
-            <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" />
+            <label for="wake_up_time" class="form-label">Wake Up Time:</label>
+            <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" class="form-control" />
             <br/><br/>
 
-            <label for="first_alarm_time">First Alarm Time:</label><br/>
-            <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
+            <label for="first_alarm_time" class="form-label">First Alarm Time:</label>
+            <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" class="form-control" />
           </div>
 
         </div><!-- end top-section (grid) -->
@@ -207,18 +207,18 @@
                  value='{{ daily_obj.hourly_activity_logging|default_if_none:"[]" }}' />
 
           <!-- Mood & Productivity at the bottom -->
-          <label for="mood_rating">Mood Rating (1-10):</label>
+          <label for="mood_rating" class="form-label">Mood Rating (1-10):</label>
           <input type="number" name="mood_rating" id="mood_rating"
-                 value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
+                 value="{{ daily_obj.mood_rating|default_if_none:'' }}" class="form-control" />
           <br/><br/>
 
-          <label for="productivity_score">Productivity Score (1-10):</label>
+          <label for="productivity_score" class="form-label">Productivity Score (1-10):</label>
           <input type="number" name="productivity_score" id="productivity_score"
-                 value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
+                 value="{{ daily_obj.productivity_score|default_if_none:'' }}" class="form-control" />
         </div>
 
         <br/>
-        <button type="submit">Save</button>
+        <button type="submit" class="btn btn-primary">Save</button>
       </form>
     </main>
   </div>

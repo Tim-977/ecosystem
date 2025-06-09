@@ -6,28 +6,28 @@
 <link rel="stylesheet" href="{% static 'mainpage/css/diary.css' %}">
 {% endblock %}
 {% block content %}
-<div class="vintage-diary">
-  <!-- <p class="intro">Daily Diary</p> -->
-
+<div class="row">
   {% for d in days_data %}
-    <div class="entry">
-      <h3>{{ d.date_obj|date:"F d, Y" }}</h3>
-      <p>
-        <span class="label">Reflection:</span>
-        {% if d.self_reflection %}
-          {{ d.self_reflection }}
-        {% else %}
-          I didn't write down any reflections today.
-        {% endif %}
-      </p>
-      <p>
-        <span class="label">Thoughts:</span>
-        {% if d.thoughts %}
-          {{ d.thoughts }}
-        {% else %}
-          Nothing particular on my mind.
-        {% endif %}
-      </p>
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h3 class="card-title">{{ d.date_obj|date:"F d, Y" }}</h3>
+          <p class="card-text"><span class="fw-semibold">Reflection:</span>
+            {% if d.self_reflection %}
+              {{ d.self_reflection }}
+            {% else %}
+              I didn't write down any reflections today.
+            {% endif %}
+          </p>
+          <p class="card-text"><span class="fw-semibold">Thoughts:</span>
+            {% if d.thoughts %}
+              {{ d.thoughts }}
+            {% else %}
+              Nothing particular on my mind.
+            {% endif %}
+          </p>
+        </div>
+      </div>
     </div>
   {% endfor %}
 </div>

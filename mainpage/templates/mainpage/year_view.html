@@ -7,19 +7,20 @@
 {% endblock %}
 {% block content %}
   <!-- ========== HEADER ========== -->
-  <header>
-    <div class="header-left">
-      <h1 id="currentYear" data-year="{{ year }}">
-        {{ year }}
-      </h1>
-    </div>
-    <div class="center-nav">
-      <a id="log-today-link" href="#">Go to Today's View</a>
-      <span style="margin: 0 10px;">|</span>
-      <a id="log-month-link" href="#">Go to Month View</a>
-    </div>
-    <div class="header-right">
-      <span class="username">{{ user.username }}</span>
+  <header class="bg-light p-3 mb-4 rounded">
+    <div class="container">
+      <div class="row align-items-end">
+        <div class="col-md">
+          <h1 class="h3" id="currentYear" data-year="{{ year }}">{{ year }}</h1>
+        </div>
+        <div class="col-md text-md-center my-2 my-md-0">
+          <a id="log-today-link" href="#" class="btn btn-link">Go to Today's View</a>
+          <a id="log-month-link" href="#" class="btn btn-link">Go to Month View</a>
+        </div>
+        <div class="col-md-auto text-end">
+          <span class="fw-bold">{{ user.username }}</span>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -35,33 +36,22 @@
     });
   </script>
 
-  <div class="content-container" style="display: flex; flex-direction: column;">
-    <main class="main-content" style="padding: 10px; flex: 1;">
-      <!-- Year Slider Section -->
-      <div class="year-slider-container">
-        <label for="yearSlider">Select Year:</label>
-        <input type="range" id="yearSlider" name="yearSlider"
-               min="{{ year_min }}" max="{{ year_max }}" value="{{ year }}">
-        <span id="sliderYearLabel">Current: {{ year }}</span>
-      </div>
+  <div class="container">
+    <div class="card p-3 mb-4">
+      <label for="yearSlider" class="form-label">Select Year:</label>
+      <input type="range" id="yearSlider" name="yearSlider" class="form-range"
+             min="{{ year_min }}" max="{{ year_max }}" value="{{ year }}">
+      <span id="sliderYearLabel" class="ms-2">Current: {{ year }}</span>
+    </div>
 
-      <!-- Download Button and Graph Display -->
-      <div style="text-align: center;">
-        {% if image_path %}
-        <a download="year_activity_graph_{{ year }}.png" href="{{ image_path }}">
-          <button class="download-btn">Download Yearly Graph</button>
-        </a>
-        {% endif %}
-      </div>
-      <div style="max-width: 100%; text-align: center; margin-top: 20px;">
-        {% if image_path %}
-        <img src="{{ image_path }}" alt="Yearly Circular Activity Graph"
-             style="width: 100%; max-width: 900px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3);" />
-        {% else %}
+    <div class="text-center mb-4">
+      {% if image_path %}
+        <a download="year_activity_graph_{{ year }}.png" href="{{ image_path }}" class="btn btn-secondary mb-3">Download Yearly Graph</a>
+        <img src="{{ image_path }}" alt="Yearly Circular Activity Graph" class="img-fluid rounded shadow" style="max-width: 900px;" />
+      {% else %}
         <p>No yearly diagram available.</p>
-        {% endif %}
-      </div>
-    </main>
+      {% endif %}
+    </div>
   </div>
 
   <script src="{% static 'mainpage/js/localtime.js' %}"></script>

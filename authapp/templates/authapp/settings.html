@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static bootstrap %}
 {% block title %}Settings{% endblock %}
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
@@ -11,132 +11,115 @@
   <h1 class="mb-4">Settings</h1>
 
   <!-- ==================== GENERAL SETTINGS ====================== -->
-  <form id="general-settings-form" method="POST" action="">
+  <form id="general-settings-form" method="POST" action="" class="mb-5">
     {% csrf_token %}
-    <h2>General Settings</h2>
+    <h2 class="h4 mb-3">General Settings</h2>
 
-    <!-- Show non-field (global) errors, if any -->
     {% if general_form.non_field_errors %}
-      <ul class="form-errors">
+      <div class="alert alert-danger">
         {% for error in general_form.non_field_errors %}
-          <li>{{ error }}</li>
+          {{ error }}<br/>
         {% endfor %}
-      </ul>
+      </div>
     {% endif %}
 
-    <!-- Username Field + Error -->
-    <p>
+    <div class="mb-3">
       {{ general_form.username.label_tag }}
-      {{ general_form.username }}
-      {% if general_form.username.errors %}
-        <ul class="field-errors">
-          {% for error in general_form.username.errors %}
-            <li style="color: red;">{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </p>
+      {{ general_form.username|add_class:'form-control' }}
+      {% for error in general_form.username.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
 
-    <!-- Email Field + Error -->
-    <p>
+    <div class="mb-3">
       {{ general_form.email.label_tag }}
-      {{ general_form.email }}
-      {% if general_form.email.errors %}
-        <ul class="field-errors">
-          {% for error in general_form.email.errors %}
-            <li style="color: red;">{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </p>
+      {{ general_form.email|add_class:'form-control' }}
+      {% for error in general_form.email.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
 
-    <!-- The following are “coming soon,” so we disable them -->
-    <p>
-      <label>Theme (soon)</label><br>
-      <input type="text" disabled placeholder="Coming soon">
-    </p>
-    <p>
-      <label>Language (soon)</label><br>
-      <input type="text" disabled placeholder="Coming soon">
-    </p>
-    <p>
-      <label>Time Format (optional)</label><br>
-      <select disabled>
+    <!-- The following are "coming soon," so we disable them -->
+    <div class="mb-3">
+      <label class="form-label">Theme (soon)</label>
+      <input type="text" class="form-control" disabled placeholder="Coming soon">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Language (soon)</label>
+      <input type="text" class="form-control" disabled placeholder="Coming soon">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Time Format (optional)</label>
+      <select class="form-select" disabled>
         <option value="12">12h</option>
         <option value="24">24h</option>
       </select>
-    </p>
+    </div>
 
-    <!-- Save & Cancel for GENERAL SETTINGS only -->
-    <button type="submit" name="save_general">Save</button>
-    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
+    <button type="submit" name="save_general" class="btn btn-primary me-2">Save</button>
+    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
   </form>
 
 
   <!-- ==================== PERSONALIZATION ======================= -->
-  <form id="personalization-form" method="POST" action="">
+  <form id="personalization-form" method="POST" action="" class="mb-5">
     {% csrf_token %}
-    <h2>Personalization</h2>
+    <h2 class="h4 mb-3">Personalization</h2>
 
-    <!-- Render fields from our PersonalizationForm -->
-    <p>
+    <div class="mb-3">
       {{ personalization_form.gender.label_tag }}
-      {{ personalization_form.gender }}
-    </p>
-    <p>
+      {{ personalization_form.gender|add_class:'form-select' }}
+    </div>
+    <div class="mb-3">
       {{ personalization_form.b_day.label_tag }}
-      {{ personalization_form.b_day }}
-    </p>
-    <p>
+      {{ personalization_form.b_day|add_class:'form-control' }}
+    </div>
+    <div class="mb-3">
       {{ personalization_form.preferred_name.label_tag }}
-      {{ personalization_form.preferred_name }}
-    </p>
+      {{ personalization_form.preferred_name|add_class:'form-control' }}
+    </div>
 
-    <!-- Save & Cancel for PERSONALIZATION only -->
-    <button type="submit" name="save_personalization">Save</button>
-    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
+    <button type="submit" name="save_personalization" class="btn btn-primary me-2">Save</button>
+    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
   </form>
 
 
 <!-- ==================== DATA SECTION (fully working version) ==== -->
-  <h2>Data</h2>
-  <p>
-    <!-- Clear All Logs button -->
+  <h2 class="h4">Data</h2>
+  <div class="mb-3">
     <form id="clear-logs-form" method="POST" action="{% url 'clear_logs' %}"
-          onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')">
+          onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')" class="d-inline">
       {% csrf_token %}
-      <button type="submit">Clear All Logs</button>
+      <button type="submit" class="btn btn-warning">Clear All Logs</button>
     </form>
+  </div>
 
-    <br>
-      
-    <!-- Download All Data (as JSON) link -->
-    <a href="{% url 'confirm_password_download' %}">
-      <button type="button">Download All Data (as JSON)</button>
-    </a>
-    
-    <br><br>
-      
-    <!-- Delete Account button -->
+  <div class="mb-3">
+    <a href="{% url 'confirm_password_download' %}" class="btn btn-secondary">Download All Data (as JSON)</a>
+  </div>
+
+  <div class="mb-4">
     <form method="POST" action="{% url 'delete_account' %}"
-          onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')">
+          onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')" class="d-inline">
       {% csrf_token %}
-      <button type="submit">Delete Account</button>
+      <button type="submit" class="btn btn-danger">Delete Account</button>
     </form>
-  </p>
+  </div>
 
   <!-- ==================== ABOUT / SUPPORT ======================== -->
-  <h2>About / Support</h2>
-  <p>
-    <label>App Version</label><br>
-    <input type="text" value="v0.1" disabled><br><br>
-    <a href="{% url 'feedback' %}"> <button type="button">Report a Bug</button></a><br><br>
-    <a href="{% url 'feedback' %}"> <button type="button">Give Feedback</button></a><br><br>
-    <a href="{% url 'developer_info' %}"> <button type="button">Developer Info</button></a><br><br>
-    <a href="{% url 'developer_info' %}"> <button type="button">Donate / Support Me</button></a><br><br>
-    <a href="{% url 'changelog' %}"> <button type="button"> Changelog / What's New</button></a><br><br>
-    <a href="{% url 'license' %}"> <button type="button">Open Source / Licenses</button></a><br><br>
-  </p>
+  <h2 class="h4">About / Support</h2>
+  <div class="mb-3">
+    <label class="form-label">App Version</label>
+    <input type="text" class="form-control" value="v0.1" disabled>
+  </div>
+  <div class="mb-4">
+    <a href="{% url 'feedback' %}" class="btn btn-secondary me-2">Report a Bug</a>
+    <a href="{% url 'feedback' %}" class="btn btn-secondary me-2">Give Feedback</a>
+    <a href="{% url 'developer_info' %}" class="btn btn-secondary me-2">Developer Info</a>
+    <a href="{% url 'developer_info' %}" class="btn btn-secondary me-2">Donate / Support Me</a>
+    <a href="{% url 'changelog' %}" class="btn btn-secondary me-2">Changelog / What's New</a>
+    <a href="{% url 'license' %}" class="btn btn-secondary">Open Source / Licenses</a>
+  </div>
 
   <a href="{% url 'month_view' now.year now.month %}" class="btn btn-link mt-2"> Month Statistics</a>
 {% endblock %}

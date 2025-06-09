@@ -15,7 +15,7 @@
 <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
 
 <!-- 'Add / Log Today' link will be assigned by JavaScript -->
-<a id="log-today-link" href="#">Add / Log Today</a>
+<a id="log-today-link" href="#" class="btn btn-primary btn-sm">Add / Log Today</a>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -41,7 +41,7 @@
 {% endif %}
 
 <!-- Table of existing logs -->
-<table class="table table-striped">
+<table class="table table-striped table-bordered">
     <tr>
         <th>User</th>
         <th>Date</th>
