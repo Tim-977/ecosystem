@@ -8,3 +8,4 @@ mainpage/static/mainpage/images/*.png
 
 activity_rendering/year_input.txt
 activity_rendering/input.txt
+.venv/
