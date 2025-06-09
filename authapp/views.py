@@ -14,6 +14,7 @@ from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 from .forms import GeneralSettingsForm, PersonalizationForm
 from .models import LoginAttempt, SignupAttempt
+from django.db import OperationalError, ProgrammingError
 from .utils.ip_utils import get_client_ip
 
 from pathlib import Path
@@ -60,11 +61,14 @@ def login_page(request):
         password = request.POST.get('password')
 
         one_hour_ago = timezone.now() - timedelta(hours=1)
-        failed_count = LoginAttempt.objects.filter(
-            ip_address=ip,
-            was_success=False,
-            timestamp__gte=one_hour_ago,
-        ).count()
+        try:
+            failed_count = LoginAttempt.objects.filter(
+                ip_address=ip,
+                was_success=False,
+                timestamp__gte=one_hour_ago,
+            ).count()
+        except (ProgrammingError, OperationalError):
+            failed_count = 0
 
         if failed_count >= 10:
             requires_captcha = True
@@ -73,11 +77,17 @@ def login_page(request):
         else:
             user = authenticate(request, username=username, password=password)
             if user is not None:
-                LoginAttempt.objects.create(ip_address=ip, was_success=True)
+                try:
+                    LoginAttempt.objects.create(ip_address=ip, was_success=True)
+                except (ProgrammingError, OperationalError):
+                    pass
                 login(request, user)
                 return redirect(next_url)
             else:
-                LoginAttempt.objects.create(ip_address=ip, was_success=False)
+                try:
+                    LoginAttempt.objects.create(ip_address=ip, was_success=False)
+                except (ProgrammingError, OperationalError):
+                    pass
                 error_message = 'Invalid username or password. Please try again.'
 
     else:
@@ -109,10 +119,13 @@ def signup_page(request):
         confirm_password = request.POST.get('confirm_password')
 
         one_hour_ago = timezone.now() - timedelta(hours=1)
-        recent_count = SignupAttempt.objects.filter(
-            ip_address=ip,
-            timestamp__gte=one_hour_ago,
-        ).count()
+        try:
+            recent_count = SignupAttempt.objects.filter(
+                ip_address=ip,
+                timestamp__gte=one_hour_ago,
+            ).count()
+        except (ProgrammingError, OperationalError):
+            recent_count = 0
 
         if recent_count >= 3:
             requires_captcha = True
@@ -137,7 +150,10 @@ def signup_page(request):
 
         elif not error_message:
             user = User.objects.create_user(username=username, email=email, password=password)
-            SignupAttempt.objects.create(ip_address=ip)
+            try:
+                SignupAttempt.objects.create(ip_address=ip)
+            except (ProgrammingError, OperationalError):
+                pass
             login(request, user)
             return redirect('welcome')
 

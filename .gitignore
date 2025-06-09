@@ -2,6 +2,8 @@
 __pycache__/
 
 logs/
+authapp/security_logs/
+db.sqlite3
 mainpage/static/mainpage/images/*.png
 
 activity_rendering/year_input.txt
