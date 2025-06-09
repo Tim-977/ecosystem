@@ -24,6 +24,11 @@
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br><br>
 
+        {# TODO: integrate Google reCAPTCHA when requires_captcha is True #}
+        {% if requires_captcha %}
+            <p>CAPTCHA goes here</p>
+        {% endif %}
+
         <button type="submit">Log In</button>
     </form>
 

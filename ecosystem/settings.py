@@ -81,7 +81,9 @@ WSGI_APPLICATION = 'ecosystem.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-USE_POSTGRES = True
+import os
+
+USE_POSTGRES = os.environ.get("USE_POSTGRES", "True") == "True"
 
 if USE_POSTGRES:
     DATABASES = {

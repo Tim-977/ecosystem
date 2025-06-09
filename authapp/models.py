@@ -46,3 +46,21 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class SignupAttempt(models.Model):
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"SignupAttempt({self.ip_address}, {self.timestamp})"
+
+
+class LoginAttempt(models.Model):
+    ip_address = models.GenericIPAddressField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    was_success = models.BooleanField()
+
+    def __str__(self):
+        status = "success" if self.was_success else "failure"
+        return f"LoginAttempt({self.ip_address}, {status}, {self.timestamp})"

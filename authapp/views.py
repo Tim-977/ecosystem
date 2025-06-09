@@ -1,16 +1,33 @@
 import json
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import logging
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET
 from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 from .forms import GeneralSettingsForm, PersonalizationForm
+from .models import LoginAttempt, SignupAttempt
+from .utils.ip_utils import get_client_ip
+
+from pathlib import Path
+
+LOG_DIR = Path(__file__).resolve().parent / "security_logs"
+LOG_DIR.mkdir(exist_ok=True)
+_log_file = LOG_DIR / "suspicious_activity.log"
+security_logger = logging.getLogger("security")
+if not security_logger.handlers:
+    handler = logging.FileHandler(_log_file)
+    formatter = logging.Formatter("%(asctime)s %(message)s")
+    handler.setFormatter(formatter)
+    security_logger.addHandler(handler)
+    security_logger.setLevel(logging.INFO)
 
 User = get_user_model()
 
@@ -31,26 +48,50 @@ def logout_view(request):
 
 def login_page(request):
     if request.user.is_authenticated:
-        return redirect('/') 
+        return redirect('/')
 
     error_message = None
+    requires_captcha = False  # TODO: integrate reCAPTCHA when this is True
 
     if request.method == 'POST':
+        ip = get_client_ip(request)
+        next_url = request.POST.get('next', '/')
         username = request.POST.get('username')
         password = request.POST.get('password')
-        next_url = request.POST.get('next', '/')
 
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect(next_url)
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        failed_count = LoginAttempt.objects.filter(
+            ip_address=ip,
+            was_success=False,
+            timestamp__gte=one_hour_ago,
+        ).count()
+
+        if failed_count >= 10:
+            requires_captcha = True
+            security_logger.warning('Excessive failed logins from %s', ip)
+            error_message = 'Too many failed login attempts. Please try again later.'
         else:
-            error_message = "Invalid username or password. Please try again."
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                LoginAttempt.objects.create(ip_address=ip, was_success=True)
+                login(request, user)
+                return redirect(next_url)
+            else:
+                LoginAttempt.objects.create(ip_address=ip, was_success=False)
+                error_message = 'Invalid username or password. Please try again.'
 
     else:
         next_url = request.GET.get('next', '/')
 
-    return render(request, 'authapp/login.html', {'next': next_url, 'error_message': error_message})
+    return render(
+        request,
+        'authapp/login.html',
+        {
+            'next': next_url,
+            'error_message': error_message,
+            'requires_captcha': requires_captcha,
+        },
+    )
 
 
 def signup_page(request):
@@ -58,12 +99,25 @@ def signup_page(request):
         return redirect('/')
 
     error_message = None
+    requires_captcha = False  # TODO: integrate reCAPTCHA when this is True
 
     if request.method == 'POST':
+        ip = get_client_ip(request)
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        recent_count = SignupAttempt.objects.filter(
+            ip_address=ip,
+            timestamp__gte=one_hour_ago,
+        ).count()
+
+        if recent_count >= 3:
+            requires_captcha = True
+            security_logger.warning('Exceeded signup rate from %s', ip)
+            error_message = 'Too many accounts created from this IP. Please try later.'
 
         # 1) Password match
         if password != confirm_password:
@@ -81,12 +135,20 @@ def signup_page(request):
         elif User.objects.filter(email=email).exists():
             error_message = "An account with this email already exists."
 
-        else:
+        elif not error_message:
             user = User.objects.create_user(username=username, email=email, password=password)
+            SignupAttempt.objects.create(ip_address=ip)
             login(request, user)
             return redirect('welcome')
 
-    return render(request, 'authapp/signup.html', {'error_message': error_message})
+    return render(
+        request,
+        'authapp/signup.html',
+        {
+            'error_message': error_message,
+            'requires_captcha': requires_captcha,
+        },
+    )
 
 
 @login_required
