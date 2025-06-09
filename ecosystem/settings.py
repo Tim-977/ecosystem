@@ -89,28 +89,16 @@ WSGI_APPLICATION = 'ecosystem.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-import os
-
-USE_POSTGRES = os.environ.get("USE_POSTGRES", "True") == "True"
-
-if USE_POSTGRES:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'ecosystemdb',
-            'USER': 'ecosystemuser',
-            'PASSWORD': 'ecosystempass',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ecosystemdb',
+        'USER': 'ecosystemuser',
+        'PASSWORD': 'ecosystempass',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 AUTH_USER_MODEL = 'authapp.CustomUser'
 
