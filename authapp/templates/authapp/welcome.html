@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Welcome to Our App</title>
-</head>
-<body>
-    <h1>Welcome!</h1>
-
-    <p>Let's gooooo, you have signed in!!!!!</p>
-    
-    <a href="/">Next</a>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+  <h1 class="mb-3">Welcome!</h1>
+  <p>Let's gooooo, you have signed in!!!!!</p>
+  <a href="/" class="btn btn-primary">Next</a>
+{% endblock %}

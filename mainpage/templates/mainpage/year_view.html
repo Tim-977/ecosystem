@@ -1,13 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Yearly Overview: {{ year }}</title>
+{% block title %}Yearly Overview: {{ year }}{% endblock %}
+{% block extra_head %}
   <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
   <link rel="stylesheet" href="{% static 'mainpage/css/year.css' %}">
-</head>
-<body>
+{% endblock %}
+{% block content %}
   <!-- ========== HEADER ========== -->
   <header>
     <div class="header-left">
@@ -78,5 +76,4 @@
       window.location.href = '/year/' + selectedYear + '/';
     });
   </script>
-</body>
-</html>
+{% endblock %}

@@ -1,41 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
-<body>
-    <h1>Sign Up</h1>
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<h1 class="mb-4">Sign Up</h1>
 
-    <!-- Show error message if it exists -->
-    {% if error_message %}
-        <p style="color: red;">{{ error_message }}</p>
+{% if error_message %}
+  <div class="alert alert-danger">{{ error_message }}</div>
+{% endif %}
+
+<form method="POST" class="mx-auto" style="max-width:400px;">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" id="username" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" id="email" name="email" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" id="password" name="password" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="confirm_password" class="form-label">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+    </div>
+    {% if requires_captcha %}
+      <p>CAPTCHA goes here</p>
     {% endif %}
 
-    <form method="POST">
-        {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Sign Up</button>
+</form>
 
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
-
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-
-        <label for="confirm_password">Confirm Password:</label>
-        <input type="password" id="confirm_password" name="confirm_password" required><br><br>
-
-        {# TODO: integrate Google reCAPTCHA when requires_captcha is True #}
-        {% if requires_captcha %}
-            <p>CAPTCHA goes here</p>
-        {% endif %}
-
-        <button type="submit">Sign Up</button>
-    </form>
-
-    <p>Already have an account? <a href="/auth/login/">Log In</a></p>
-</body>
-</html>
+<p class="mt-3">Already have an account? <a href="{% url 'login' %}">Log In</a></p>
+{% endblock %}

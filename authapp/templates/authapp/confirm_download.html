@@ -1,25 +1,18 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Confirm Password</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>Confirm Password to Download Your Data</h1>
-
-  <form method="POST" action="{% url 'confirm_password_download' %}">
+{% block title %}Confirm Download{% endblock %}
+{% block content %}
+  <h1 class="mb-4">Confirm Password to Download Your Data</h1>
+  <form method="POST" action="{% url 'confirm_password_download' %}" class="mx-auto" style="max-width:400px;">
     {% csrf_token %}
-    <p>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-    </p>
+    <div class="mb-3">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" id="password" name="password" class="form-control" required>
+    </div>
     {% if error %}
-      <p style="color: red;">{{ error }}</p>
+      <div class="alert alert-danger">{{ error }}</div>
     {% endif %}
-    <button type="submit">Confirm and Download</button>
-    <a href="{% url 'settings' %}"><button type="button">Cancel</button></a>
+    <button type="submit" class="btn btn-primary">Confirm and Download</button>
+    <a href="{% url 'settings' %}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
-</body>
-</html>
+{% endblock %}

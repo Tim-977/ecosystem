@@ -1,13 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{% block title %}My App{% endblock %}</title>
+{% block title %}{% block month_title %}My App{% endblock %}{% endblock %}
+{% block extra_head %}
   <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
-  {% block extra_head %}{% endblock %}
-</head>
-<body>
+  {{ block.super }}
+{% endblock %}
+{% block content %}
 
   <!-- ========== HEADER ========== -->
   <header class="main-header">
@@ -94,5 +92,4 @@
   <script src="{% static 'mainpage/js/localtime.js' %}"></script>
   <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
   {% block extra_js %}{% endblock %}
-</body>
-</html>
+{% endblock %}

@@ -1,10 +1,10 @@
-{% extends "authapp/mainpage.html" %}
+{% extends "base.html" %}
 {% load static %}  <!-- Load static files -->
 
 {% block title %}Daily Logs{% endblock %}
 
 {% block content %}
-<h2>All Daily Data</h2>
+<h2 class="mb-3">All Daily Data</h2>
 
 
 <!-- Display Server Time -->
@@ -35,15 +35,13 @@
 
 <!-- If you have messages for future date restrictions, show them here -->
 {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li style="color: red;">{{ message }}</li>
-    {% endfor %}
-  </ul>
+  {% for message in messages %}
+    <div class="alert alert-danger">{{ message }}</div>
+  {% endfor %}
 {% endif %}
 
 <!-- Table of existing logs -->
-<table border="1">
+<table class="table table-striped">
     <tr>
         <th>User</th>
         <th>Date</th>

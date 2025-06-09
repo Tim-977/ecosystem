@@ -2,8 +2,10 @@
 {% load static %}
 {% block title %}Month Diary{% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <link rel="stylesheet" href="{% static 'mainpage/css/diary.css' %}">
+{% endblock %}
+{% block content %}
 <div class="vintage-diary">
   <!-- <p class="intro">Daily Diary</p> -->
 

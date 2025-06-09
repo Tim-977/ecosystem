@@ -1,14 +1,14 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Settings</title>
+{% block title %}Settings{% endblock %}
+{% block extra_head %}
   <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
+{% endblock %}
+{% block extra_js %}
   <script src="{% static 'authapp/js/settings.js' %}"></script>
-</head>
-<body>
-  <h1>Settings</h1>
+{% endblock %}
+{% block content %}
+  <h1 class="mb-4">Settings</h1>
 
   <!-- ==================== GENERAL SETTINGS ====================== -->
   <form id="general-settings-form" method="POST" action="">
@@ -138,7 +138,5 @@
     <a href="{% url 'license' %}"> <button type="button">Open Source / Licenses</button></a><br><br>
   </p>
 
-  <a href="{% url 'month_view' now.year now.month %}"> Month Statistics</a><br><br>
-
-</body>
-</html>
+  <a href="{% url 'month_view' now.year now.month %}" class="btn btn-link mt-2"> Month Statistics</a>
+{% endblock %}

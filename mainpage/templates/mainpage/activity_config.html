@@ -4,59 +4,65 @@
 {% block title %}Manage Activities{% endblock %}
 
 {% block content %}
-<h2>Activity Configuration</h2>
+<h2 class="mb-3">Activity Configuration</h2>
 
 {% if messages %}
-  <ul style="color:red;">
-    {% for msg in messages %}
-      <li>{{ msg }}</li>
-    {% endfor %}
-  </ul>
+  {% for msg in messages %}
+    <div class="alert alert-danger">{{ msg }}</div>
+  {% endfor %}
 {% endif %}
 
-<form method="POST" action="{% url 'activity_config_view' year month %}">
+<form method="POST" action="{% url 'activity_config_view' year month %}" class="mb-4">
   {% csrf_token %}
   {% if edit_activity %}
     <input type="hidden" name="action" value="update" />
     <input type="hidden" name="activity_id" value="{{ edit_activity.id }}" />
-    <label for="name">Activity Name:</label><br/>
-    <input type="text" name="name" required maxlength="15" value="{{ edit_activity.name }}"><br/><br/>
+    <div class="mb-3">
+      <label for="name" class="form-label">Activity Name</label>
+      <input type="text" name="name" class="form-control" required maxlength="15" value="{{ edit_activity.name }}">
+    </div>
 
-    <label for="color">Color (CSS name or #hex):</label><br/>
-    <input type="text" name="color" required value="{{ edit_activity.color }}"><br/><br/>
+    <div class="mb-3">
+      <label for="color" class="form-label">Color (CSS name or #hex)</label>
+      <input type="text" name="color" class="form-control" required value="{{ edit_activity.color }}">
+    </div>
 
-    <button type="submit">Update Activity</button>
+    <button type="submit" class="btn btn-primary">Update Activity</button>
   {% else %}
     <input type="hidden" name="action" value="create" />
-    <label for="name">Activity Name:</label><br/>
-    <input type="text" name="name" required maxlength="15"><br/><br/>
+    <div class="mb-3">
+      <label for="name" class="form-label">Activity Name</label>
+      <input type="text" name="name" class="form-control" required maxlength="15">
+    </div>
 
-    <label for="color">Color (CSS name or #hex):</label><br/>
-    <input type="text" name="color" value="#0000ff" required><br/><br/>
+    <div class="mb-3">
+      <label for="color" class="form-label">Color (CSS name or #hex)</label>
+      <input type="text" name="color" class="form-control" value="#0000ff" required>
+    </div>
 
-    <button type="submit">Add Activity</button>
+    <button type="submit" class="btn btn-primary">Add Activity</button>
   {% endif %}
 </form>
 
 <hr/>
-<h3>Existing Activities</h3>
-<ul>
+<h3 class="mt-4">Existing Activities</h3>
+<ul class="list-unstyled">
   {% for act in activities %}
     <li>
       {{ act.name }} ({{ act.color }})
 
       <!-- Edit button (GET request with edit_id) -->
-      <form method="GET" action="{% url 'activity_config_view' year month %}" style="display:inline;">
+      <form method="GET" action="{% url 'activity_config_view' year month %}" class="d-inline">
         <input type="hidden" name="edit_id" value="{{ act.id }}">
-        <button type="submit">Edit</button>
+        <button type="submit" class="btn btn-sm btn-secondary">Edit</button>
       </form>
 
       <!-- Delete button -->
-      <form method="POST" action="{% url 'activity_config_view' year month %}" style="display:inline;">
+      <form method="POST" action="{% url 'activity_config_view' year month %}" class="d-inline">
         {% csrf_token %}
         <input type="hidden" name="activity_id" value="{{ act.id }}">
         <input type="hidden" name="action" value="delete">
-        <button type="submit">Delete</button>
+        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
       </form>
     </li><br>
   {% endfor %}

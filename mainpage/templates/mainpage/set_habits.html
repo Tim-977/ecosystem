@@ -4,37 +4,39 @@
 {% block title %}Set Monthly Habits{% endblock %}
 
 {% block content %}
-<h2>Set or Update This Month's Habits</h2>
+<h2 class="mb-3">Set or Update This Month's Habits</h2>
 
 {% if messages %}
   {% for msg in messages %}
-    <p style="color: green;">{{ msg }}</p>
+    <div class="alert alert-success">{{ msg }}</div>
   {% endfor %}
 {% endif %}
 
-<form method="POST" action="{% url 'set_habits' year month %}">
+<form method="POST" action="{% url 'set_habits' year month %}" class="mb-4">
   {% csrf_token %}
-  <label for="goal_text">Monthly Goals:</label><br/>
-  <textarea name="goal_text" id="goal_text" rows="2" cols="50">{{ monthly_obj.goal_text }}</textarea>
-  <br/><br/>
+  <div class="mb-3">
+    <label for="goal_text" class="form-label">Monthly Goals</label>
+    <textarea name="goal_text" id="goal_text" rows="2" class="form-control">{{ monthly_obj.goal_text }}</textarea>
+  </div>
 
   <h3>Habits:</h3>
   {% for idx, habit_value in habits_with_index %}
-    <label>Habit {{ idx }}:</label>
-    <input type="text" name="habit_{{ idx }}" value="{{ habit_value|default_if_none:'' }}">
-    <br/>
+    <div class="mb-2">
+      <label class="form-label">Habit {{ idx }}</label>
+      <input type="text" name="habit_{{ idx }}" class="form-control" value="{{ habit_value|default_if_none:'' }}">
+    </div>
   {% endfor %}
   <br/>
-  <button type="submit">Save All Habits</button>
+  <button type="submit" class="btn btn-primary">Save All Habits</button>
 </form>
 
 <br/>
 {% for idx, habit_value in habits_with_index %}
   {% if habit_value %}
-    <form method="POST" action="{% url 'set_habits' year month %}" style="display:inline;">
+    <form method="POST" action="{% url 'set_habits' year month %}" class="d-inline">
       {% csrf_token %}
       <input type="hidden" name="clear_habit_index" value="{{ idx }}">
-      <button type="submit">Clear Habit {{ idx }} ({{ habit_value }})</button>
+      <button type="submit" class="btn btn-sm btn-danger">Clear Habit {{ idx }} ({{ habit_value }})</button>
     </form>
     <br/>
   {% endif %}
