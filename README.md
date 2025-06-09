@@ -21,7 +21,7 @@ setup_postgres.sh          # optional PostgreSQL setup helper
 - **virtualenv** (`python3 -m venv` or the `virtualenv` package)
 - **g++** with C++17 support
 - **CMake** and `make`
-- **PostgreSQL** server and client tools (default DB) or SQLite (built‑in)
+- **PostgreSQL** server and client tools
 
 
 On Arch Linux use `pacman`:
@@ -54,7 +54,6 @@ On Ubuntu-based systems you can use the same `apt` commands as on Debian to inst
    ```bash
    ./setup_postgres.sh
    ```
-   To use SQLite instead, edit `ecosystem/settings.py` and set `USE_POSTGRES = False`.
 4. **Collect static files** (required for production with WhiteNoise)
    ```bash
    python manage.py collectstatic
@@ -75,8 +74,8 @@ requests on port `9090`.
 After applying migrations you can run a helper script to trigger the abuse-detection logic. This will create test accounts and perform repeated logins from the same IP.
 
 ```bash
-USE_POSTGRES=False python manage.py migrate --noinput
-USE_POSTGRES=False python security_test.py
+python manage.py migrate --noinput
+python security_test.py
 ```
 
 Check `authapp/security_logs/suspicious_activity.log` for the logged events.

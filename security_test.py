@@ -2,10 +2,10 @@
 """Simulate repeated signups and logins to trigger security logging.
 
 Run with:
-    USE_POSTGRES=False python security_test.py
+    python security_test.py
 
 Ensure database migrations are applied first:
-    USE_POSTGRES=False python manage.py migrate --noinput
+    python manage.py migrate --noinput
 """
 import os
 import django
