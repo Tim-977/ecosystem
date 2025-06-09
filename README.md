@@ -69,3 +69,14 @@ On Ubuntu based system just ki|l yourself and never do coding related stuff agai
 The site should now be accessible and the C++ server will handle rendering
 requests on port `9090`.
 
+
+## Security Demo
+
+After applying migrations you can run a helper script to trigger the abuse-detection logic. This will create test accounts and perform repeated logins from the same IP.
+
+```bash
+USE_POSTGRES=False python manage.py migrate --noinput
+USE_POSTGRES=False python security_test.py
+```
+
+Check `authapp/security_logs/suspicious_activity.log` for the logged events.
