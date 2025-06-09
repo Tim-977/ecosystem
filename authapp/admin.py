@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, LoginAttempt, SignupAttempt
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'is_staff', 'is_active')
@@ -29,3 +29,5 @@ class CustomUserAdmin(UserAdmin):
     )
 
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(SignupAttempt)
+admin.site.register(LoginAttempt)

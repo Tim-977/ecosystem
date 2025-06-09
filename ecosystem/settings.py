@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-+aj1$s#k7+s_vp)qyf6=-7+d!rsm6zl&p-y=_mvtyahv(mbv&3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
 
 
 # Application definition
@@ -53,8 +53,16 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+
+# WhiteNoise is useful for serving static files in production but it isn't
+# required when running tests. Add it only if the package is installed.
+try:
+    import whitenoise  # noqa: F401
+except ImportError:
+    pass
+else:
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'ecosystem.urls'
 
@@ -81,7 +89,9 @@ WSGI_APPLICATION = 'ecosystem.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-USE_POSTGRES = True
+import os
+
+USE_POSTGRES = os.environ.get("USE_POSTGRES", "True") == "True"
 
 if USE_POSTGRES:
     DATABASES = {
