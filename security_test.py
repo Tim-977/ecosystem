@@ -52,9 +52,13 @@ response = client.post(
         "confirm_password": "pw123456",
     },
     REMOTE_ADDR="5.5.5.5",
+    follow=True,
 )
-print("Requires CAPTCHA:", response.context.get("requires_captcha"))
-print("Message:", response.context.get("error_message"))
+if response.context:
+    print("Requires CAPTCHA:", response.context.get("requires_captcha"))
+    print("Message:", response.context.get("error_message"))
+else:
+    print("No context returned (response code:", response.status_code, ")")
 
 print("\n>>> Simulating login abuse")
 for _ in range(10):
@@ -68,8 +72,12 @@ response = client.post(
     "/auth/login/",
     {"username": "tester", "password": "wrongpass"},
     REMOTE_ADDR="6.6.6.6",
+    follow=True,
 )
-print("Requires CAPTCHA:", response.context.get("requires_captcha"))
-print("Message:", response.context.get("error_message"))
+if response.context:
+    print("Requires CAPTCHA:", response.context.get("requires_captcha"))
+    print("Message:", response.context.get("error_message"))
+else:
+    print("No context returned (response code:", response.status_code, ")")
 
 print("\nSecurity log -> authapp/security_logs/suspicious_activity.log")

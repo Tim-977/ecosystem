@@ -35,7 +35,7 @@ sudo apt update
 sudo apt install python3 python3-venv python3-pip g++ cmake make postgresql
 ```
 
-On Ubuntu based system just ki|l yourself and never do coding related stuff again.
+On Ubuntu-based systems you can use the same `apt` commands as on Debian to install the required packages.
 
 ## Setup Steps
 
