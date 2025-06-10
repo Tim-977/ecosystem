@@ -30,6 +30,7 @@ std::string handle_request(const std::string& request_buffer) {
 
     int user_id = request_json.value("user_id", -1);
     int year = request_json.value("year", 0);
+    std::string username = request_json.value("username", std::to_string(user_id));
     std::string mode = request_json.value("mode", "month");
     int month = request_json.value("month", 0);
 
@@ -82,14 +83,14 @@ std::string handle_request(const std::string& request_buffer) {
 
         std::ofstream lf(legendFile);
         if (lf) {
-            if (request_json.contains("color_map")) {
-                for (auto it = request_json["color_map"].begin(); it != request_json["color_map"].end(); ++it) {
-                    lf << it.value().get<std::string>() << '\t' << it.key() << '\n';
-                }
-            } else if (request_json.contains("legend")) {
+            if (request_json.contains("legend")) {
                 for (const auto& item : request_json["legend"]) {
                     if (item.size() >= 2)
                         lf << item[1].get<std::string>() << '\t' << item[0].get<std::string>() << '\n';
+                }
+            } else if (request_json.contains("color_map")) {
+                for (auto it = request_json["color_map"].begin(); it != request_json["color_map"].end(); ++it) {
+                    lf << it.value().get<std::string>() << '\t' << it.key() << '\n';
                 }
             }
             lf.close();
@@ -101,7 +102,7 @@ std::string handle_request(const std::string& request_buffer) {
 
     std::string cmd;
     if (mode == "year") {
-    cmd = "activity_rendering/render_year " + std::to_string(user_id) + " " + std::to_string(year) + " " + inputFile + " " + outputFile + " " + legendFile;
+        cmd = "activity_rendering/render_year " + username + " " + std::to_string(year) + " " + inputFile + " " + outputFile + " " + legendFile;
     } else {
         cmd = "activity_rendering/render " + std::to_string(user_id) + " " + inputFile + " " + outputFile + " " + legendFile;
     }

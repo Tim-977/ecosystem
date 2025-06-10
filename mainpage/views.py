@@ -828,6 +828,7 @@ def year_view(request, year):
             "year": year,
             "mode": "year",
             "activity_log": day_hour_colors,
+            "username": request.user.username,
             "color_map": full_mapping,
             "legend": legend_list,
         }

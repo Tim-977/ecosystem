@@ -4,8 +4,13 @@ import json
 
 def send_render_request(data):
     """
-    data: dict containing keys "user_id", "year", "activity_log", "color_map"
-    Returns: parsed JSON response from C++ server (dict)
+    Send a payload to the C++ renderer socket server.
+
+    ``data`` should include at least ``user_id`` and ``year``. 
+    
+    Optional keys like ``activity_log``, ``color_map``, ``legend`` and ``username`` are forwarded as they are.
+
+    Returns the parsed JSON response from the C++ server (dict).
     """
     HOST = '127.0.0.1'
     PORT = 9090
