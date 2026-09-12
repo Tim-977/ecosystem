@@ -44,19 +44,26 @@ sudo apt install python3 python3-venv python3-pip g++ cmake make postgresql
    ```
 2. **Install Python packages**
    ```bash
-   pip install django gunicorn whitenoise psycopg2-binary
+   pip install django gunicorn whitenoise psycopg2-binary python-dotenv
    ```
-3. **(Optional) Configure PostgreSQL**
+3. **Set the Django secret key**
+   `ecosystem/settings.py` reads `DJANGO_SECRET_KEY` from the environment
+   (via a `.env` file next to `manage.py`, loaded automatically). Create one:
+   ```bash
+   python -c "from django.core.management.utils import get_random_secret_key; print('DJANGO_SECRET_KEY=' + get_random_secret_key())" > .env
+   ```
+   `.env` is gitignored - each environment should generate its own.
+4. **(Optional) Configure PostgreSQL**
    By default `ecosystem/settings.py` uses PostgreSQL. Run the helper script to
    create the database and user:
    ```bash
    ./setup_postgres.sh
    ```
-4. **Collect static files** (required for production with WhiteNoise)
+5. **Collect static files** (required for production with WhiteNoise)
    ```bash
    python manage.py collectstatic
    ```
-5. **Build and run the project**
+6. **Build and run the project**
    ```bash
    ./run.sh
    ```
