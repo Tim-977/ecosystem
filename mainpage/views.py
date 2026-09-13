@@ -13,11 +13,92 @@ from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 from tracker.utils.socket_client import send_render_request
 
 
+def _parse_time_str(t_str):
+    """Parse "HHMM" / "HMM" / "HH:MM" into a time, or None if blank/invalid."""
+    t_str = (t_str or "").strip().replace(':', '')
+    if len(t_str) == 3:
+        h, m = t_str[0], t_str[1:]
+    elif len(t_str) == 4:
+        h, m = t_str[:2], t_str[2:]
+    else:
+        return None
+    try:
+        h, m = int(h), int(m)
+    except ValueError:
+        return None
+    if h < 0 or h > 23 or m < 0 or m > 59:
+        return None
+    return time(h, m)
+
+
+def _sleep_hours(log):
+    """Hours slept from a DailyData "bed,wake,alarm," string (0 if unknown).
+    A wake time earlier than the bed time is treated as crossing midnight."""
+    if not log.sleep:
+        return 0
+    parts = log.sleep.split(',')
+    bed = _parse_time_str(parts[0]) if len(parts) > 0 else None
+    wake = _parse_time_str(parts[1]) if len(parts) > 1 else None
+    if not (bed and wake):
+        return 0
+    duration = datetime.combine(log.date, wake) - datetime.combine(log.date, bed)
+    if duration.total_seconds() < 0:
+        duration += timedelta(hours=24)
+    return duration.total_seconds() / 3600.0
+
+
+def _hourly_ids(log):
+    """The day's 24 hourly activity ids (None where nothing was logged)."""
+    try:
+        hour_list = json.loads(log.hourly_activity_logging or "[]")
+    except (TypeError, ValueError):
+        return [None] * 24
+    hours = [None] * 24
+    for item in hour_list if isinstance(hour_list, list) else []:
+        h = item.get("hour") if isinstance(item, dict) else None
+        if isinstance(h, int) and 0 <= h < 24:
+            hours[h] = item.get("activity")
+    return hours
+
+
+def _day_summary(log):
+    """Read-only, JSON-friendly summary of one DailyData row for charts."""
+    return {
+        "date": log.date.isoformat(),
+        "mood": log.mood_rating,
+        "productivity": log.productivity_score,
+        "sleep": round(_sleep_hours(log), 2),
+        "habits": (log.habits_completed or "").ljust(10, '0')[:10],
+        "thoughts": log.thoughts or "",
+        "has_reflection": bool(log.self_reflection),
+    }
+
+
 @login_required
 def main_page_view(request):
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
     server_time = now()
     today = date.today()
+
+    monthly_obj = MonthlyHabits.objects.filter(
+        user_id=request.user.id, year=today.year, month=today.month
+    ).first()
+    today_log = next((log for log in all_data if log.date == today), None)
+
+    # The recent calendar window, plus the latest days that actually hold
+    # something (so a long gap doesn't hide the most recent entries).
+    window_start = today - timedelta(days=120)
+    summary_logs, with_content = [], 0
+    for log in all_data:
+        has_content = (log.mood_rating is not None or log.productivity_score is not None
+                       or log.thoughts or log.self_reflection
+                       or (log.habits_completed and '1' in log.habits_completed))
+        if log.date >= window_start or (has_content and with_content < 40):
+            summary_logs.append(log)
+        if has_content:
+            with_content += 1
+        if log.date < window_start and with_content >= 40:
+            break
 
     context = {
         "all_data": all_data,
@@ -25,8 +106,19 @@ def main_page_view(request):
         "server_time": server_time,
         "year": today.year,
         "month": today.month,
+        # Chart-ready views of the data above (read-only, for the dashboard)
+        "monthly_obj": monthly_obj,
+        "habit_names": [getattr(monthly_obj, f"habit_{i}") for i in range(1, 11)] if monthly_obj else [""] * 10,
+        "day_summaries": [_day_summary(log) for log in summary_logs],
+        "today_hourly": _hourly_ids(today_log) if today_log else None,
     }
     return render(request, 'mainpage/main.html', context)
+
+
+@login_required
+def tasks_view(request):
+    """Full-page home for the TODO list; all data comes from the /api/todo/ endpoints."""
+    return render(request, 'mainpage/tasks.html', {"current_view": "tasks"})
 
 
 @login_required
@@ -144,6 +236,17 @@ def day_view(request, year, month, day):
     habits_binary = habits_binary.ljust(10, '0')[:10]
     habits_status = list(zip(habits, habits_binary))
 
+    # Which days of this month already hold any entry (for the date strip)
+    logged_days = [
+        log.date.day for log in DailyData.objects.filter(
+            user_id=request.user.id, date__year=year, date__month=month
+        )
+        if log.mood_rating is not None or log.productivity_score is not None
+        or (log.habits_completed and '1' in log.habits_completed)
+        or log.thoughts or log.self_reflection
+        or any(a is not None for a in _hourly_ids(log))
+    ]
+
     context = {
         "daily_obj": daily_obj,
         "date": current_date,
@@ -153,6 +256,8 @@ def day_view(request, year, month, day):
         "habits_status": habits_status,
         "monthly_obj": monthly_obj,
         "hourly_data": hourly_data,
+        "logged_days": logged_days,
+        "days_in_month": calendar.monthrange(year, month)[1],
     }
     return render(request, 'mainpage/day.html', context)
 
@@ -224,12 +329,20 @@ def set_habits_view(request, year, month):
         return redirect('set_habits', year=year, month=month)
 
     # --- Regular GET request ---
+    habit_days = [
+        {"day": log.date.day, "habits": (log.habits_completed or "").ljust(10, '0')[:10]}
+        for log in DailyData.objects.filter(
+            user_id=request.user.id, date__year=year, date__month=month
+        ).order_by('date')
+    ]
     context = {
         "monthly_obj": monthly_obj,
         "habits_with_index": habits_with_index,
         "year": year,
         "month": month,
         "current_view": "set_habits",
+        "habit_days": habit_days,
+        "days_in_month": calendar.monthrange(year, month)[1],
     }
     return render(request, "mainpage/set_habits.html", context)
 
@@ -761,6 +874,14 @@ def month_view(request, year, month):
         "monthly_sleep_data": monthly_sleep_data,
         "monthly_activity_aggregate": monthly_activity_aggregate,
         "image_path": image_path,
+        # Chart-ready views of the same logs (read-only, for native charts)
+        "day_summaries": [_day_summary(log) for log in daily_logs.order_by('date')],
+        "hourly_grid": {log.date.day: _hourly_ids(log) for log in daily_logs},
+        "activity_legend": list(ActivityMapping.objects.filter(
+            user_id=request.user.id, year=year, month=month
+        ).order_by('id').values("id", "name", "color")),
+        "habit_names": [getattr(monthly_obj, f"habit_{i}") for i in range(1, 11)] if monthly_obj else [""] * 10,
+        "days_in_month": calendar.monthrange(year, month)[1],
     }
     return render(request, 'mainpage/month_statistics.html', context)
 
@@ -839,11 +960,16 @@ def year_view(request, year):
         image_path = None
 
     # 11) Render the response
+    year_logs = list(all_logs.order_by('date'))
     context = {
         "year": year,
         "year_min": year_min,
         "year_max": year_max,
         "image_path": image_path,
+        # Chart-ready views of the same logs (read-only, for native charts)
+        "day_summaries": [_day_summary(log) for log in year_logs],
+        "hourly_grid": {log.date.isoformat(): _hourly_ids(log) for log in year_logs},
+        "activity_legend": list(mapping_qs.values("id", "name", "color", "month")),
     }
     return render(request, "mainpage/year_view.html", context)
 

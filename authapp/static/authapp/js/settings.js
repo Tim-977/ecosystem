@@ -1,44 +1,76 @@
-document.addEventListener("DOMContentLoaded", function () {
-  function setupFormChangeDetection(form) {
-    if (!form) return;
+/* Ecosystem — settings: change tracking per form, theme picker, section scroll-spy. */
+(function () {
+  'use strict';
+  const Eco = window.Eco;
+  const { $, $$ } = Eco;
 
-    const inputs = form.querySelectorAll("input, select, textarea");
-    const saveBtn = form.querySelector("button[type='submit']");
-    const cancelBtn = form.querySelector("button[type='button']");
+  document.addEventListener('DOMContentLoaded', () => {
+    const dock = $('#settingsDock');
+    const forms = $$('form[data-track]');
+    let active = null; // the form with unsaved changes (only one at a time)
 
-    if (saveBtn) saveBtn.disabled = true;
-    if (cancelBtn) cancelBtn.disabled = true;
-
-    const initialValues = {};
-    inputs.forEach((input) => {
-      initialValues[input.name] = input.value;
-    });
-
-    form.addEventListener("input", () => {
-      let hasChanged = false;
-      inputs.forEach((input) => {
-        const initial = initialValues[input.name] || "";
-        const current = input.value || "";
-        if (initial !== current) {
-          hasChanged = true;
-        }
+    forms.forEach((form) => {
+      const fields = $$('input[name]:not([type="hidden"][name="csrfmiddlewaretoken"]), select[name]', form);
+      const initial = new Map(fields.map((f) => [f, f.value]));
+      const save = $('[data-save]', form), cancel = $('[data-cancel]', form), text = $('[data-state-text]', form);
+      const isDirty = () => fields.some((f) => f.value !== initial.get(f));
+      const update = () => {
+        const dirty = isDirty();
+        save.disabled = !dirty; cancel.disabled = !dirty;
+        text.textContent = dirty ? 'Unsaved changes' : 'No changes';
+        text.classList.toggle('is-dirty', dirty);
+        if (dirty) active = form; else if (active === form) active = null;
+        forms.forEach((f) => { if (f !== form && dirty) f.classList.add('is-muted'); else f.classList.remove('is-muted'); });
+        dock.hidden = !active;
+        if (active) $('#settingsDockText').textContent = `Unsaved changes in ${active.closest('section').querySelector('h2').textContent}`;
+      };
+      form.addEventListener('input', update);
+      form.addEventListener('change', update);
+      form.addEventListener('reset', (e) => {
+        e.preventDefault();
+        fields.forEach((f) => { f.value = initial.get(f); if (f.tagName === 'SELECT' && f._eco) f._eco.render(); });
+        $$('[data-datefield]', form).forEach((b) => b._df && b._df.render());
+        $$('[aria-invalid]', form).forEach((f) => f.removeAttribute('aria-invalid'));
+        $$('[data-count-for]', form).forEach((c) => document.getElementById(c.dataset.countFor).dispatchEvent(new Event('input')));
+        update();
       });
-
-      if (saveBtn) saveBtn.disabled = !hasChanged;
-      if (cancelBtn) cancelBtn.disabled = !hasChanged;
+      form.addEventListener('submit', () => { form._submitting = true; save.classList.add('is-busy'); });
+      form._update = update;
     });
-  }
 
-  setupFormChangeDetection(document.querySelector("#general-settings-form"));
-  setupFormChangeDetection(document.querySelector("#personalization-form"));
+    $('#settingsDiscard').addEventListener('click', () => active && active.reset());
+    $('#settingsSave').addEventListener('click', () => active && active.requestSubmit($('[data-save]', active)));
+    Eco.onKey('mod+s', () => active && active.requestSubmit($('[data-save]', active)));
+    window.addEventListener('beforeunload', (e) => { if (active && !active._submitting) { e.preventDefault(); e.returnValue = ''; } });
 
-  const clearLogsButton = document.getElementById("clearLogsButton");
-  if (clearLogsButton) {
-    clearLogsButton.addEventListener("click", function (event) {
-      const confirmed = confirm("Are you sure you want to clear all logs?");
-      if (!confirmed) {
-        event.preventDefault();
-      }
+    // Username rule feedback as you type (the server check stays authoritative)
+    const username = $('#id_username');
+    if (username) username.addEventListener('input', () => {
+      const ok = /^[A-Za-z0-9]{3,12}$/.test(username.value.trim());
+      username.setAttribute('aria-invalid', ok ? 'false' : 'true');
     });
-  }
-});
+
+    // theme
+    const picker = $('#themePicker');
+    const renderTheme = () => $$('.theme-option', picker).forEach((o) => o.setAttribute('aria-checked', o.dataset.value === Eco.theme.get()));
+    picker.addEventListener('click', (e) => { const o = e.target.closest('.theme-option'); if (o) { Eco.theme.set(o.dataset.value); renderTheme(); } });
+    picker.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      Eco.theme.toggle(); renderTheme(); $('[aria-checked="true"]', picker).focus(); e.preventDefault();
+    });
+    document.addEventListener('eco:theme', renderTheme);
+    renderTheme();
+
+    // scroll-spy
+    const links = $$('.settings-nav__link');
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      links.forEach((l) => l.classList.toggle('is-active', l.getAttribute('href') === `#${en.target.id}`));
+    }), { rootMargin: '-35% 0px -60% 0px' });
+    $$('.settings-section').forEach((s) => io.observe(s));
+
+    // after a failed save, bring the form with errors into view
+    const err = $('.settings-section .has-error, .settings-section .alert--error');
+    if (err) err.closest('.settings-section').scrollIntoView({ block: 'start' });
+  });
+})();

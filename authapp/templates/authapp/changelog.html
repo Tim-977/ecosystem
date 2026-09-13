@@ -1,19 +1,26 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Changelog / What's New</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>🛠️ Changelog / What's New (Beta)</h1>
 
-  <p>This project is currently in <strong>beta</strong>. Changelog entries will appear here once version tracking begins.</p>
+{% block title %}What’s new{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block page_class %}page--narrow{% endblock %}
 
-  <p>Stay tuned for updates as new features are added and bugs are fixed!</p>
-
-  <br>
-  <a href="{% url 'settings' %}"><button>Back to Settings</button></a>
-</body>
-</html>
+{% block content %}
+<a class="btn btn--ghost btn--sm subpage-back" href="{% url 'settings' %}#about"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Settings</a>
+<header class="page-head reveal"><div><h1 class="page-head__title">What’s new</h1><p class="page-head__sub">Ecosystem is in <strong style="color:var(--fg-1);font-weight:560">beta</strong>. Versioned release notes start once version tracking begins.</p></div></header>
+<div class="reveal">
+<section class="panel panel--pad">
+  <ol class="timeline-log">
+    <li>
+      <p class="eyebrow">Current beta · v0.1</p>
+      <h3 style="margin-top:6px">A new interface</h3>
+      <p>Every screen was redesigned: an interactive 24-hour timeline on the Day page, a journal built for reading, a dedicated Tasks page, habit consistency maps, native charts for months and years, a light theme, and keyboard shortcuts throughout.</p>
+    </li>
+    <li>
+      <h3>Stay tuned</h3>
+      <p>New features and fixes will be listed here as they ship.</p>
+    </li>
+  </ol>
+</section>
+</div>
+{% endblock %}

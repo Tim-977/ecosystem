@@ -1,83 +1,112 @@
-{% extends "authapp/mainpage.html" %}
-{% load static %}  <!-- Load static files -->
+{% extends "mainpage/base.html" %}
+{% load static %}
 
-{% block title %}Daily Logs{% endblock %}
+{% block title %}Overview{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">
+<link rel="stylesheet" href="{% static 'mainpage/css/overview.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>All Daily Data</h2>
+{{ day_summaries|json_script:"daySummaries" }}
+{{ habit_names|json_script:"habitNames" }}
+{{ today_hourly|json_script:"todayHourly" }}
+<div id="overview" data-server-today="{% now 'Y-m-d' %}" data-activities-api="{% url 'get_activities' %}"
+     data-name="{{ user.preferred_name|default:user.username }}">
 
+  <header class="hero reveal">
+    <div>
+      <p class="eyebrow" id="heroDate">{% now "l, j F" %}</p>
+      <h1 class="hero__title" id="heroGreeting">Welcome back, {{ user.preferred_name|default:user.username }}</h1>
+      <p class="hero__sub" id="heroSummary">&nbsp;</p>
+    </div>
+    <div class="hero__clock" aria-hidden="true"><span id="heroClock">--:--</span></div>
+  </header>
 
-<!-- Display Server Time -->
-<p><strong>Server Time:</strong> {{ server_time|date:"Y-m-d H:i:s" }}</p>
+  <div class="ov-grid reveal">
+    {# ============ today ============ #}
+    <section class="panel today" id="todayPanel" aria-labelledby="todayTitle">
+      <div class="today__head">
+        <h2 class="panel__title" id="todayTitle"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>Today</h2>
+        <a class="btn btn--sm" href="#" data-today-href="/day/{yyyy}/{m}/{d}/" id="todayOpen">Open day<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <div id="todayBody">
+        <div class="skeleton" style="height:40px;margin-bottom:20px"></div>
+        <div class="skeleton" style="height:64px"></div>
+      </div>
+    </section>
 
-<!-- Show local date/time for user convenience -->
-<p id="local-date" style="font-weight:bold;">Date: --</p>
-<p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+    {# ============ focus tasks ============ #}
+    <section class="panel panel--pad focus" aria-labelledby="focusTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="focusTitle"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg>Focus</h2>
+        <a class="link-quiet" href="{% url 'tasks' %}">All tasks<svg class="icon icon--xs" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <div data-tasks-compact data-limit="5" data-show-done></div>
+    </section>
+  </div>
 
-<!-- 'Add / Log Today' link will be assigned by JavaScript -->
-<a id="log-today-link" href="#">Add / Log Today</a>
+  <div class="ov-grid ov-grid--even reveal">
+    {# ============ trend ============ #}
+    <section class="panel panel--pad trend" aria-labelledby="trendTitle">
+      <div class="panel__head">
+        <div>
+          <h2 class="panel__title" id="trendTitle"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span id="trendLabel">Last 30 days</span></h2>
+          <p class="panel__meta trend__note" id="trendNote"></p>
+        </div>
+        <div class="chart-legend">
+          <span><i style="background:var(--green)"></i>Mood</span>
+          <span><i style="background:var(--indigo)"></i>Productivity</span>
+          <span><i style="background:var(--sky)"></i>Sleep</span>
+        </div>
+      </div>
+      <div id="trendChart"></div>
+      <div id="sleepChart" class="trend__sleep"></div>
+    </section>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Get the user's local date
-        let today = new Date();
-        let year = today.getFullYear();
-        let month = String(today.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
-        let day = String(today.getDate()).padStart(2, '0');
+    {# ============ rhythm ============ #}
+    <section class="panel panel--pad rhythm" aria-labelledby="rhythmTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="rhythmTitle"><svg class="icon" aria-hidden="true"><use href="#i-flame"/></svg>Rhythm</h2>
+        <span class="panel__meta">Last 16 weeks</span>
+      </div>
+      <div class="rhythm__stats" id="rhythmStats"></div>
+      <div id="rhythmCalendar" class="rhythm__cal"></div>
+      <div class="rhythm__legend"><span>Less</span><i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i><span>More habits done</span></div>
+    </section>
+  </div>
 
-        // Construct the URL dynamically
-        let logTodayUrl = `/day/${year}/${month}/${day}/`;
+  {# ============ recent thoughts ============ #}
+  <section class="section reveal" aria-labelledby="thoughtsTitle">
+    <div class="section-head">
+      <h2 class="section-title" id="thoughtsTitle">Recent thoughts</h2>
+      <a class="link-quiet" href="#" data-today-href="/diary/{yyyy}/{m}/">Open journal<svg class="icon icon--xs" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+    </div>
+    <div class="thoughts" id="thoughts"></div>
+  </section>
+</div>
+{% endblock %}
 
-        // Set the "Add / Log Today" button link
-        document.getElementById("log-today-link").setAttribute("href", logTodayUrl);
-    });
-</script>
+{% block dock %}
+<div class="dock" role="toolbar" aria-label="Quick actions">
+  <a class="dock__btn dock__btn--primary" href="#" data-today-href="/day/{yyyy}/{m}/{d}/" id="dockLog" data-tip="Open today's log" data-kbd="T" data-shortcut="t">
+    <svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg><span>Log today</span>
+  </a>
+  <span class="dock__sep"></span>
+  <a class="dock__btn" href="#" data-today-href="/day/{yyyy}/{m}/{d}/#journal" data-tip="Write today's thought" data-kbd="W" data-shortcut="w">
+    <svg class="icon" aria-hidden="true"><use href="#i-pen-line"/></svg>Write
+  </a>
+  <a class="dock__btn" href="#" data-today-href="/day/{yyyy}/{m}/{d}/#habits" data-tip="Check off today's habits" data-kbd="H" data-shortcut="h">
+    <svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Habits
+  </a>
+  <button type="button" class="dock__btn" id="dockTask" data-tip="Add a task" data-kbd="N" data-shortcut="n">
+    <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Task
+  </button>
+</div>
+{% endblock %}
 
-<!-- If you have messages for future date restrictions, show them here -->
-{% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li style="color: red;">{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
-
-<!-- Table of existing logs -->
-<table border="1">
-    <tr>
-        <th>User</th>
-        <th>Date</th>
-        <th>Mood</th>
-        <th>Productivity</th>
-        <th>Sleep</th>
-        <th>Habits Completed</th>
-        <th>Thoughts</th>
-        <th>Self Reflection</th>
-        <th>Hourly Activity</th>
-    </tr>
-    {% for row in all_data %}
-    <tr>
-        <td>{{ row.user_id }}</td>
-        <td style="white-space: nowrap;">
-            <a href="{% url 'day_view' year=row.date.year month=row.date.month day=row.date.day %}">
-                {{ row.date }}
-            </a>
-        </td>
-        <td>{{ row.mood_rating }}</td>
-        <td>{{ row.productivity_score }}</td>
-        <td>{{ row.sleep }}</td>
-        <td>{{ row.habits_completed }}</td>
-        <td>{{ row.thoughts }}</td>
-        <td>{{ row.self_reflection }}</td>
-        <td>{{ row.hourly_activity_logging }}</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="9">No records found.</td>
-    </tr>
-    {% endfor %}
-</table>
-
-<script src="{% static 'mainpage/js/localtime.js' %}"></script>
-
+{% block scripts %}
+<script src="{% static 'mainpage/js/charts.js' %}" defer></script>
+<script src="{% static 'mainpage/js/tasks.js' %}" defer></script>
+<script src="{% static 'mainpage/js/overview.js' %}" defer></script>
 {% endblock %}

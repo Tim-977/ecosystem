@@ -1,32 +1,103 @@
-{% extends "mainpage/base_month.html" %}
-{% load static %}
-{% block title %}Month Diary{% endblock %}
+{% extends "mainpage/base.html" %}
+{% load static ecosystem_extras %}
+
+{% block title %}Journal · {{ month|month_name }} {{ year }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/journal.css' %}">{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'mainpage/css/diary.css' %}">
-<div class="vintage-diary">
-  <!-- <p class="intro">Daily Diary</p> -->
-
-  {% for d in days_data %}
-    <div class="entry">
-      <h3>{{ d.date_obj|date:"F d, Y" }}</h3>
-      <p>
-        <span class="label">Reflection:</span>
-        {% if d.self_reflection %}
-          {{ d.self_reflection }}
-        {% else %}
-          I didn't write down any reflections today.
-        {% endif %}
-      </p>
-      <p>
-        <span class="label">Thoughts:</span>
-        {% if d.thoughts %}
-          {{ d.thoughts }}
-        {% else %}
-          Nothing particular on my mind.
-        {% endif %}
-      </p>
+{% month_nav year month as nav %}
+<div class="journal" id="journal" data-year="{{ year }}" data-month="{{ month }}">
+  <header class="page-head reveal">
+    <div>
+      <p class="eyebrow">Journal</p>
+      <h1 class="page-head__title" style="margin-top:6px">{{ nav.name }} <span class="muted">{{ year }}</span></h1>
+      <p class="page-head__sub" id="journalSummary">&nbsp;</p>
     </div>
-  {% endfor %}
+    <div class="page-head__aside">
+      <div class="input-group journal-search">
+        <svg class="icon" aria-hidden="true"><use href="#i-list-filter"/></svg>
+        <label class="sr-only" for="journalSearch">Search this month</label>
+        <input class="input" id="journalSearch" type="search" placeholder="Search this month" autocomplete="off">
+        <span class="input-group__end"><kbd>/</kbd></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="journal-layout">
+    <aside class="journal-index reveal" aria-label="Days of {{ nav.name }}">
+      <div class="panel panel--pad">
+        <div class="jcal" id="journalCalendar"></div>
+        <hr class="hairline" style="margin:16px 0">
+        <dl class="jstats" id="journalStats"></dl>
+      </div>
+    </aside>
+
+    <div class="journal-entries reveal" id="entries">
+      {% for d in days_data %}
+        {% if d.thoughts or d.self_reflection %}
+          <article class="entry" id="day-{{ d.date_obj.day }}" data-day="{{ d.date_obj.day }}">
+            <header class="entry__head">
+              <a class="entry__date" href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}">
+                <span class="entry__num">{{ d.date_obj.day }}</span>
+                <span class="entry__when"><span class="eyebrow">{{ d.date_obj|date:"l" }}</span><span>{{ d.date_obj|date:"F Y" }}</span></span>
+              </a>
+              <a class="icon-btn entry__edit" href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}#journal" data-tip="Edit this entry" aria-label="Edit entry for {{ d.date_obj|date:'j F' }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-pen-line"/></svg>
+              </a>
+            </header>
+            {% if d.thoughts %}<p class="entry__thought" data-search>{{ d.thoughts }}</p>{% endif %}
+            {% if d.self_reflection %}<div class="entry__body" data-search>{{ d.self_reflection|linebreaks }}</div>{% endif %}
+          </article>
+        {% endif %}
+      {% endfor %}
+
+      <div class="empty journal-empty" id="journalEmpty" hidden>
+        <div class="empty__glyph"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-book-open"/></svg></div>
+        <p class="empty__title">Nothing written in {{ nav.name }}</p>
+        <p class="empty__text">Each day has room for a short thought and a longer reflection. Whatever you write shows up here as your month’s journal.</p>
+        <div class="empty__actions">
+          {% if nav.is_current %}
+            <a class="btn btn--primary btn--sm" href="#" data-today-href="/day/{yyyy}/{m}/{d}/#journal"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pen-line"/></svg>Write today’s entry</a>
+          {% else %}
+            <a class="btn btn--sm" href="{% url 'day_view' year month 1 %}#journal">Open {{ nav.name }} 1</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="empty journal-empty" id="searchEmpty" hidden>
+        <div class="empty__glyph"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-list-filter"/></svg></div>
+        <p class="empty__title">No entries match</p>
+        <p class="empty__text">Nothing in {{ nav.name }} contains “<span id="searchTerm"></span>”.</p>
+        <div class="empty__actions"><button type="button" class="btn btn--sm" id="searchClear">Clear search</button></div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
+
+{% block dock %}
+{% month_nav year month as nav %}
+<div class="dock" role="toolbar" aria-label="Journal controls">
+  <a class="dock__btn dock__btn--icon" href="{% url 'diary_view' nav.prev_year nav.prev_month %}" data-tip="{{ nav.prev_name }}" data-kbd="[" data-shortcut="[" aria-label="Previous month">
+    <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+  </a>
+  <span class="dock__label">{{ nav.name }} {{ year }}</span>
+  {% if nav.next_is_future %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
+  {% else %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'diary_view' nav.next_year nav.next_month %}" data-tip="{{ nav.next_name }}" data-kbd="]" data-shortcut="]" aria-label="Next month">
+      <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+    </a>
+  {% endif %}
+  <span class="dock__sep"></span>
+  <div class="segmented" role="radiogroup" aria-label="Order" id="journalOrder">
+    <button type="button" role="radio" class="segmented__opt" data-value="asc" aria-checked="true" tabindex="0">Oldest first</button>
+    <button type="button" role="radio" class="segmented__opt" data-value="desc" aria-checked="false" tabindex="-1">Newest first</button>
+  </div>
+  <span class="dock__sep"></span>
+  <a class="dock__btn dock__btn--primary" href="#" data-today-href="/day/{yyyy}/{m}/{d}/#journal" data-tip="Write today’s entry" data-kbd="W" data-shortcut="w">
+    <svg class="icon" aria-hidden="true"><use href="#i-pen-line"/></svg>Write
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'mainpage/js/journal.js' %}" defer></script>{% endblock %}

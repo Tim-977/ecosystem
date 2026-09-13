@@ -1,25 +1,35 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Confirm Password</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>Confirm Password to Download Your Data</h1>
 
-  <form method="POST" action="{% url 'confirm_password_download' %}">
-    {% csrf_token %}
-    <p>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-    </p>
-    {% if error %}
-      <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    <button type="submit">Confirm and Download</button>
-    <a href="{% url 'settings' %}"><button type="button">Cancel</button></a>
-  </form>
-</body>
-</html>
+{% block title %}Export data{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block page_class %}page--narrow{% endblock %}
+
+{% block content %}
+<a class="btn btn--ghost btn--sm subpage-back" href="{% url 'settings' %}#data"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Settings</a>
+<div class="auth-card reveal" style="max-width:440px;margin:40px auto 0">
+  <div class="panel panel--pad">
+    <div class="dialog__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-download"/></svg></div>
+    <h1 class="dialog__title">Export your data</h1>
+    <p class="dialog__text">Confirm your password to download everything as <span class="mono">user_data.json</span>: days, monthly habits, activities and tasks.</p>
+    <form method="POST" action="{% url 'confirm_password_download' %}" style="margin-top:22px" id="exportForm">
+      {% csrf_token %}
+      {% if error %}<div class="alert alert--error" style="margin-bottom:16px"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{{ error }}</div></div>{% endif %}
+      <div class="field">
+        <label class="field__label" for="password">Password</label>
+        <div class="input-group">
+          <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+          <input class="input" type="password" id="password" name="password" required autocomplete="current-password" autofocus {% if error %}aria-invalid="true"{% endif %}>
+          <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:22px">
+        <a class="btn btn--ghost" href="{% url 'settings' %}#data">Cancel</a>
+        <button type="submit" class="btn btn--primary"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-download"/></svg>Download</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'authapp/js/auth.js' %}" defer></script>{% endblock %}

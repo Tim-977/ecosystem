@@ -1,0 +1,31 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>{% block title %}Ecosystem{% endblock %} · Ecosystem</title>
+  <script>try{var t=localStorage.getItem('eco-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2308080a'/%3E%3Ccircle cx='12' cy='12' r='6.5' fill='none' stroke='%23f1f1f3' stroke-width='1.6'/%3E%3Ccircle cx='16.6' cy='7.4' r='2.2' fill='%237d7bff'/%3E%3C/svg%3E">
+  <link rel="preload" href="{% static 'mainpage/fonts/Geist-Variable.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'mainpage/css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="sr-only" href="#main">Skip to content</a>
+  {% include "mainpage/partials/icons.html" %}
+  <div hidden>{% csrf_token %}</div>
+
+  {% block nav %}{% include "mainpage/partials/nav.html" %}{% endblock %}
+
+  <main id="main" class="page {% block page_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <div class="dock-wrap">{% block dock %}{% endblock %}</div>
+
+  {% include "mainpage/partials/flash.html" %}
+  <script src="{% static 'mainpage/js/core.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

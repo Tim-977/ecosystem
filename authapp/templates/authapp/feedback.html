@@ -1,32 +1,59 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Give Feedback / Report a Bug</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>💬 Feedback / Bug Report</h1>
 
-  <form method="POST" action="{% url 'feedback' %}">
-    {% csrf_token %}
+{% block title %}Feedback{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block page_class %}page--narrow{% endblock %}
 
-    <p>
-      <label for="feedback_type"><strong>Type:</strong></label><br>
-      <select id="feedback_type" name="feedback_type" required>
-        <option value="feedback">Feedback</option>
-        <option value="bug">Bug Report</option>
-      </select>
-    </p>
+{% block content %}
+<a class="btn btn--ghost btn--sm subpage-back" href="{% url 'settings' %}#about"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Settings</a>
+<header class="page-head reveal"><div><h1 class="page-head__title">Feedback &amp; bug reports</h1><p class="page-head__sub">Your report opens as a pre-filled issue on the project’s GitHub page, where you can review it before sending.</p></div></header>
+<div class="reveal">
+<form class="panel panel--pad" id="feedbackForm" novalidate data-repo="https://github.com/Tim-977/ecosystem">
+  <div class="field">
+    <span class="field__label">Type</span>
+    <div class="segmented" role="radiogroup" aria-label="Report type" id="fbType">
+      <button type="button" role="radio" class="segmented__opt" data-value="feedback" aria-checked="true" tabindex="0"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-message-square"/></svg>Feedback</button>
+      <button type="button" role="radio" class="segmented__opt" data-value="bug" aria-checked="false" tabindex="-1"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-bug"/></svg>Bug report</button>
+    </div>
+  </div>
+  <div class="field">
+    <label class="field__label" for="fbTitle">Summary <span class="field__count" data-count-for="fbTitle" data-max="120"></span></label>
+    <input class="input" id="fbTitle" type="text" maxlength="120" placeholder="One line about the idea or problem" required>
+  </div>
+  <div class="field">
+    <label class="field__label" for="fbMessage">Details</label>
+    <textarea class="textarea" id="fbMessage" rows="6" data-autosize placeholder="What did you expect, what happened instead, and on which page?" required></textarea>
+    <p class="field__error" id="fbError" hidden></p>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px">
+    <span class="section-note">Needs a GitHub account · opens in a new tab</span>
+    <button type="submit" class="btn btn--primary"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-external-link"/></svg>Continue on GitHub</button>
+  </div>
+</form>
+</div>
+{% endblock %}
 
-    <p>
-      <label for="message"><strong>Your Message:</strong></label><br>
-      <textarea id="message" name="message" rows="6" cols="60" placeholder="Write your thoughts or report here..." required></textarea>
-    </p>
-
-    <button type="submit">Submit</button>
-    <a href="{% url 'settings' %}"><button type="button">Back to Settings</button></a>
-  </form>
-</body>
-</html>
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('feedbackForm');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = document.getElementById('fbTitle'), msg = document.getElementById('fbMessage'), err = document.getElementById('fbError');
+      if (!title.value.trim() || !msg.value.trim()) {
+        err.innerHTML = Eco.icon('circle-alert', 'icon icon--sm') + 'Add a summary and some details first.';
+        err.hidden = false;
+        (title.value.trim() ? msg : title).focus();
+        return;
+      }
+      err.hidden = true;
+      var type = form.querySelector('#fbType [aria-checked="true"]').dataset.value;
+      var body = msg.value.trim() + '\n\n---\nSent from Ecosystem · ' + navigator.userAgent;
+      var url = form.dataset.repo + '/issues/new?title=' + encodeURIComponent((type === 'bug' ? '[Bug] ' : '[Feedback] ') + title.value.trim()) + '&body=' + encodeURIComponent(body);
+      window.open(url, '_blank', 'noopener');
+      Eco.toast('Opened GitHub in a new tab', { type: 'success' });
+    });
+  });
+</script>
+{% endblock %}

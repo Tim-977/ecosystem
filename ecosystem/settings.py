@@ -152,7 +152,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Include your app's static directory
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'mainpage/static'),
+    # NOTE: mainpage/ and authapp/ static dirs are already picked up by
+    # Django's AppDirectoriesFinder (they're INSTALLED_APPS) - don't relist
+    # them here, or collectstatic reports every one of their files as a
+    # duplicate "found another file" conflict.
     os.path.join(BASE_DIR, 'project/cpp_server/static'),
 ]
 

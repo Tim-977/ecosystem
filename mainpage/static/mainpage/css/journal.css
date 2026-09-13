@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Journal — an editorial month of thoughts and reflections.
+   ========================================================================== */
+
+.journal-search { width: 260px; }
+.journal-search .input { height: 36px; border-radius: var(--r-pill); padding-right: 40px; }
+.journal-search .input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.journal-search .input-group__end { right: 10px; }
+
+.journal-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 56px; align-items: start; }
+.journal-index { position: sticky; top: calc(var(--nav-h) + 24px); }
+
+.jcal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.jcal__dow { height: 22px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--fg-4); }
+.jcal__day {
+  position: relative; height: 28px; display: grid; place-items: center;
+  font-size: 12px; color: var(--fg-3); font-variant-numeric: tabular-nums;
+  border-radius: var(--r-sm);
+  transition: background-color var(--t-1), color var(--t-1);
+}
+a.jcal__day:hover { background: var(--bg-3); color: var(--fg-1); }
+.jcal__day.has-entry { color: var(--fg-1); font-weight: 540; background: var(--bg-3); }
+.jcal__day.has-entry::after { content: ''; position: absolute; bottom: 3px; width: 3px; height: 3px; border-radius: 50%; background: var(--indigo); }
+.jcal__day.is-today { box-shadow: inset 0 0 0 1px var(--line-3); }
+.jcal__day.is-future { color: var(--fg-4); opacity: 0.5; }
+.jcal__day.is-reading { background: var(--inverse-bg); color: var(--inverse-fg); }
+.jcal__day.is-reading::after { background: var(--inverse-fg); }
+
+.jstats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; margin: 0; }
+.jstats div { display: grid; gap: 6px; }
+.jstats dd { margin: 0; font-size: 20px; font-weight: 540; letter-spacing: -0.02em; line-height: 1; }
+.jstats small { font-size: 11.5px; font-weight: 450; letter-spacing: 0; color: var(--fg-3); }
+
+.journal-entries { max-width: 700px; }
+.entry { padding: 8px 0 40px; scroll-margin-top: calc(var(--nav-h) + 28px); }
+.entry + .entry, .quiet + .entry { border-top: 1px solid var(--line-1); padding-top: 36px; }
+.entry.is-flash .entry__num { animation: flash 900ms var(--ease-out); }
+@keyframes flash { 30% { color: var(--indigo); } }
+.entry__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.entry__date { display: flex; align-items: center; gap: 16px; border-radius: var(--r-sm); }
+.entry__num { font-size: 40px; font-weight: 520; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; min-width: 1.3em; transition: color var(--t-3); }
+.entry__when { display: grid; gap: 3px; font-size: 13px; color: var(--fg-2); }
+.entry__edit { opacity: 0; transition: opacity var(--t-1); }
+.entry:hover .entry__edit, .entry__edit:focus-visible { opacity: 1; }
+.entry__thought {
+  position: relative;
+  margin-bottom: 18px; padding-left: 20px;
+  font-size: 21px; font-weight: 470; line-height: 1.45; letter-spacing: -0.018em;
+  color: var(--fg-1);
+}
+.entry__thought::before { content: ''; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2px; border-radius: 2px; background: var(--indigo); }
+.entry__body { font-size: 15.5px; line-height: 1.8; color: var(--fg-2); max-width: 64ch; }
+.entry__body p + p { margin-top: 14px; }
+.entry mark { background: var(--indigo-soft); color: var(--fg-1); border-radius: 3px; padding: 0 2px; box-shadow: 0 0 0 1px var(--indigo-line); }
+
+.quiet { display: flex; align-items: center; gap: 12px; padding: 18px 0; font-size: 12px; color: var(--fg-3); border-top: 1px dashed var(--line-2); }
+.quiet + .entry { border-top-style: dashed; border-top-color: transparent; }
+.journal-empty { padding-top: 72px; }

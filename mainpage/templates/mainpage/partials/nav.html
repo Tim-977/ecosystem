@@ -1,0 +1,54 @@
+{% now "Y" as this_year %}{% now "n" as this_month %}{% now "j" as this_day %}
+{% with name=request.resolver_match.url_name %}
+<header class="nav">
+  <div class="nav__inner">
+    <a class="brand" href="{% url 'main_page' %}" aria-label="Ecosystem — overview">
+      {% include "mainpage/partials/brand_mark.html" %}
+      <span>Ecosystem</span>
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <span class="nav__indicator" aria-hidden="true"></span>
+      <a class="nav__link" data-nav="overview" href="{% url 'main_page' %}" {% if name == 'main_page' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-layout-grid"/></svg><span>Overview</span>
+      </a>
+      <a class="nav__link" data-nav="day" href="/day/{{ this_year }}/{{ this_month }}/{{ this_day }}/" data-today-href="/day/{yyyy}/{m}/{d}/" {% if name == 'day_view' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span>Day</span>
+      </a>
+      <a class="nav__link" data-nav="journal" href="/diary/{{ this_year }}/{{ this_month }}/" data-today-href="/diary/{yyyy}/{m}/" {% if name == 'diary_view' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-book-open"/></svg><span>Journal</span>
+      </a>
+      <a class="nav__link" data-nav="tasks" href="{% url 'tasks' %}" {% if name == 'tasks' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg><span>Tasks</span>
+      </a>
+      <a class="nav__link" data-nav="habits" href="/habits/{{ this_year }}/{{ this_month }}/" data-today-href="/habits/{yyyy}/{m}/" {% if name == 'set_habits' or name == 'activity_config_view' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg><span>Routines</span>
+      </a>
+      <a class="nav__link" data-nav="insights" href="/month/{{ this_year }}/{{ this_month }}/" data-today-href="/month/{yyyy}/{m}/" {% if name == 'month_view' or name == 'year_statistics' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg><span>Insights</span>
+      </a>
+    </nav>
+
+    <div class="nav__right">
+      <button type="button" class="nav__icon theme-toggle" data-theme-toggle data-tip="Toggle theme" data-tip-placement="bottom" aria-label="Toggle light or dark theme">
+        <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+      <a class="nav__icon" href="{% url 'settings' %}" data-tip="Settings" data-tip-placement="bottom" aria-label="Settings" {% if name == 'settings' or name == 'developer_info' or name == 'changelog' or name == 'license' or name == 'feedback' or name == 'confirm_password_download' %}aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
+      </a>
+      <button type="button" class="account" data-menu="account-menu" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar" aria-hidden="true">{{ user.username|slice:":1" }}</span>
+        <span>{{ user.preferred_name|default:user.username }}</span>
+      </button>
+      <template id="account-menu">
+        <div class="menu__label eyebrow">Signed in as {{ user.username }}</div>
+        <a class="menu__item" href="{% url 'settings' %}"><svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>Profile &amp; settings</a>
+        <a class="menu__item" href="{% url 'confirm_password_download' %}"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Export my data</a>
+        <div class="menu__sep"></div>
+        <a class="menu__item" href="{% url 'logout' %}"><svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg>Log out</a>
+      </template>
+    </div>
+  </div>
+</header>
+{% endwith %}

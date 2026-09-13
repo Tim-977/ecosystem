@@ -1,240 +1,267 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Daily Data for {{ date }}</title>
-  <!-- Include your existing CSS -->
-  <link rel="stylesheet" href="{% static 'mainpage/css/hourly_activities.css' %}">
-  <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
-</head>
 
-<body>
-  <!-- ========== HEADER ========== -->
-  <header>
-    <div class="header-left">
-        <h1 id="currentDate"
-            data-year="{{ date.year }}"
-            data-month="{{ date.month }}"
-            data-day="{{ date.day }}">
-            {{ date }}
-        </h1>
-        <p id="local-date" style="font-weight:bold;">Date: --</p>
-        <p id="local-time" style="font-weight:bold;">Time: --:--:--</p>
+{% block title %}{{ date|date:"j F Y" }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">
+<link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
+{% endblock %}
 
-        {% if monthly_obj.goal_text %}
-        <div class="monthly-goals">Monthly Goals: {{ monthly_obj.goal_text }}</div>
-        {% endif %}
+{% block content %}
+<form method="POST" id="dayForm" action="{% url 'day_view' date.year date.month date.day %}" novalidate
+      data-year="{{ date.year }}" data-month="{{ date.month }}" data-day="{{ date.day }}" data-iso="{{ date|date:'Y-m-d' }}">
+  {% csrf_token %}
+
+  <header class="day-head reveal">
+    <div>
+      <p class="eyebrow day-head__rel" id="dayRelative">{{ date|date:"l" }}</p>
+      <h1 class="day-head__title">{{ date|date:"l, j F" }} <span class="day-head__year">{{ date.year }}</span></h1>
+      {% if monthly_obj.goal_text %}
+        <p class="day-head__goal"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-target"/></svg><span>{{ monthly_obj.goal_text }}</span></p>
+      {% endif %}
     </div>
-
-    <!-- Centered Go to Month View Button -->
-    <div class="center-nav">
-        <a href="{% url 'month_view' date.year date.month %}" class="month-view-link">Go to Month View</a>
-        <span style="margin: 0 10px;">|</span>
-        <a id="log-year-link" href="{% url 'year_statistics' year=date.year %}">Go to Year's View</a>
-      </div>
-
-    <div class="right-info">
-        <span class="username">{{ user.username }}</span>
+    <div class="day-head__aside">
+      <a class="btn btn--ghost btn--sm" href="{% url 'month_view' date.year date.month %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-chart-column"/></svg>{{ date|date:"F" }} insights</a>
     </div>
   </header>
 
+  <nav class="strip reveal" aria-label="Days of {{ date|date:'F Y' }}" id="dayStrip"
+       data-days="{{ days_in_month }}" data-logged="{{ logged_days|join:',' }}">
+    {# filled in by day.js; the dock offers the same navigation #}
+  </nav>
 
-  <!-- ========== DATE SLIDER ========== -->
-  <div class="date-slider-wrapper" style="margin: 20px;">
-    <label for="dateSlider">Pick a day of this month:</label><br/>
-    
-    <!-- The slider references the datalist by "list='dayTickmarks'" -->
-    <input 
-      type="range" 
-      id="dateSlider" 
-      min="1" 
-      max="31"
-      step="1" 
-      value="1"
-      list="dayTickmarks"
-    />
-    <datalist id="dayTickmarks">
-      <!-- We'll fill this in via JS or you can pre-generate them in Django -->
-    </datalist>
-    
-    <span id="sliderDayLabel"></span>
-  </div>
+  {# ============ the 24-hour canvas ============ #}
+  <section class="panel timeline reveal" aria-labelledby="timelineTitle">
+    <div class="timeline__head">
+      <div>
+        <h2 class="panel__title" id="timelineTitle"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Your 24 hours</h2>
+        <p class="timeline__summary" id="timelineSummary" aria-live="polite">&nbsp;</p>
+      </div>
+      <div class="timeline__tools">
+        <div class="brushes" id="brushes" role="toolbar" aria-label="Activity brush"></div>
+        <a class="icon-btn" href="{% url 'activity_config_view' date.year date.month %}" data-tip="Manage {{ date|date:'F' }} activities" aria-label="Manage activities">
+          <svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg>
+        </a>
+      </div>
+    </div>
 
+    <div class="canvas" id="canvas" data-api="{% url 'get_activities' %}?year={{ date.year }}&month={{ date.month }}">
+      <div class="canvas__track" id="canvasTrack" role="grid" aria-label="Hourly activity. Use arrow keys to move, Shift+arrows to select a range, Enter to assign.">
+        <div class="canvas__segments" id="canvasSegments" aria-hidden="true"></div>
+        <div class="canvas__selection" id="canvasSelection" aria-hidden="true" hidden></div>
+        <div class="canvas__now" id="canvasNow" aria-hidden="true" hidden><span></span></div>
+        <div class="canvas__cells" id="canvasCells" role="row">
+          {% for entry in hourly_data %}
+            <button type="button" class="canvas__cell" role="gridcell" data-hour="{{ entry.hour }}" tabindex="{% if forloop.first %}0{% else %}-1{% endif %}"></button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="canvas__axis" aria-hidden="true">
+        <span>00</span><span>03</span><span>06</span><span>09</span><span>12</span><span>15</span><span>18</span><span>21</span><span>24</span>
+      </div>
+      <div class="canvas__loading" id="canvasLoading"><div class="skeleton" style="height:100%"></div></div>
+    </div>
 
+    <div class="composition" id="composition" aria-live="polite"></div>
 
-  <ul class="nav-links">
-    <li><a href="{% url 'main_page' %}">Return to Main Page</a></li>
-    <li><a href="{% url 'settings' %}">Settings</a></li>
-    <li><a href="{% url 'activity_config_view' date.year date.month %}">Set Monthly Activities</a></li>
-    <li><a href="{% url 'set_habits' date.year date.month %}">Set Monthly Habits</a></li>
-    <li><a href="{% url 'logout' %}">Log out</a></li>
-  </ul>
+    <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"
+           value="{{ daily_obj.hourly_activity_logging|default_if_none:'[]' }}">
+  </section>
 
-  <!-- ========== MAIN CONTENT AREA ========== -->
-  <div class="main-container">
-    <main>
-      <!-- We still use one form to POST everything. Keep all name/IDs the same. -->
-      <form method="POST" id="dayForm">
-        {% csrf_token %}
-
-        <!-- ========== TOP SECTION (GRID) ========== -->
-        <div class="top-section">
-
-          <!-- Habits Tracker (left) -->
-          <div class="habits-tracker">
-            <h2>Habits Tracker</h2>
-            <div>
-              {% for habit, status in habits_status %}
-                {% if habit %}
-                  <input type="checkbox" name="habit_{{ forloop.counter0 }}" 
-                         {% if status == '1' %} checked {% endif %}>
-                  <label>{{ habit }}</label><br/>
-                {% endif %}
-              {% endfor %}
+  <div class="day-grid">
+    {# ============ check-in ============ #}
+    <section class="panel panel--pad reveal" aria-labelledby="checkinTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="checkinTitle"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Check-in</h2>
+      </div>
+      <div class="checkin">
+        <div class="slider" data-slider data-scale="mood">
+          <div class="slider__top">
+            <label class="slider__label" for="moodRange">Mood</label>
+            <div class="slider__end">
+              <button type="button" class="icon-btn icon-btn--sm slider__clear" data-tip="Clear rating" aria-label="Clear rating"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
+              <div class="slider__value"><b data-slider-out>–</b><span>/10</span></div>
             </div>
           </div>
-
-          <!-- Quick thought (middle top) -->
-          <div class="thoughts-box">
-            <h2>Write a thought...</h2>
-            <textarea name="thoughts" id="thoughts" rows="2" cols="40">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
-            {% if messages %}
-              <div class="messages">
-                {% for message in messages %}
-                  <div class="message {{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
+          <div class="slider__control">
+            <div class="slider__ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <input type="range" id="moodRange" min="1" max="10" step="1" value="5">
           </div>
-          
-
-          <!-- TODO List (right, spans two rows) -->
-          <div class="todo-box">
-            <h2>TODO</h2>
-
-            <!-- Add Task Section -->
-            <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
-              <h3>Add a New Task</h3>
-              <label>Task Description:</label><br/>
-              <input type="text" id="taskText" style="width:100%;" />
-              <br/><br/>
-
-              <label>Priority:</label><br/>
-              <select id="taskPriority">
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium" selected>Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <br/><br/>
-
-              <label>Deadline Type:</label><br/>
-              <select id="taskDueType">
-                <option value="none" selected>No Deadline</option>
-                <option value="today">Today</option>
-                <option value="until">Until (Date)</option>
-                <option value="exact">Exact (Date + Time)</option>
-              </select>
-              <br/><br/>
-
-              <div>
-                <label>Due Date:</label><br/>
-                <input type="date" id="taskDueDate" disabled />
-              </div>
-              <br/>
-              <div>
-                <label>Due Time:</label><br/>
-                <input type="time" id="taskDueTime" disabled />
-              </div>
-              <br/>
-
-              <button id="createTaskBtn" type="button">Add Task</button>
-            </div>
-
-            <!-- Pending / Done Lists side by side -->
-            <div style="display: flex; gap: 30px;">
-              <div>
-                <h3>Pending</h3>
-                <ul id="pendingList"></ul>
-              </div>
-              <div>
-                <h3>Done</h3>
-                <ul id="doneList"></ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Self Reflection (middle bottom) -->
-          <div class="reflection-box">
-            <h2>Detailed Thoughts (Self-Reflection)</h2>
-            <textarea name="self_reflection" id="self_reflection" rows="4" cols="40">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
-          </div>
-          <!-- Sleep Tracker (left bottom) -->
-          <div class="sleep-tracker">
-            <h2>Sleep Tracker</h2>
-            <label for="bed_time">Bed Time:</label><br/>
-            <input type="time" name="bed_time" id="bed_time" value="{{ bed_time_form }}" />
-            <br/><br/>
-
-            <label for="wake_up_time">Wake Up Time:</label><br/>
-            <input type="time" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}" />
-            <br/><br/>
-
-            <label for="first_alarm_time">First Alarm Time:</label><br/>
-            <input type="time" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}" />
-          </div>
-
-        </div><!-- end top-section (grid) -->
-
-        <!-- ========== BOTTOM SECTION ========== -->
-        <div class="bottom-section">
-          <h2>Hourly Activity Logging</h2>
-          <div id="hourly-activity-bar">
-            {% for entry in hourly_data %}
-              <div class="hour-square"
-                   data-hour="{{ entry.hour }}"
-                   data-activity="{{ entry.activity }}">
-                {{ entry.hour|add:"1" }}
-              </div>
-            {% endfor %}
-          </div>
-
-          <!-- Hidden dropdown for activities -->
-          <div id="activity-dropdown">
-            <select id="activity-select">
-              <!-- Populated by JS -->
-            </select>
-          </div>
-
-          <!-- Hidden JSON field that stores the final hourly logs -->
-          <input type="hidden" name="hourly_activity_logging" id="hourly_activity_logging"
-                 value='{{ daily_obj.hourly_activity_logging|default_if_none:"[]" }}' />
-
-          <!-- Mood & Productivity at the bottom -->
-          <label for="mood_rating">Mood Rating (1-10):</label>
-          <input type="number" name="mood_rating" id="mood_rating"
-                 value="{{ daily_obj.mood_rating|default_if_none:'' }}" />
-          <br/><br/>
-
-          <label for="productivity_score">Productivity Score (1-10):</label>
-          <input type="number" name="productivity_score" id="productivity_score"
-                 value="{{ daily_obj.productivity_score|default_if_none:'' }}" />
+          <div class="slider__scale"><span>Low</span><span>Great</span></div>
+          <input type="hidden" name="mood_rating" value="{{ daily_obj.mood_rating|default_if_none:'' }}">
         </div>
 
-        <br/>
-        <button type="submit">Save</button>
-      </form>
-    </main>
+        <div class="slider" data-slider data-scale="energy">
+          <div class="slider__top">
+            <label class="slider__label" for="prodRange">Productivity</label>
+            <div class="slider__end">
+              <button type="button" class="icon-btn icon-btn--sm slider__clear" data-tip="Clear rating" aria-label="Clear rating"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
+              <div class="slider__value"><b data-slider-out>–</b><span>/10</span></div>
+            </div>
+          </div>
+          <div class="slider__control">
+            <div class="slider__ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <input type="range" id="prodRange" min="1" max="10" step="1" value="5">
+          </div>
+          <div class="slider__scale"><span>Idle</span><span>Focused</span></div>
+          <input type="hidden" name="productivity_score" value="{{ daily_obj.productivity_score|default_if_none:'' }}">
+        </div>
+      </div>
+    </section>
+
+    {# ============ sleep ============ #}
+    <section class="panel panel--pad reveal" aria-labelledby="sleepTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="sleepTitle"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Sleep</h2>
+        <span class="panel__meta" id="sleepAlarmNote"></span>
+      </div>
+      <div class="sleep">
+        <div class="sleep__total">
+          <span class="sleep__hours" id="sleepTotal">–</span>
+          <span class="muted" id="sleepTotalLabel">asleep</span>
+        </div>
+        <div class="night" id="night" aria-hidden="true">
+          <div class="night__track"><div class="night__bar" id="nightBar"></div><div class="night__alarm" id="nightAlarm"></div></div>
+          <div class="night__axis"><span>18</span><span>21</span><span>00</span><span>03</span><span>06</span><span>09</span><span>12</span></div>
+        </div>
+        <div class="sleep__fields">
+          <div class="field">
+            <label class="field__label" for="bedH">Bed</label>
+            <div class="timefield" data-timefield>
+              <input class="timefield__seg" id="bedH" inputmode="numeric" aria-label="Bed time hours" placeholder="--" autocomplete="off">
+              <span class="timefield__colon">:</span>
+              <input class="timefield__seg" inputmode="numeric" aria-label="Bed time minutes" placeholder="--" autocomplete="off">
+              <button type="button" class="icon-btn icon-btn--sm timefield__clear" aria-label="Clear bed time"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
+              <input type="hidden" name="bed_time" id="bed_time" value="{{ bed_time_form }}">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="wakeH">Woke up</label>
+            <div class="timefield" data-timefield>
+              <input class="timefield__seg" id="wakeH" inputmode="numeric" aria-label="Wake up hours" placeholder="--" autocomplete="off">
+              <span class="timefield__colon">:</span>
+              <input class="timefield__seg" inputmode="numeric" aria-label="Wake up minutes" placeholder="--" autocomplete="off">
+              <button type="button" class="icon-btn icon-btn--sm timefield__clear" aria-label="Clear wake up time"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
+              <input type="hidden" name="wake_up_time" id="wake_up_time" value="{{ wake_up_time_form }}">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="alarmH">First alarm</label>
+            <div class="timefield" data-timefield>
+              <input class="timefield__seg" id="alarmH" inputmode="numeric" aria-label="First alarm hours" placeholder="--" autocomplete="off">
+              <span class="timefield__colon">:</span>
+              <input class="timefield__seg" inputmode="numeric" aria-label="First alarm minutes" placeholder="--" autocomplete="off">
+              <button type="button" class="icon-btn icon-btn--sm timefield__clear" aria-label="Clear first alarm"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
+              <input type="hidden" name="first_alarm_time" id="first_alarm_time" value="{{ first_alarm_time_form }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# ============ habits ============ #}
+    <section class="panel panel--pad reveal" id="habits" aria-labelledby="habitsTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="habitsTitle"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg>Habits</h2>
+        <a class="link-quiet" href="{% url 'set_habits' date.year date.month %}">Edit habits</a>
+      </div>
+      {% with has_habits=monthly_obj.habit_1|add:monthly_obj.habit_2|add:monthly_obj.habit_3|add:monthly_obj.habit_4|add:monthly_obj.habit_5|add:monthly_obj.habit_6|add:monthly_obj.habit_7|add:monthly_obj.habit_8|add:monthly_obj.habit_9|add:monthly_obj.habit_10 %}
+      {% if has_habits %}
+        <div class="habit-progress" id="habitProgress">
+          <svg class="ring" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+            <circle class="ring__track" cx="22" cy="22" r="18" stroke-width="4"/>
+            <circle class="ring__value" id="habitRing" cx="22" cy="22" r="18" stroke-width="4" stroke="var(--green)" stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
+          </svg>
+          <div>
+            <div class="habit-progress__count num" id="habitCount">0 of 0</div>
+            <div class="habit-progress__label muted" id="habitLabel">done today</div>
+          </div>
+        </div>
+        <ul class="habit-list" role="list">
+          {% for habit, status in habits_status %}
+            {% if habit %}
+              <li>
+                <label class="habit">
+                  <input type="checkbox" class="check check--round check--green" name="habit_{{ forloop.counter0 }}" {% if status == '1' %}checked{% endif %}>
+                  <span class="habit__name">{{ habit }}</span>
+                </label>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty empty--compact">
+          <div class="empty__glyph"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-repeat"/></svg></div>
+          <p class="empty__title">No habits for {{ date|date:"F" }}</p>
+          <p class="empty__text">Pick up to ten habits for the month and check them off here each day.</p>
+          <div class="empty__actions"><a class="btn btn--sm" href="{% url 'set_habits' date.year date.month %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-plus"/></svg>Set habits</a></div>
+        </div>
+      {% endif %}
+      {% endwith %}
+    </section>
   </div>
 
-  <!-- Scripts for your hourly activity, TODO, local clock, etc. -->
-  <script src="{% static 'mainpage/js/hourly_activities.js' %}"></script>
-  <script src="{% static 'mainpage/js/todo.js' %}"></script>
-  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
-  <script src="{% static 'mainpage/js/thoughts.js' %}"></script>
+  <div class="day-grid day-grid--wide">
+    {# ============ journal ============ #}
+    <section class="panel journal-edit reveal" id="journal" aria-labelledby="journalTitle">
+      <div class="journal-edit__thought">
+        <div class="panel__head">
+          <h2 class="panel__title" id="journalTitle"><svg class="icon" aria-hidden="true"><use href="#i-quote"/></svg><label for="thoughts">A thought</label></h2>
+          <span class="field__count" data-count-for="thoughts" data-max="115"></span>
+        </div>
+        <textarea class="thought-input" name="thoughts" id="thoughts" rows="2" maxlength="115" data-autosize
+                  placeholder="One line you'd want to remember from today">{{ daily_obj.thoughts|default_if_none:'' }}</textarea>
+      </div>
+      <hr class="hairline">
+      <div class="journal-edit__reflection">
+        <div class="panel__head">
+          <h2 class="panel__title"><svg class="icon" aria-hidden="true"><use href="#i-pen-line"/></svg><label for="self_reflection">Reflection</label></h2>
+          <a class="link-quiet" href="{% url 'diary_view' date.year date.month %}">Read {{ date|date:"F" }} journal<svg class="icon icon--xs" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+        </div>
+        <textarea class="reflection-input" name="self_reflection" id="self_reflection" rows="5" data-autosize
+                  placeholder="What happened, what you noticed, what you'd do differently…">{{ daily_obj.self_reflection|default_if_none:'' }}</textarea>
+      </div>
+    </section>
 
+    {# ============ tasks (shared list, not part of the day form) ============ #}
+    <section class="panel panel--pad reveal" aria-labelledby="tasksTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="tasksTitle"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg>Tasks</h2>
+        <a class="link-quiet" href="{% url 'tasks' %}">All tasks<svg class="icon icon--xs" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <div data-tasks-compact data-limit="6" data-show-done></div>
+    </section>
+  </div>
 
-  <!-- New script for the date slider logic -->
-  <script src="{% static 'mainpage/js/date_slider.js' %}"></script>
-</body>
-</html>
+  <noscript><div class="section"><button type="submit" class="btn btn--primary">Save day</button></div></noscript>
+</form>
+{% endblock %}
+
+{% block dock %}
+<div class="dock" role="toolbar" aria-label="Day controls">
+  <a class="dock__btn dock__btn--icon" id="dockPrev" href="{% url 'month_view' date.year date.month %}" data-tip="Previous day" data-kbd="[" data-shortcut="[" aria-label="Previous day">
+    <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+  </a>
+  <a class="dock__btn" id="dockToday" href="#" data-today-href="/day/{yyyy}/{m}/{d}/" data-tip="Jump to today" data-kbd="T" data-shortcut="t">
+    <svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg>Today
+  </a>
+  <a class="dock__btn dock__btn--icon" id="dockNext" href="{% url 'month_view' date.year date.month %}" data-tip="Next day" data-kbd="]" data-shortcut="]" aria-label="Next day">
+    <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+  </a>
+  <span class="dock__sep"></span>
+  <button type="button" class="dock__btn dock__btn--icon" id="dockJump" data-tip="Jump to a date" aria-label="Jump to a date" aria-haspopup="dialog" aria-expanded="false">
+    <svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg>
+  </button>
+  <input type="hidden" id="jumpDate" value="{{ date|date:'Y-m-d' }}">
+  <span class="dock__sep"></span>
+  <span class="dock__status" id="saveStatus" aria-live="polite"><span class="status-dot" data-state="saved"></span><span class="dock__status-text">All changes saved</span></span>
+  <button type="submit" form="dayForm" class="dock__btn dock__btn--primary" id="saveBtn" data-tip="Save now" data-kbd="Ctrl S">
+    <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Save
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'mainpage/js/tasks.js' %}" defer></script>
+<script src="{% static 'mainpage/js/day.js' %}" defer></script>
+{% endblock %}
