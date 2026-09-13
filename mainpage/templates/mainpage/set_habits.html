@@ -1,42 +1,106 @@
-{% extends "mainpage/base_month.html" %}
-{% load static %}
+{% extends "mainpage/base.html" %}
+{% load static ecosystem_extras %}
 
-{% block title %}Set Monthly Habits{% endblock %}
+{% block title %}Habits · {{ month|month_name }} {{ year }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/routines.css' %}">{% endblock %}
 
 {% block content %}
-<h2>Set or Update This Month's Habits</h2>
+{% month_nav year month as nav %}
+{{ habit_days|json_script:"habitDays" }}
+<header class="page-head reveal">
+  <div>
+    <p class="eyebrow">Routines</p>
+    <h1 class="page-head__title" style="margin-top:6px">{{ nav.name }} <span class="muted">{{ year }}</span></h1>
+    <p class="page-head__sub">The goal and habits you track for this month. Check habits off each day on the Day page.</p>
+  </div>
+  <nav class="page-head__aside" aria-label="Routines sections">
+    <div class="segmented">
+      <a class="segmented__opt" href="{% url 'set_habits' year month %}" aria-current="page"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-repeat"/></svg>Habits</a>
+      <a class="segmented__opt" href="{% url 'activity_config_view' year month %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-palette"/></svg>Activities</a>
+    </div>
+  </nav>
+</header>
 
-{% if messages %}
-  {% for msg in messages %}
-    <p style="color: green;">{{ msg }}</p>
-  {% endfor %}
-{% endif %}
-
-<form method="POST" action="{% url 'set_habits' year month %}">
+<form method="POST" action="{% url 'set_habits' year month %}" id="habitsForm" data-days="{{ days_in_month }}" data-year="{{ year }}" data-month="{{ month }}">
   {% csrf_token %}
-  <label for="goal_text">Monthly Goals:</label><br/>
-  <textarea name="goal_text" id="goal_text" rows="2" cols="50">{{ monthly_obj.goal_text }}</textarea>
-  <br/><br/>
 
-  <h3>Habits:</h3>
-  {% for idx, habit_value in habits_with_index %}
-    <label>Habit {{ idx }}:</label>
-    <input type="text" name="habit_{{ idx }}" value="{{ habit_value|default_if_none:'' }}">
-    <br/>
-  {% endfor %}
-  <br/>
-  <button type="submit">Save All Habits</button>
+  <section class="panel goal reveal" aria-labelledby="goalLabel">
+    <div class="goal__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-target"/></svg></div>
+    <div class="goal__body">
+      <label class="eyebrow" id="goalLabel" for="goal_text">Goal for {{ nav.name }}</label>
+      <textarea class="goal__input" name="goal_text" id="goal_text" rows="1" data-autosize placeholder="What would make this month a good one?">{{ monthly_obj.goal_text }}</textarea>
+    </div>
+  </section>
+
+  <div class="metrics habit-metrics reveal" style="--cols:4">
+    <div class="metric"><div class="metric__label eyebrow">Habits</div><div class="metric__value" id="mHabits">–</div><div class="metric__foot">of 10 slots</div></div>
+    <div class="metric"><div class="metric__label eyebrow"><span class="dot" style="background:var(--green)"></span>Completion</div><div class="metric__value" id="mRate">–</div><div class="metric__foot" id="mRateFoot">&nbsp;</div></div>
+    <div class="metric"><div class="metric__label eyebrow">Perfect days</div><div class="metric__value" id="mPerfect">–</div><div class="metric__foot">every habit checked</div></div>
+    <div class="metric"><div class="metric__label eyebrow"><span class="dot" style="background:var(--orange)"></span>Strongest</div><div class="metric__value metric__value--text" id="mBest">–</div><div class="metric__foot" id="mBestFoot">&nbsp;</div></div>
+  </div>
+
+  <section class="panel habits-panel reveal" aria-labelledby="habitsHeading">
+    <div class="habits-panel__head">
+      <h2 class="panel__title" id="habitsHeading"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg>Habits</h2>
+      <div class="matrix-days" aria-hidden="true" id="matrixDays"></div>
+      <span class="habits-panel__stat eyebrow">Done</span>
+    </div>
+
+    <ol class="habit-rows" role="list" id="habitRows">
+      {% for idx, habit_value in habits_with_index %}
+        <li class="habit-row{% if not habit_value %} is-empty{% endif %}" data-index="{{ idx }}">
+          <div class="habit-row__name">
+            <span class="habit-row__idx num" aria-hidden="true">{{ idx }}</span>
+            <label class="sr-only" for="habit_{{ idx }}">Habit {{ idx }}</label>
+            <input class="habit-row__input" type="text" name="habit_{{ idx }}" id="habit_{{ idx }}" value="{{ habit_value|default_if_none:'' }}" maxlength="100" autocomplete="off" placeholder="Add a habit">
+            {% if habit_value %}
+              <button type="submit" form="clearHabit{{ idx }}" class="icon-btn icon-btn--sm icon-btn--danger habit-row__clear" data-tip="Remove habit" aria-label="Remove {{ habit_value }}">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-trash-2"/></svg>
+              </button>
+            {% endif %}
+          </div>
+          <div class="habit-row__cells" aria-label="{{ habit_value|default:'Empty slot' }} by day"></div>
+          <div class="habit-row__stat num"></div>
+        </li>
+      {% endfor %}
+    </ol>
+    <div class="habits-panel__foot">
+      <button type="button" class="btn btn--ghost btn--sm" id="addHabit"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-plus"/></svg>Add habit</button>
+      <span class="section-note" id="slotsLeft"></span>
+    </div>
+  </section>
+
+  <noscript><div class="section"><button type="submit" class="btn btn--primary">Save all habits</button></div></noscript>
 </form>
 
-<br/>
 {% for idx, habit_value in habits_with_index %}
   {% if habit_value %}
-    <form method="POST" action="{% url 'set_habits' year month %}" style="display:inline;">
+    <form method="POST" action="{% url 'set_habits' year month %}" id="clearHabit{{ idx }}" hidden
+          data-confirm="Remove “{{ habit_value }}”?" data-danger data-confirm-label="Remove habit"
+          data-confirm-text="This clears the habit from {{ nav.name }} and also erases its check-offs on every day of the month. Unsaved edits on this page will be discarded.">
       {% csrf_token %}
       <input type="hidden" name="clear_habit_index" value="{{ idx }}">
-      <button type="submit">Clear Habit {{ idx }} ({{ habit_value }})</button>
     </form>
-    <br/>
   {% endif %}
 {% endfor %}
 {% endblock %}
+
+{% block dock %}
+{% month_nav year month as nav %}
+<div class="dock" role="toolbar" aria-label="Habit controls">
+  <a class="dock__btn dock__btn--icon" href="{% url 'set_habits' nav.prev_year nav.prev_month %}" data-tip="{{ nav.prev_name }}" data-kbd="[" data-shortcut="[" aria-label="Previous month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></a>
+  <span class="dock__label">{{ nav.name }} {{ year }}</span>
+  {% if nav.next_is_future %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
+  {% else %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'set_habits' nav.next_year nav.next_month %}" data-tip="{{ nav.next_name }}" data-kbd="]" data-shortcut="]" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+  {% endif %}
+  <span class="dock__sep"></span>
+  <a class="dock__btn" href="#" data-today-href="/day/{yyyy}/{m}/{d}/#habits" data-tip="Check off today's habits" data-kbd="T" data-shortcut="t"><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Check in today</a>
+  <span class="dock__sep"></span>
+  <span class="dock__status" id="habitsStatus" aria-live="polite"><span class="status-dot" data-state="saved"></span><span class="dock__status-text">No changes</span></span>
+  <button type="submit" form="habitsForm" class="dock__btn dock__btn--primary" id="habitsSave" data-tip="Save goal and habits" data-kbd="Ctrl S" disabled><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Save</button>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'mainpage/js/habits.js' %}" defer></script>{% endblock %}

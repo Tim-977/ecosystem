@@ -1,0 +1,100 @@
+{% extends "mainpage/base.html" %}
+{% load static %}
+
+{% block title %}Tasks{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">{% endblock %}
+
+{% block content %}
+<div data-tasks-board>
+  <header class="page-head reveal">
+    <div>
+      <h1 class="page-head__title">Tasks</h1>
+      <p class="page-head__sub">One list for everything that needs doing, ordered by priority and deadline.</p>
+    </div>
+  </header>
+
+  <div class="tasks-layout">
+    <div class="reveal">
+      <form class="composer" data-role="composer" novalidate>
+        <div class="composer__main">
+          <svg class="icon" aria-hidden="true" style="color:var(--fg-3)"><use href="#i-plus"/></svg>
+          <label class="sr-only" for="taskText">New task</label>
+          <input class="composer__input" id="taskText" type="text" placeholder="What needs doing?" autocomplete="off" maxlength="200">
+          <kbd data-tip="Focus the composer from anywhere on this page">N</kbd>
+        </div>
+        <div class="composer__bar">
+          <div class="field">
+            <label class="field__label" for="taskPriorityBtn">Priority</label>
+            <button type="button" class="select-btn prio-btn" id="taskPriorityBtn" aria-haspopup="listbox" aria-expanded="false"></button>
+          </div>
+          <div data-role="composer-due"></div>
+          <button type="submit" class="btn btn--primary composer__submit"><span class="spinner"></span>Add task</button>
+        </div>
+        <p class="field__error composer__error" data-role="composer-error" role="alert" hidden></p>
+      </form>
+
+      <div class="board-toolbar">
+        <span class="section-note"><svg class="icon icon--xs" aria-hidden="true" style="display:inline;vertical-align:-1px;margin-right:4px"><use href="#i-layers"/></svg>Grouped by deadline · sorted by priority</span>
+        <button type="button" class="select-btn filter-btn" data-role="prio-filter" aria-haspopup="listbox" aria-expanded="false"></button>
+      </div>
+
+      <div data-role="board" aria-live="polite">
+        <div class="task-group">
+          <div class="skeleton" style="height:14px;width:120px;margin-bottom:16px"></div>
+          <div class="skeleton" style="height:44px;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:44px;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:44px"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="tasks-side reveal" aria-label="Task summary">
+      <div class="metrics tasks-metrics">
+        <div class="metric"><div class="metric__label eyebrow">Open</div><div class="metric__value" data-metric="open">–</div></div>
+        <div class="metric"><div class="metric__label eyebrow"><span class="dot" style="background:var(--red)"></span>Overdue</div><div class="metric__value" data-metric="overdue">–</div></div>
+        <div class="metric"><div class="metric__label eyebrow"><span class="dot" style="background:var(--amber)"></span>Today</div><div class="metric__value" data-metric="today">–</div></div>
+        <div class="metric"><div class="metric__label eyebrow"><span class="dot" style="background:var(--green)"></span>Done</div><div class="metric__value" data-metric="done">–</div></div>
+      </div>
+      <div class="panel capacity">
+        <div class="capacity__row"><span data-role="capacity-label">–</span><span data-tip="The list keeps up to 30 tasks, open and done together">Limit 30</span></div>
+        <div class="bar" data-role="capacity"><i></i></div>
+      </div>
+      <div class="panel panel--pad tasks-help">
+        <p class="eyebrow" style="margin-bottom:12px">Deadlines</p>
+        <dl class="help-list">
+          <div><dt><span class="tag tag--amber">Today</span></dt><dd>Stays marked for today until you finish it.</dd></div>
+          <div><dt><span class="tag">By date</span></dt><dd>Due any time before the end of that day.</dd></div>
+          <div><dt><span class="tag">Date &amp; time</span></dt><dd>Turns orange 30 minutes before, red once it passes.</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block dock %}
+<div class="dock" role="toolbar" aria-label="Task controls">
+  <button type="button" class="dock__btn dock__btn--primary" id="dockNewTask" data-tip="New task" data-kbd="N">
+    <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>New task
+  </button>
+  <span class="dock__sep"></span>
+  <div class="segmented" role="radiogroup" aria-label="Show tasks" id="taskView">
+    <button type="button" role="radio" class="segmented__opt" data-value="open" aria-checked="true" tabindex="0">Open</button>
+    <button type="button" role="radio" class="segmented__opt" data-value="done" aria-checked="false" tabindex="-1">Completed</button>
+    <button type="button" role="radio" class="segmented__opt" data-value="all" aria-checked="false" tabindex="-1">All</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'mainpage/js/tasks.js' %}" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('dockNewTask').addEventListener('click', function () {
+      var t = document.getElementById('taskText');
+      t.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      t.focus({ preventScroll: true });
+    });
+  });
+</script>
+{% endblock %}

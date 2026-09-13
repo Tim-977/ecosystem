@@ -1,144 +1,198 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Settings</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-  <script src="{% static 'authapp/js/settings.js' %}"></script>
-</head>
-<body>
-  <h1>Settings</h1>
 
-  <!-- ==================== GENERAL SETTINGS ====================== -->
-  <form id="general-settings-form" method="POST" action="">
-    {% csrf_token %}
-    <h2>General Settings</h2>
+{% block title %}Settings{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
 
-    <!-- Show non-field (global) errors, if any -->
-    {% if general_form.non_field_errors %}
-      <ul class="form-errors">
-        {% for error in general_form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+{% block content %}
+<header class="page-head reveal">
+  <div>
+    <h1 class="page-head__title">Settings</h1>
+    <p class="page-head__sub">Your account, how Ecosystem looks, and what happens to your data.</p>
+  </div>
+</header>
 
-    <!-- Username Field + Error -->
-    <p>
-      {{ general_form.username.label_tag }}
-      {{ general_form.username }}
-      {% if general_form.username.errors %}
-        <ul class="field-errors">
-          {% for error in general_form.username.errors %}
-            <li style="color: red;">{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </p>
+<div class="settings">
+  <nav class="settings-nav reveal" aria-label="Settings sections">
+    <a href="#profile" class="settings-nav__link is-active"><svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>Profile</a>
+    <a href="#personal" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg>Personal</a>
+    <a href="#appearance" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Appearance</a>
+    <a href="#data" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>Data &amp; privacy</a>
+    <a href="#about" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>About</a>
+  </nav>
 
-    <!-- Email Field + Error -->
-    <p>
-      {{ general_form.email.label_tag }}
-      {{ general_form.email }}
-      {% if general_form.email.errors %}
-        <ul class="field-errors">
-          {% for error in general_form.email.errors %}
-            <li style="color: red;">{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </p>
+  <div class="settings-body reveal">
+    {# ---------------- profile ---------------- #}
+    <section class="settings-section" id="profile" aria-labelledby="profileTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="profileTitle">Profile</h2>
+        <p class="settings-section__text">How you sign in and how Ecosystem addresses you.</p>
+      </div>
+      <form class="panel settings-card" id="general-settings-form" method="POST" action="{% url 'settings' %}" data-track novalidate>
+        {% csrf_token %}
+        <div class="profile-id">
+          <span class="avatar avatar--lg" aria-hidden="true">{{ user.username|slice:":1" }}</span>
+          <div>
+            <p class="profile-id__name">{{ user.preferred_name|default:user.username }}</p>
+            <p class="muted" style="font-size:12.5px">@{{ user.username }}{% if user.date_joined %} · member since {{ user.date_joined|date:"F Y" }}{% endif %}</p>
+          </div>
+        </div>
+        {% if general_form.non_field_errors %}
+          <div class="alert alert--error"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{% for e in general_form.non_field_errors %}{{ e }} {% endfor %}</div></div>
+        {% endif %}
+        <div class="field-grid">
+          <div class="field{% if general_form.username.errors %} has-error{% endif %}">
+            <label class="field__label" for="id_username">Username <span class="field__count" data-count-for="id_username" data-max="12"></span></label>
+            <input class="input" type="text" name="username" id="id_username" value="{{ general_form.username.value|default_if_none:'' }}" maxlength="12" minlength="3" required autocomplete="username" spellcheck="false" {% if general_form.username.errors %}aria-invalid="true" aria-describedby="usernameError"{% endif %}>
+            {% if general_form.username.errors %}
+              <p class="field__error" id="usernameError"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-circle-alert"/></svg>{{ general_form.username.errors|join:" " }}</p>
+            {% else %}
+              <p class="field__hint">3–12 letters or digits. You sign in with this.</p>
+            {% endif %}
+          </div>
+          <div class="field{% if general_form.email.errors %} has-error{% endif %}">
+            <label class="field__label" for="id_email">Email</label>
+            <input class="input" type="email" name="email" id="id_email" value="{{ general_form.email.value|default_if_none:'' }}" autocomplete="email" {% if general_form.email.errors %}aria-invalid="true" aria-describedby="emailError"{% endif %}>
+            {% if general_form.email.errors %}
+              <p class="field__error" id="emailError"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-circle-alert"/></svg>{{ general_form.email.errors|join:" " }}</p>
+            {% else %}
+              <p class="field__hint">Optional. Must not belong to another account.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="settings-card__foot">
+          <span class="settings-card__state muted" data-state-text>No changes</span>
+          <button type="reset" class="btn btn--ghost btn--sm" data-cancel disabled>Cancel</button>
+          <button type="submit" name="save_general" class="btn btn--primary btn--sm" data-save disabled><span class="spinner"></span>Save profile</button>
+        </div>
+      </form>
+    </section>
 
-    <!-- The following are “coming soon,” so we disable them -->
-    <p>
-      <label>Theme (soon)</label><br>
-      <input type="text" disabled placeholder="Coming soon">
-    </p>
-    <p>
-      <label>Language (soon)</label><br>
-      <input type="text" disabled placeholder="Coming soon">
-    </p>
-    <p>
-      <label>Time Format (optional)</label><br>
-      <select disabled>
-        <option value="12">12h</option>
-        <option value="24">24h</option>
-      </select>
-    </p>
+    {# ---------------- personal ---------------- #}
+    <section class="settings-section" id="personal" aria-labelledby="personalTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="personalTitle">Personal</h2>
+        <p class="settings-section__text">Optional details. Your preferred name is used in greetings.</p>
+      </div>
+      <form class="panel settings-card" id="personalization-form" method="POST" action="{% url 'settings' %}" data-track novalidate>
+        {% csrf_token %}
+        {% if personalization_form.errors %}
+          <div class="alert alert--error"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{% for field in personalization_form %}{% for e in field.errors %}{{ field.label }}: {{ e }} {% endfor %}{% endfor %}</div></div>
+        {% endif %}
+        <div class="field">
+          <label class="field__label" for="id_preferred_name">Preferred name</label>
+          <input class="input" type="text" name="preferred_name" id="id_preferred_name" maxlength="100" value="{{ personalization_form.preferred_name.value|default_if_none:'' }}" placeholder="What should we call you?" autocomplete="nickname">
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field__label" for="id_gender">Gender</label>
+            <select name="gender" id="id_gender" data-select>
+              {% for value, label in personalization_form.fields.gender.choices %}
+                <option value="{{ value }}" {% if personalization_form.gender.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{% if value == '' %}Prefer not to say{% else %}{{ label }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="bdayBtn">Birthday</label>
+            <button type="button" class="select-btn datefield" id="bdayBtn" data-datefield="id_b_day" data-placeholder="Not set" data-max="{{ now|date:'Y-m-d' }}">
+              <svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg><span class="select-btn__value"></span>
+            </button>
+            <input type="hidden" name="b_day" id="id_b_day" value="{% if personalization_form.b_day.value %}{{ personalization_form.b_day.value|date:'Y-m-d'|default:personalization_form.b_day.value }}{% endif %}">
+          </div>
+        </div>
+        <div class="settings-card__foot">
+          <span class="settings-card__state muted" data-state-text>No changes</span>
+          <button type="reset" class="btn btn--ghost btn--sm" data-cancel disabled>Cancel</button>
+          <button type="submit" name="save_personalization" class="btn btn--primary btn--sm" data-save disabled><span class="spinner"></span>Save details</button>
+        </div>
+      </form>
+    </section>
 
-    <!-- Save & Cancel for GENERAL SETTINGS only -->
-    <button type="submit" name="save_general">Save</button>
-    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
-  </form>
+    {# ---------------- appearance ---------------- #}
+    <section class="settings-section" id="appearance" aria-labelledby="appearanceTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="appearanceTitle">Appearance</h2>
+        <p class="settings-section__text">Saved in this browser.</p>
+      </div>
+      <div class="panel settings-card">
+        <div class="theme-picker" role="radiogroup" aria-label="Theme" id="themePicker">
+          <button type="button" role="radio" class="theme-option" data-value="dark" aria-checked="true">
+            <span class="theme-option__preview theme-option__preview--dark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="theme-option__label"><span>Dark</span><span class="muted">Near-black, easy at night</span></span>
+          </button>
+          <button type="button" role="radio" class="theme-option" data-value="light" aria-checked="false">
+            <span class="theme-option__preview theme-option__preview--light" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="theme-option__label"><span>Light</span><span class="muted">Warm paper tones</span></span>
+          </button>
+        </div>
+      </div>
+    </section>
 
+    {# ---------------- data ---------------- #}
+    <section class="settings-section" id="data" aria-labelledby="dataTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="dataTitle">Data &amp; privacy</h2>
+        <p class="settings-section__text">Take your data with you, or remove it.</p>
+      </div>
+      <div class="panel settings-card settings-list">
+        <div class="settings-row">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Export all data</p>
+            <p class="settings-row__text">Days, habits, activities and tasks as a JSON file. You’ll confirm your password first.</p>
+          </div>
+          <a class="btn btn--sm" href="{% url 'confirm_password_download' %}">Export</a>
+        </div>
+        <div class="settings-row settings-row--danger">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Clear all logs</p>
+            <p class="settings-row__text">Deletes every day, habit, activity and task. Your account stays.</p>
+          </div>
+          <form method="POST" action="{% url 'clear_logs' %}" data-confirm="Clear all logs?" data-danger data-confirm-label="Clear everything"
+                data-confirm-text="Every logged day, monthly habit, activity and task will be permanently deleted. Your account and profile stay. This can’t be undone.">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--danger btn--sm">Clear logs</button>
+          </form>
+        </div>
+        <div class="settings-row settings-row--danger">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-trash-2"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Delete account</p>
+            <p class="settings-row__text">Removes your account and all of its data, then signs you out.</p>
+          </div>
+          <form method="POST" action="{% url 'delete_account' %}" data-confirm="Delete your account?" data-danger data-confirm-label="Delete account"
+                data-confirm-text="Your account “{{ user.username }}” and all of its data will be permanently deleted. Consider exporting your data first. This can’t be undone.">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--danger-solid btn--sm">Delete account</button>
+          </form>
+        </div>
+      </div>
+    </section>
 
-  <!-- ==================== PERSONALIZATION ======================= -->
-  <form id="personalization-form" method="POST" action="">
-    {% csrf_token %}
-    <h2>Personalization</h2>
+    {# ---------------- about ---------------- #}
+    <section class="settings-section" id="about" aria-labelledby="aboutTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="aboutTitle">About</h2>
+        <p class="settings-section__text">Ecosystem <span class="tag">Beta · v0.1</span></p>
+      </div>
+      <div class="panel settings-card settings-links">
+        <a class="settings-link" href="{% url 'feedback' %}"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg><span><b>Feedback &amp; bug reports</b><small>Tell the developer what’s broken or missing</small></span><svg class="icon icon--sm settings-link__go" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+        <a class="settings-link" href="{% url 'changelog' %}"><svg class="icon" aria-hidden="true"><use href="#i-scroll-text"/></svg><span><b>What’s new</b><small>Changelog</small></span><svg class="icon icon--sm settings-link__go" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+        <a class="settings-link" href="{% url 'developer_info' %}"><svg class="icon" aria-hidden="true"><use href="#i-code-xml"/></svg><span><b>Developer</b><small>Who builds Ecosystem</small></span><svg class="icon icon--sm settings-link__go" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+        <a class="settings-link" href="{% url 'license' %}"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg><span><b>Open source &amp; licenses</b><small>Fonts, icons and project license</small></span><svg class="icon icon--sm settings-link__go" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
 
-    <!-- Render fields from our PersonalizationForm -->
-    <p>
-      {{ personalization_form.gender.label_tag }}
-      {{ personalization_form.gender }}
-    </p>
-    <p>
-      {{ personalization_form.b_day.label_tag }}
-      {{ personalization_form.b_day }}
-    </p>
-    <p>
-      {{ personalization_form.preferred_name.label_tag }}
-      {{ personalization_form.preferred_name }}
-    </p>
+{% block dock %}
+<div class="dock" id="settingsDock" role="toolbar" aria-label="Unsaved changes" hidden>
+  <span class="dock__status"><span class="status-dot" data-state="dirty"></span><span id="settingsDockText">Unsaved changes</span></span>
+  <button type="button" class="dock__btn" id="settingsDiscard">Discard</button>
+  <button type="button" class="dock__btn dock__btn--primary" id="settingsSave" data-kbd="Ctrl S" data-tip="Save"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Save</button>
+</div>
+{% endblock %}
 
-    <!-- Save & Cancel for PERSONALIZATION only -->
-    <button type="submit" name="save_personalization">Save</button>
-    <button type="button" onclick="window.location.href='{% url 'settings' %}'">Cancel</button>
-  </form>
-
-
-<!-- ==================== DATA SECTION (fully working version) ==== -->
-  <h2>Data</h2>
-  <p>
-    <!-- Clear All Logs button -->
-    <form id="clear-logs-form" method="POST" action="{% url 'clear_logs' %}"
-          onsubmit="return confirm('Are you sure you want to clear all logs? This cannot be undone.')">
-      {% csrf_token %}
-      <button type="submit">Clear All Logs</button>
-    </form>
-
-    <br>
-      
-    <!-- Download All Data (as JSON) link -->
-    <a href="{% url 'confirm_password_download' %}">
-      <button type="button">Download All Data (as JSON)</button>
-    </a>
-    
-    <br><br>
-      
-    <!-- Delete Account button -->
-    <form method="POST" action="{% url 'delete_account' %}"
-          onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone!')">
-      {% csrf_token %}
-      <button type="submit">Delete Account</button>
-    </form>
-  </p>
-
-  <!-- ==================== ABOUT / SUPPORT ======================== -->
-  <h2>About / Support</h2>
-  <p>
-    <label>App Version</label><br>
-    <input type="text" value="v0.1" disabled><br><br>
-    <a href="{% url 'feedback' %}"> <button type="button">Report a Bug</button></a><br><br>
-    <a href="{% url 'feedback' %}"> <button type="button">Give Feedback</button></a><br><br>
-    <a href="{% url 'developer_info' %}"> <button type="button">Developer Info</button></a><br><br>
-    <a href="{% url 'developer_info' %}"> <button type="button">Donate / Support Me</button></a><br><br>
-    <a href="{% url 'changelog' %}"> <button type="button"> Changelog / What's New</button></a><br><br>
-    <a href="{% url 'license' %}"> <button type="button">Open Source / Licenses</button></a><br><br>
-  </p>
-
-  <a href="{% url 'month_view' now.year now.month %}"> Month Statistics</a><br><br>
-
-</body>
-</html>
+{% block scripts %}<script src="{% static 'authapp/js/settings.js' %}" defer></script>{% endblock %}

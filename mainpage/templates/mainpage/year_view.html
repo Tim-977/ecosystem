@@ -1,82 +1,124 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Yearly Overview: {{ year }}</title>
-  <link rel="stylesheet" href="{% static 'mainpage/css/monthly.css' %}">
-  <link rel="stylesheet" href="{% static 'mainpage/css/year.css' %}">
-</head>
-<body>
-  <!-- ========== HEADER ========== -->
-  <header>
-    <div class="header-left">
-      <h1 id="currentYear" data-year="{{ year }}">
-        {{ year }}
-      </h1>
+
+{% block title %}Insights · {{ year }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/insights.css' %}">{% endblock %}
+
+{% block content %}
+{% now "Y" as current_year %}{% now "n" as current_month %}
+{{ day_summaries|json_script:"daySummaries" }}
+{{ hourly_grid|json_script:"hourlyGrid" }}
+{{ activity_legend|json_script:"activityLegend" }}
+
+<div id="insightsYear" data-year="{{ year }}">
+  <header class="page-head reveal">
+    <div>
+      <p class="eyebrow">Insights</p>
+      <h1 class="page-head__title" style="margin-top:6px">{{ year }}</h1>
+      <p class="page-head__sub" id="yearSummary">&nbsp;</p>
     </div>
-    <div class="center-nav">
-      <a id="log-today-link" href="#">Go to Today's View</a>
-      <span style="margin: 0 10px;">|</span>
-      <a id="log-month-link" href="#">Go to Month View</a>
-    </div>
-    <div class="header-right">
-      <span class="username">{{ user.username }}</span>
-    </div>
+    <nav class="page-head__aside" aria-label="Insights period">
+      <div class="segmented">
+        <a class="segmented__opt" href="{% if year|stringformat:'s' == current_year %}{% url 'month_view' year current_month %}{% else %}{% url 'month_view' year 12 %}{% endif %}">Month</a>
+        <a class="segmented__opt" href="{% url 'year_statistics' year %}" aria-current="page">Year</a>
+      </div>
+    </nav>
   </header>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      let today = new Date();
-      let year = today.getFullYear();
-      let month = today.getMonth() + 1;
-      let day = today.getDate();
-
-      document.getElementById("log-today-link").href = `/day/${year}/${month}/${day}/`;
-      document.getElementById("log-month-link").href = `/month/${year}/${month}/`;
-    });
-  </script>
-
-  <div class="content-container" style="display: flex; flex-direction: column;">
-    <main class="main-content" style="padding: 10px; flex: 1;">
-      <!-- Year Slider Section -->
-      <div class="year-slider-container">
-        <label for="yearSlider">Select Year:</label>
-        <input type="range" id="yearSlider" name="yearSlider"
-               min="{{ year_min }}" max="{{ year_max }}" value="{{ year }}">
-        <span id="sliderYearLabel">Current: {{ year }}</span>
-      </div>
-
-      <!-- Download Button and Graph Display -->
-      <div style="text-align: center;">
-        {% if image_path %}
-        <a download="year_activity_graph_{{ year }}.png" href="{{ image_path }}">
-          <button class="download-btn">Download Yearly Graph</button>
-        </a>
-        {% endif %}
-      </div>
-      <div style="max-width: 100%; text-align: center; margin-top: 20px;">
-        {% if image_path %}
-        <img src="{{ image_path }}" alt="Yearly Circular Activity Graph"
-             style="width: 100%; max-width: 900px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3);" />
-        {% else %}
-        <p>No yearly diagram available.</p>
-        {% endif %}
-      </div>
-    </main>
+  <div class="metrics kpis reveal" style="--cols:5" id="kpis">
+    <div class="metric" data-kpi="mood"><div class="metric__label eyebrow"><span class="dot" style="background:var(--green)"></span>Avg mood</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="productivity"><div class="metric__label eyebrow"><span class="dot" style="background:var(--indigo)"></span>Avg productivity</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="sleep"><div class="metric__label eyebrow"><span class="dot" style="background:var(--sky)"></span>Avg sleep</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="hours"><div class="metric__label eyebrow">Hours tracked</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="logged"><div class="metric__label eyebrow">Days logged</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
   </div>
 
-  <script src="{% static 'mainpage/js/localtime.js' %}"></script>
-  <script src="{% static 'mainpage/js/month_slider.js' %}"></script>
-  <script>
-    const yearSlider = document.getElementById('yearSlider');
-    yearSlider.addEventListener('input', function() {
-      document.getElementById('sliderYearLabel').innerText = 'Current: ' + this.value;
-    });
-    yearSlider.addEventListener('change', function() {
-      let selectedYear = this.value;
-      window.location.href = '/year/' + selectedYear + '/';
-    });
-  </script>
-</body>
-</html>
+  <section class="panel panel--pad reveal" aria-labelledby="calHeading">
+    <div class="panel__head">
+      <div>
+        <h2 class="panel__title" id="calHeading"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg>Every day of {{ year }} · <span id="calTitle">Mood</span></h2>
+        <p class="panel__meta" style="margin-top:6px">Click a day to open it.</p>
+      </div>
+      <div class="segmented segmented--sm" role="radiogroup" aria-label="Calendar metric" id="yearMetric">
+        <button type="button" role="radio" class="segmented__opt" data-value="mood" aria-checked="true" tabindex="0">Mood</button>
+        <button type="button" role="radio" class="segmented__opt" data-value="productivity" aria-checked="false" tabindex="-1">Productivity</button>
+        <button type="button" role="radio" class="segmented__opt" data-value="sleep" aria-checked="false" tabindex="-1">Sleep</button>
+        <button type="button" role="radio" class="segmented__opt" data-value="habits" aria-checked="false" tabindex="-1">Habits</button>
+      </div>
+    </div>
+    <div class="year-cal" id="yearCalendar"></div>
+    <div class="cal-legend" id="calLegend"></div>
+  </section>
+
+  <div class="ins-grid reveal">
+    <section class="panel panel--pad" aria-labelledby="monthlyTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="monthlyTitle"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Month by month</h2>
+        <div class="chart-legend"><span><i style="background:var(--green)"></i>Mood</span><span><i style="background:var(--indigo)"></i>Productivity</span></div>
+      </div>
+      <div id="monthlyChart"></div>
+    </section>
+    <section class="panel panel--pad" aria-labelledby="actTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="actTitle"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Where the hours went</h2>
+        <span class="panel__meta" id="actMeta"></span>
+      </div>
+      <div class="hbars" id="actBars"></div>
+    </section>
+  </div>
+
+  <section class="panel panel--pad section-gap reveal" aria-labelledby="yearMapTitle">
+    <div class="panel__head">
+      <div>
+        <h2 class="panel__title" id="yearMapTitle"><svg class="icon" aria-hidden="true"><use href="#i-layout-grid"/></svg>The year, hour by hour</h2>
+        <p class="panel__meta" style="margin-top:6px">Each column is a day, each row an hour from midnight at the top.</p>
+      </div>
+      {% if image_path %}
+      <div class="segmented segmented--sm" role="tablist" aria-label="Year view" id="yearView">
+        <button type="button" role="tab" class="segmented__opt" data-value="map" aria-selected="true" tabindex="0">Interactive</button>
+        <button type="button" role="tab" class="segmented__opt" data-value="poster" aria-selected="false" tabindex="-1">Circular poster</button>
+      </div>
+      {% endif %}
+    </div>
+    <div id="yearMap"></div>
+    <div class="heat-legend" id="yearLegend"></div>
+    {% if image_path %}
+      <figure class="poster" id="yearPoster" hidden>
+        <img src="{{ image_path }}" alt="Circular activity poster for {{ year }}" loading="lazy">
+        <figcaption><span class="muted">Your year as a circular poster, generated by the Ecosystem renderer</span><a class="btn btn--sm" href="{{ image_path }}" download="year_activity_graph_{{ year }}.png"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-download"/></svg>Download PNG</a></figcaption>
+      </figure>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block dock %}
+{% now "Y" as current_year %}{% now "n" as current_month %}
+<div class="dock" role="toolbar" aria-label="Year controls">
+  {% if year > year_min %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'year_statistics' year|add:'-1' %}" data-tip="{{ year|add:'-1' }}" data-kbd="[" data-shortcut="[" aria-label="Previous year"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></a>
+  {% else %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="No earlier data"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></span>
+  {% endif %}
+  <span class="dock__label" style="min-width:64px">{{ year }}</span>
+  {% if year < year_max %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'year_statistics' year|add:'1' %}" data-tip="{{ year|add:'1' }}" data-kbd="]" data-shortcut="]" aria-label="Next year"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+  {% else %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="Next year"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
+  {% endif %}
+  <span class="dock__sep"></span>
+  <nav class="segmented" aria-label="Period">
+    <a class="segmented__opt" href="{% if year|stringformat:'s' == current_year %}{% url 'month_view' year current_month %}{% else %}{% url 'month_view' year 12 %}{% endif %}" data-shortcut="m">Month</a>
+    <a class="segmented__opt" href="{% url 'year_statistics' year %}" aria-current="page">Year</a>
+  </nav>
+  {% if image_path %}
+    <span class="dock__sep"></span>
+    <a class="dock__btn" href="{{ image_path }}" download="year_activity_graph_{{ year }}.png" data-tip="Download the circular poster"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Poster</a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'mainpage/js/charts.js' %}" defer></script>
+<script src="{% static 'mainpage/js/insights.js' %}" defer></script>
+{% endblock %}

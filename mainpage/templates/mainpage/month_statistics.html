@@ -1,123 +1,166 @@
-{% extends "mainpage/base_month.html" %}
-{% load static %}
-{% block title %}Month Statistics{% endblock %}
+{% extends "mainpage/base.html" %}
+{% load static ecosystem_extras %}
+
+{% block title %}Insights · {{ month|month_name }} {{ year }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/insights.css' %}">{% endblock %}
 
 {% block content %}
-<div class="toggle-order-btn">
-  {% if reverse %}
-    <a href="?reverse=0" class="button">Show Oldest → Newest</a>
-  {% else %}
-    <a href="?reverse=1" class="button">Show Newest → Oldest</a>
-  {% endif %}
-</div>
+{% month_nav year month as nav %}
+{{ day_summaries|json_script:"daySummaries" }}
+{{ hourly_grid|json_script:"hourlyGrid" }}
+{{ activity_legend|json_script:"activityLegend" }}
+{{ monthly_activity_aggregate|json_script:"activityHours" }}
+{{ habit_names|json_script:"habitNames" }}
 
-<div class="stats-container">
-  <!-- Left section: the table -->
-  <section class="stats-table">
-    <table class="days-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Mood</th>
-          <th>Prod</th>
-          <th>Habits</th>
-          <th>Thoughts</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in days_data %}
-        <tr>
-          <td>{{ d.date_obj|date:"M d" }}</td>
-          <td style="background-color: {{ d.mood_color }};">{{ d.mood_val }}</td>
-          <td style="background-color: {{ d.prod_color }};">{{ d.prod_val }}</td>
-          <td>
-            {% for habit_name, is_done in d.habit_statuses %}
-              {% if habit_name %}
-                <span class="habit-square {% if is_done %}complete{% else %}incomplete{% endif %}"
-                      title="{{ habit_name }}"></span>
-              {% endif %}
-            {% endfor %}
-          </td>
-          <td>{{ d.thoughts|truncatewords:10 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div id="insightsMonth" data-year="{{ year }}" data-month="{{ month }}" data-days="{{ days_in_month }}">
+  <header class="page-head reveal">
+    <div>
+      <p class="eyebrow">Insights</p>
+      <h1 class="page-head__title" style="margin-top:6px">{{ nav.name }} <span class="muted">{{ year }}</span></h1>
+      {% if monthly_obj.goal_text %}
+        <p class="page-head__sub insight-goal"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-target"/></svg>{{ monthly_obj.goal_text }}</p>
+      {% else %}
+        <p class="page-head__sub" id="monthSummary">&nbsp;</p>
+      {% endif %}
+    </div>
+    <nav class="page-head__aside" aria-label="Insights period">
+      <div class="segmented">
+        <a class="segmented__opt" href="{% url 'month_view' year month %}" aria-current="page">Month</a>
+        <a class="segmented__opt" href="{% url 'year_statistics' year %}">Year</a>
+      </div>
+    </nav>
+  </header>
+
+  <div class="metrics kpis reveal" style="--cols:5" id="kpis">
+    <div class="metric" data-kpi="mood"><div class="metric__label eyebrow"><span class="dot" style="background:var(--green)"></span>Avg mood</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="productivity"><div class="metric__label eyebrow"><span class="dot" style="background:var(--indigo)"></span>Avg productivity</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="sleep"><div class="metric__label eyebrow"><span class="dot" style="background:var(--sky)"></span>Avg sleep</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="habits"><div class="metric__label eyebrow"><span class="dot" style="background:var(--orange)"></span>Habits done</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+    <div class="metric" data-kpi="logged"><div class="metric__label eyebrow">Days logged</div><div class="metric__value">–</div><div class="metric__foot"><span></span><span class="metric__spark"></span></div></div>
+  </div>
+
+  <div class="ins-grid ins-grid--wide reveal">
+    <section class="panel panel--pad" aria-labelledby="moodTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="moodTitle"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Mood &amp; productivity</h2>
+        <div class="chart-legend"><span><i style="background:var(--green)"></i>Mood</span><span><i style="background:var(--indigo)"></i>Productivity</span></div>
+      </div>
+      <div id="moodChart"></div>
+    </section>
+    <section class="panel panel--pad" aria-labelledby="weekdayTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="weekdayTitle"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg>By weekday</h2>
+        <span class="panel__meta">average mood</span>
+      </div>
+      <div class="weekday" id="weekday"></div>
+    </section>
+  </div>
+
+  <div class="ins-grid reveal">
+    <section class="panel panel--pad" aria-labelledby="sleepTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="sleepTitle"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Sleep</h2>
+        <span class="panel__meta" id="sleepMeta"></span>
+      </div>
+      <div id="sleepChart"></div>
+    </section>
+    <section class="panel panel--pad" aria-labelledby="actTitle">
+      <div class="panel__head">
+        <h2 class="panel__title" id="actTitle"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Where the hours went</h2>
+        <span class="panel__meta" id="actMeta"></span>
+      </div>
+      <div class="hbars" id="actBars"></div>
+    </section>
+  </div>
+
+  <section class="panel panel--pad section-gap reveal" aria-labelledby="heatTitle">
+    <div class="panel__head">
+      <div>
+        <h2 class="panel__title" id="heatTitle"><svg class="icon" aria-hidden="true"><use href="#i-layout-grid"/></svg>Activity map</h2>
+        <p class="panel__meta" style="margin-top:6px">Every logged hour of {{ nav.name }}, day by day. Click a day to open it.</p>
+      </div>
+      {% if image_path %}
+      <div class="segmented segmented--sm" role="tablist" aria-label="Activity map view" id="heatView">
+        <button type="button" role="tab" class="segmented__opt" data-value="map" aria-selected="true" tabindex="0">Interactive</button>
+        <button type="button" role="tab" class="segmented__opt" data-value="poster" aria-selected="false" tabindex="-1">Rendered image</button>
+      </div>
+      {% endif %}
+    </div>
+    <div id="heatMap"></div>
+    <div class="heat-legend" id="heatLegend"></div>
+    {% if image_path %}
+      <figure class="poster" id="heatPoster" hidden>
+        <img src="{{ image_path }}" alt="Rendered activity diagram for {{ nav.name }} {{ year }}" loading="lazy">
+        <figcaption><span class="muted">Generated by the Ecosystem renderer</span><a class="btn btn--sm" href="{{ image_path }}" download="activity_{{ year }}_{{ month }}.png"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-download"/></svg>Download PNG</a></figcaption>
+      </figure>
+    {% endif %}
   </section>
 
-  <!-- Right section: Sleep & Activity Info -->
-  <div class="right-section">
-    <aside class="sleep-graph">
-      <h2>Sleep Graph (Monthly Data)</h2>
-      <div class="graph-box" style="width: 400px; height: 300px;">
-        <canvas id="sleepChart"></canvas>
-      </div>
+  <section class="panel panel--pad section-gap reveal" aria-labelledby="habitMapTitle" id="habitMapSection">
+    <div class="panel__head">
+      <h2 class="panel__title" id="habitMapTitle"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg>Habit consistency</h2>
+      <a class="link-quiet" href="{% url 'set_habits' year month %}">Manage habits<svg class="icon icon--xs" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+    </div>
+    <div id="habitMap"></div>
+  </section>
 
-    </aside>
-    
-    <aside class="activity-graph">
-      <h2>Activity Graph (Monthly Data)</h2>
-      <div class="graph-box" style="height: 100%;">
-        {% if image_path %}
-          <img src="{{ image_path }}"
-              alt="Activity Diagram"
-              style="width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);" />
-        {% else %}
-          <p>No activity diagram available.</p>
-        {% endif %}
+  <section class="panel section-gap log reveal" aria-labelledby="logTitle">
+    <div class="panel__head log__head">
+      <h2 class="panel__title" id="logTitle"><svg class="icon" aria-hidden="true"><use href="#i-scroll-text"/></svg>Daily log</h2>
+      <a class="btn btn--ghost btn--sm" href="?reverse={% if reverse %}0{% else %}1{% endif %}#logTitle">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-{% if reverse %}chevron-up{% else %}chevron-down{% endif %}"/></svg>{% if reverse %}Newest first{% else %}Oldest first{% endif %}
+      </a>
+    </div>
+    {% if days_data %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Mood</th><th>Productivity</th><th>Habits</th><th style="width:44%">Thought</th></tr></thead>
+        <tbody>
+          {% for d in days_data %}
+            <tr class="row-link" data-href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}">
+              <td class="log__date"><a href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}"><span class="num">{{ d.date_obj|date:"j" }}</span><span class="muted">{{ d.date_obj|date:"D" }}</span></a></td>
+              <td>{% if d.mood_val %}<span class="score" style="--v:{{ d.mood_val }}"><i style="background:var(--green)"></i>{{ d.mood_val }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td>{% if d.prod_val %}<span class="score" style="--v:{{ d.prod_val }}"><i style="background:var(--indigo)"></i>{{ d.prod_val }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td><span class="hdots">{% for habit_name, is_done in d.habit_statuses %}{% if habit_name %}<i class="{% if is_done %}is-done{% endif %}" data-tip="{{ habit_name }}{% if is_done %} · done{% else %} · not done{% endif %}"></i>{% endif %}{% endfor %}</span></td>
+              <td class="log__thought">{{ d.thoughts|default:"" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty">
+        <div class="empty__glyph"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-scroll-text"/></svg></div>
+        <p class="empty__title">No days logged in {{ nav.name }}</p>
+        <p class="empty__text">Insights appear as soon as you log a day in this month.</p>
+        {% if nav.is_current %}<div class="empty__actions"><a class="btn btn--primary btn--sm" href="#" data-today-href="/day/{yyyy}/{m}/{d}/">Log today</a></div>{% endif %}
       </div>
-    </aside>
-  </div>
+    {% endif %}
+  </section>
 </div>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block dock %}
+{% month_nav year month as nav %}
+<div class="dock" role="toolbar" aria-label="Insights controls">
+  <a class="dock__btn dock__btn--icon" href="{% url 'month_view' nav.prev_year nav.prev_month %}" data-tip="{{ nav.prev_name }}" data-kbd="[" data-shortcut="[" aria-label="Previous month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></a>
+  <span class="dock__label">{{ nav.name }} {{ year }}</span>
+  {% if nav.next_is_future %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
+  {% else %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'month_view' nav.next_year nav.next_month %}" data-tip="{{ nav.next_name }}" data-kbd="]" data-shortcut="]" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+  {% endif %}
+  <span class="dock__sep"></span>
+  <nav class="segmented" aria-label="Period">
+    <a class="segmented__opt" href="{% url 'month_view' year month %}" aria-current="page">Month</a>
+    <a class="segmented__opt" href="{% url 'year_statistics' year %}" data-kbd="Y" data-shortcut="y">Year</a>
+  </nav>
+  <span class="dock__sep"></span>
+  <a class="dock__btn" href="{% url 'diary_view' year month %}" data-tip="Read {{ nav.name }} journal"><svg class="icon" aria-hidden="true"><use href="#i-book-open"/></svg>Journal</a>
+</div>
+{% endblock %}
 
-<script>
-const sleepLabels = [
-  {% for item in monthly_sleep_data %}
-    "{{ item.date_obj|date:'M d' }}",
-  {% endfor %}
-];
-const sleepData = [
-  {% for item in monthly_sleep_data %}
-    {{ item.sleep_hours|floatformat:1 }},
-  {% endfor %}
-];
-
-const ctx = document.getElementById('sleepChart').getContext('2d');
-const sleepChart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: sleepLabels,
-    datasets: [{
-      label: 'Sleep Hours',
-      data: sleepData,
-      fill: false,
-      borderColor: 'rgba(75, 192, 192, 1)',
-      borderWidth: 2,
-      tension: 0.2,
-      pointRadius: 3,
-    }]
-  },
-  options: {
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Hours of Sleep'
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Date'
-        }
-      }
-    },
-    responsive: true,
-    maintainAspectRatio: false
-  }
-});
-</script>
+{% block scripts %}
+<script src="{% static 'mainpage/js/charts.js' %}" defer></script>
+<script src="{% static 'mainpage/js/insights.js' %}" defer></script>
 {% endblock %}

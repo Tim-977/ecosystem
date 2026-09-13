@@ -1,19 +1,27 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Open Source / Licenses</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>📄 Open Source / Licenses</h1>
 
-  <p>This app is currently in <strong>beta</strong> and does not yet include open source components or a published license.</p>
+{% block title %}Open source & licenses{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block page_class %}page--narrow{% endblock %}
 
-  <p>License information will be listed here when open source modules or contributions are introduced.</p>
-
-  <br>
-  <a href="{% url 'settings' %}"><button>Back to Settings</button></a>
-</body>
-</html>
+{% block content %}
+<a class="btn btn--ghost btn--sm subpage-back" href="{% url 'settings' %}#about"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Settings</a>
+<header class="page-head reveal"><div><h1 class="page-head__title">Open source &amp; licenses</h1><p class="page-head__sub">The project itself is not open source. The interface is built with these open-source components.</p></div></header>
+<div class="reveal">
+<section class="panel panel--pad">
+  <p class="eyebrow" style="margin-bottom:6px">Used in the interface</p>
+  <div class="license-list">
+    <div class="license-row"><div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></div><div class="license-row__body"><p class="license-row__title">Geist &amp; Geist Mono</p><p class="license-row__text">Typefaces by Vercel · SIL Open Font License 1.1</p></div><a class="link-quiet" href="https://github.com/vercel/geist-font" target="_blank" rel="noopener">Source<svg class="icon icon--xs" aria-hidden="true"><use href="#i-external-link"/></svg></a></div>
+    <div class="license-row"><div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></div><div class="license-row__body"><p class="license-row__title">Lucide icons</p><p class="license-row__text">Icon set · ISC License</p></div><a class="link-quiet" href="https://lucide.dev" target="_blank" rel="noopener">Source<svg class="icon icon--xs" aria-hidden="true"><use href="#i-external-link"/></svg></a></div>
+  </div>
+</section>
+<section class="panel panel--pad" style="margin-top:16px">
+  <p class="eyebrow" style="margin-bottom:12px">Project license</p>
+  <div class="prose">
+    <p>Copyright © 2025 Timofei Generalov. All rights reserved.</p>
+    <p>This project is available for viewing only. No permission is granted to use, copy, modify, or distribute.</p>
+  </div>
+</section>
+</div>
+{% endblock %}

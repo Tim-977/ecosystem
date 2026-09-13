@@ -1,20 +1,21 @@
+{% extends "mainpage/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Developer Info</title>
-  <link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
-</head>
-<body>
-  <h1>Developer Information</h1>
 
-  <p><strong>Name:</strong> Tim</p>
-  <p><strong>Email:</strong> timo@email.com</p>
-  <p><strong>GitHub:</strong> <a href="https://github.com/Tim-977" target="_blank">Github</a></p>
-  <p><strong>About:</strong> Ending high-school in 4 weeks.</p>
-  <p><a href="javascript:void(0)"><strong>Support Me</strong></a></p>
-  <br>
-  <a href="{% url 'settings' %}"><button>Back to Settings</button></a>
-</body>
-</html>
+{% block title %}Developer{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block page_class %}page--narrow{% endblock %}
+
+{% block content %}
+<a class="btn btn--ghost btn--sm subpage-back" href="{% url 'settings' %}#about"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Settings</a>
+<header class="page-head reveal"><div><h1 class="page-head__title">Developer</h1><p class="page-head__sub">Ecosystem is a personal project, designed and built by one person.</p></div></header>
+<div class="reveal">
+<section class="panel panel--pad">
+  <dl class="info-list">
+    <div><dt>Name</dt><dd>Tim</dd></div>
+    <div><dt>Email</dt><dd><a class="link" href="mailto:timo@email.com">timo@email.com</a></dd></div>
+    <div><dt>GitHub</dt><dd><a class="link" href="https://github.com/Tim-977" target="_blank" rel="noopener">github.com/Tim-977</a> <svg class="icon icon--xs" aria-hidden="true" style="display:inline;vertical-align:-1px;color:var(--fg-3)"><use href="#i-external-link"/></svg></dd></div>
+    <div><dt>About</dt><dd>Ending high-school in 4 weeks.</dd></div>
+  </dl>
+</section>
+</div>
+{% endblock %}

@@ -1,41 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
-<body>
-    <h1>Sign Up</h1>
-
-    <!-- Show error message if it exists -->
-    {% if error_message %}
-        <p style="color: red;">{{ error_message }}</p>
-    {% endif %}
-
-    <form method="POST">
+{% extends "authapp/auth_base.html" %}
+{% block title %}Create account{% endblock %}
+{% block page_class %}page--auth{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <aside class="auth-aside">
+    <a class="brand" href="{% url 'login' %}">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
+    <div>
+      <h1 class="auth-aside__title">Your days, <span>in one calm place.</span></h1>
+      <div class="auth-pillars">
+        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-clock"/></svg><b>Day</b><p>Fill in your 24 hours, rate mood and productivity, log sleep.</p></div>
+        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-book-open"/></svg><b>Journal</b><p>A short thought and a longer reflection for every day.</p></div>
+        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-repeat"/></svg><b>Routines</b><p>Monthly goals and up to ten habits to check off.</p></div>
+        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chart-column"/></svg><b>Insights</b><p>See your months and years take shape.</p></div>
+      </div>
+    </div>
+    <p class="auth-aside__foot">© 2025 Ecosystem · Beta</p>
+  </aside>
+  <div class="auth-main">
+    <div class="auth-main__top"><button type="button" class="nav__icon theme-toggle" data-theme-toggle data-tip="Toggle theme" data-tip-placement="bottom" aria-label="Toggle light or dark theme"><svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg></button></div>
+    <div class="auth-card reveal">
+      <h2 class="auth-card__title">Create your account</h2>
+      <p class="auth-card__sub">It takes a minute. Your data stays yours and can be exported any time.</p>
+      <form method="POST" novalidate data-auth-form data-signup>
         {% csrf_token %}
-
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
-
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-
-        <label for="confirm_password">Confirm Password:</label>
-        <input type="password" id="confirm_password" name="confirm_password" required><br><br>
-
-        {# TODO: integrate Google reCAPTCHA when requires_captcha is True #}
-        {% if requires_captcha %}
-            <p>CAPTCHA goes here</p>
-        {% endif %}
-
-        <button type="submit">Sign Up</button>
-    </form>
-
-    <p>Already have an account? <a href="/auth/login/">Log In</a></p>
-</body>
-</html>
+        {% if error_message %}<div class="alert alert--error" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{{ error_message }}</div></div>{% endif %}
+        {% if requires_captcha %}<div class="alert alert--warning"><svg class="icon" aria-hidden="true"><use href="#i-shield-check"/></svg><div>For your security, further attempts from this network are paused for a while.</div></div>{% endif %}
+        <div class="field">
+          <label class="field__label" for="username">Username <span class="field__count" data-count-for="username" data-max="12"></span></label>
+          <div class="input-group">
+            <svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>
+            <input class="input input--lg" type="text" id="username" name="username" required maxlength="12" autocomplete="username" autocapitalize="off" spellcheck="false" autofocus value="{{ request.POST.username|default:'' }}">
+          </div>
+          <div class="rules" aria-live="polite"><span class="rule" data-rule="length">3 to 12 characters</span><span class="rule" data-rule="chars">Letters and digits only</span></div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="email">Email</label>
+          <div class="input-group">
+            <svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>
+            <input class="input input--lg" type="email" id="email" name="email" required autocomplete="email" value="{{ request.POST.email|default:'' }}">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="password">Password</label>
+          <div class="input-group">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+            <input class="input input--lg" type="password" id="password" name="password" required autocomplete="new-password" >
+            <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="confirm_password">Confirm password</label>
+          <div class="input-group">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+            <input class="input input--lg" type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password" >
+            <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+          </div>
+          <div class="rules" aria-live="polite"><span class="rule" data-rule="match">Passwords match</span></div>
+        </div>
+        <p class="field__error" data-auth-error hidden></p>
+        <button type="submit" class="btn btn--primary btn--lg btn--block"><span class="spinner"></span>Create account</button>
+      </form>
+      <p class="auth-card__alt">Already have an account? <a class="link" href="{% url 'login' %}">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

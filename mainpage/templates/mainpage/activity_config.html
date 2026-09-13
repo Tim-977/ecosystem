@@ -1,64 +1,139 @@
-{% extends "mainpage/base_month.html" %}
-{% load static %}
+{% extends "mainpage/base.html" %}
+{% load static ecosystem_extras %}
 
-{% block title %}Manage Activities{% endblock %}
+{% block title %}Activities · {{ month|month_name }} {{ year }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/routines.css' %}">{% endblock %}
 
 {% block content %}
-<h2>Activity Configuration</h2>
+{% month_nav year month as nav %}
+<header class="page-head reveal">
+  <div>
+    <p class="eyebrow">Routines</p>
+    <h1 class="page-head__title" style="margin-top:6px">{{ nav.name }} <span class="muted">{{ year }}</span></h1>
+    <p class="page-head__sub">The activities you paint your hours with on the Day timeline. Each month has its own set, up to 15.</p>
+  </div>
+  <nav class="page-head__aside" aria-label="Routines sections">
+    <div class="segmented">
+      <a class="segmented__opt" href="{% url 'set_habits' year month %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-repeat"/></svg>Habits</a>
+      <a class="segmented__opt" href="{% url 'activity_config_view' year month %}" aria-current="page"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-palette"/></svg>Activities</a>
+    </div>
+  </nav>
+</header>
 
-{% if messages %}
-  <ul style="color:red;">
-    {% for msg in messages %}
-      <li>{{ msg }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+<div class="act-layout" id="activities" data-count="{{ activities|length }}">
+  <section class="reveal" aria-labelledby="actListTitle">
+    <div class="section-head">
+      <h2 class="section-title" id="actListTitle">{{ activities|length }} {% if activities|length == 1 %}activity{% else %}activities{% endif %}</h2>
+      <span class="section-note">Hover a card to edit or delete</span>
+    </div>
+    {% if activities %}
+      <ul class="act-grid" role="list" style="list-style:none;margin:0;padding:0">
+        {% for act in activities %}
+          <li class="act-card{% if edit_activity and edit_activity.id == act.id %} is-editing{% endif %}" data-id="{{ act.id }}" data-name="{{ act.name }}" data-color="{{ act.color }}" style="animation-delay:{{ forloop.counter0 }}0ms">
+            <div class="act-card__preview" aria-hidden="true"></div>
+            <div class="act-card__row">
+              <div style="min-width:0">
+                <div class="act-card__name">{{ act.name }}</div>
+                <div class="act-card__hex">{{ act.color }}</div>
+              </div>
+              <div class="act-card__actions">
+                <a class="icon-btn icon-btn--sm" href="?edit_id={{ act.id }}" data-edit data-tip="Edit" aria-label="Edit {{ act.name }}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pencil"/></svg></a>
+                <form method="POST" action="{% url 'activity_config_view' year month %}"
+                      data-confirm="Delete “{{ act.name }}”?" data-danger data-confirm-label="Delete activity"
+                      data-confirm-text="Hours already logged with this activity in {{ nav.name }} will show as an unknown activity on those days.">
+                  {% csrf_token %}
+                  <input type="hidden" name="activity_id" value="{{ act.id }}">
+                  <input type="hidden" name="action" value="delete">
+                  <button type="submit" class="icon-btn icon-btn--sm icon-btn--danger" data-tip="Delete" aria-label="Delete {{ act.name }}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
+                </form>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="panel">
+        <div class="empty">
+          <div class="empty__glyph"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-palette"/></svg></div>
+          <p class="empty__title">No activities for {{ nav.name }} yet</p>
+          <p class="empty__text">Create the handful of things your days are made of. Pick a name on the right, choose a color, and it’s ready to use on the timeline.</p>
+        </div>
+      </div>
+    {% endif %}
+  </section>
 
-<form method="POST" action="{% url 'activity_config_view' year month %}">
-  {% csrf_token %}
-  {% if edit_activity %}
-    <input type="hidden" name="action" value="update" />
-    <input type="hidden" name="activity_id" value="{{ edit_activity.id }}" />
-    <label for="name">Activity Name:</label><br/>
-    <input type="text" name="name" required maxlength="15" value="{{ edit_activity.name }}"><br/><br/>
+  <aside class="act-side reveal">
+    <form class="panel act-form" method="POST" action="{% url 'activity_config_view' year month %}" id="actForm" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="action" id="actAction" value="{% if edit_activity %}update{% else %}create{% endif %}">
+      <input type="hidden" name="activity_id" id="actId" value="{{ edit_activity.id|default:'' }}">
+      <div class="act-form__title">
+        <h2 class="panel__title" id="actFormTitle">{% if edit_activity %}Edit activity{% else %}New activity{% endif %}</h2>
+        <a class="btn btn--ghost btn--sm" href="{% url 'activity_config_view' year month %}" id="actCancel" {% if not edit_activity %}hidden{% endif %}>Cancel</a>
+      </div>
 
-    <label for="color">Color (CSS name or #hex):</label><br/>
-    <input type="text" name="color" required value="{{ edit_activity.color }}"><br/><br/>
+      <div class="field">
+        <label class="field__label" for="actName">Name <span class="field__count" data-count-for="actName" data-max="15"></span></label>
+        <input class="input" type="text" name="name" id="actName" maxlength="15" required autocomplete="off"
+               value="{{ edit_activity.name|default:'' }}" placeholder="e.g. Deep work">
+        <p class="field__error" id="actNameError" hidden></p>
+      </div>
+      <div class="field" id="suggestField" {% if edit_activity %}hidden{% endif %}>
+        <span class="field__hint">Common starting points</span>
+        <div class="suggestions">
+          <button type="button">Sleep</button><button type="button">Work</button><button type="button">Study</button>
+          <button type="button">Exercise</button><button type="button">Commute</button><button type="button">Reading</button>
+          <button type="button">Social</button><button type="button">Rest</button>
+        </div>
+      </div>
 
-    <button type="submit">Update Activity</button>
-  {% else %}
-    <input type="hidden" name="action" value="create" />
-    <label for="name">Activity Name:</label><br/>
-    <input type="text" name="name" required maxlength="15"><br/><br/>
+      <div class="field">
+        <span class="field__label" id="colorLabel">Color</span>
+        <div class="swatches" role="group" aria-labelledby="colorLabel" id="swatches"></div>
+        <div class="hex-row" style="margin-top:6px">
+          <span class="hex-preview" id="hexPreview" data-tip="Custom color"><input type="color" id="colorWheel" aria-label="Pick a custom color"></span>
+          <label class="sr-only" for="actColor">Hex color</label>
+          <input class="input" type="text" name="color" id="actColor" required maxlength="7" spellcheck="false" autocomplete="off"
+                 value="{{ edit_activity.color|default:'#7c83fd' }}" placeholder="#7c83fd">
+        </div>
+        <p class="field__error" id="actColorError" hidden></p>
+      </div>
 
-    <label for="color">Color (CSS name or #hex):</label><br/>
-    <input type="text" name="color" value="#0000ff" required><br/><br/>
+      <div class="field">
+        <span class="field__label">On your timeline</span>
+        <div class="timeline-preview" aria-hidden="true"><i></i><i class="is-new" id="actPreview"></i><i></i></div>
+      </div>
 
-    <button type="submit">Add Activity</button>
-  {% endif %}
-</form>
+      <div class="field" style="margin-top:22px">
+        <button type="submit" class="btn btn--primary btn--block" id="actSubmit">
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-{% if edit_activity %}check{% else %}plus{% endif %}"/></svg>
+          <span>{% if edit_activity %}Save changes{% else %}Add activity{% endif %}</span>
+        </button>
+      </div>
+    </form>
 
-<hr/>
-<h3>Existing Activities</h3>
-<ul>
-  {% for act in activities %}
-    <li>
-      {{ act.name }} ({{ act.color }})
-
-      <!-- Edit button (GET request with edit_id) -->
-      <form method="GET" action="{% url 'activity_config_view' year month %}" style="display:inline;">
-        <input type="hidden" name="edit_id" value="{{ act.id }}">
-        <button type="submit">Edit</button>
-      </form>
-
-      <!-- Delete button -->
-      <form method="POST" action="{% url 'activity_config_view' year month %}" style="display:inline;">
-        {% csrf_token %}
-        <input type="hidden" name="activity_id" value="{{ act.id }}">
-        <input type="hidden" name="action" value="delete">
-        <button type="submit">Delete</button>
-      </form>
-    </li><br>
-  {% endfor %}
-</ul>
+    <div class="panel capacity">
+      <div class="capacity__row"><span>{{ activities|length }} of 15 used</span><span>{{ nav.name }}</span></div>
+      <div class="bar"><i style="--w:{% widthratio activities|length 15 100 %}%;--fill:{% if activities|length >= 15 %}var(--red){% elif activities|length >= 12 %}var(--amber){% else %}var(--fg-3){% endif %}"></i></div>
+    </div>
+  </aside>
+</div>
 {% endblock %}
+
+{% block dock %}
+{% month_nav year month as nav %}
+<div class="dock" role="toolbar" aria-label="Activity controls">
+  <a class="dock__btn dock__btn--icon" href="{% url 'activity_config_view' nav.prev_year nav.prev_month %}" data-tip="{{ nav.prev_name }}" data-kbd="[" data-shortcut="[" aria-label="Previous month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></a>
+  <span class="dock__label">{{ nav.name }} {{ year }}</span>
+  {% if nav.next_is_future %}
+    <span class="dock__btn dock__btn--icon" aria-disabled="true" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
+  {% else %}
+    <a class="dock__btn dock__btn--icon" href="{% url 'activity_config_view' nav.next_year nav.next_month %}" data-tip="{{ nav.next_name }}" data-kbd="]" data-shortcut="]" aria-label="Next month"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+  {% endif %}
+  <span class="dock__sep"></span>
+  <a class="dock__btn" href="#" data-today-href="/day/{yyyy}/{m}/{d}/" data-tip="Log hours today"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Open timeline</a>
+  <button type="button" class="dock__btn dock__btn--primary" id="dockNewAct" data-tip="New activity" data-kbd="N" data-shortcut="n" {% if activities|length >= 15 %}aria-disabled="true"{% endif %}><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>New activity</button>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'mainpage/js/activities.js' %}" defer></script>{% endblock %}
