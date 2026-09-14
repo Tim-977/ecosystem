@@ -246,10 +246,16 @@
     });
   }
 
-  /* ---------------- popovers ---------------- */
-  let openPop = null;
+  /* ---------------- popovers ----------------
+     A stack, not a single slot: opening a popover from an anchor that lives
+     inside an already-open one (e.g. a date field's calendar inside a task's
+     edit popover) nests it instead of closing the parent out from under
+     itself. Opening an unrelated popover still closes whatever was open. */
+  let popStack = [];
   Eco.popover = function (anchor, content, { placement = 'bottom-start', onClose, className = '', gap = 6, focus = true } = {}) {
-    Eco.closePopover();
+    while (popStack.length && !popStack[popStack.length - 1].el.contains(anchor)) {
+      popStack.pop().close();
+    }
     const el = document.createElement('div');
     el.className = `popover ${className}`;
     if (typeof content === 'string') el.innerHTML = content; else el.appendChild(content);
@@ -271,15 +277,19 @@
     place();
     // controls measured during the entrance scale settle once it finishes
     el.addEventListener('animationend', () => $$('.segmented', el).forEach((sg) => sg._seg && sg._seg.update(false)), { once: true });
-    const onDoc = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) Eco.closePopover(); };
-    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); Eco.closePopover(); anchor.focus(); } };
+    // Only the topmost popover in the stack reacts to outside clicks/Escape,
+    // so closing a nested one (e.g. the calendar) never also closes its parent.
+    let entry;
+    const isTop = () => popStack[popStack.length - 1] === entry;
+    const onDoc = (e) => { if (isTop() && !el.contains(e.target) && !anchor.contains(e.target)) Eco.closePopover(); };
+    const onKey = (e) => { if (isTop() && e.key === 'Escape') { e.stopPropagation(); Eco.closePopover(); anchor.focus(); } };
     const onScroll = (e) => { if (!el.contains(e.target)) place(); };
     setTimeout(() => document.addEventListener('pointerdown', onDoc), 0);
     document.addEventListener('keydown', onKey, true);
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', place);
     anchor.setAttribute('aria-expanded', 'true');
-    openPop = {
+    entry = {
       el, anchor,
       close() {
         document.removeEventListener('pointerdown', onDoc);
@@ -293,10 +303,11 @@
       },
       place,
     };
+    popStack.push(entry);
     if (focus) { const f = el.querySelector('[autofocus], [aria-selected="true"], input, button, [tabindex="0"]'); f && f.focus({ preventScroll: true }); }
-    return openPop;
+    return entry;
   };
-  Eco.closePopover = function () { if (openPop) { const p = openPop; openPop = null; p.close(); } };
+  Eco.closePopover = function () { const p = popStack.pop(); if (p) p.close(); };
 
   /* Build a keyboard-navigable menu. items: [{label, value, icon, swatch, selected, danger, meta, sep, heading}] */
   Eco.menu = function (anchor, items, onPick, opts = {}) {
