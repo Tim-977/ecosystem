@@ -1,0 +1,16 @@
+{% extends "mainpage/base.html" %}
+{% load static %}
+{# Placeholder: the onboarding flow is designed separately. #}
+{% block title %}Get started{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">{% endblock %}
+{% block body_class %}onboarding{% endblock %}
+{% block nav %}{% endblock %}
+{% block page_class %}page--onboarding{% endblock %}
+
+{% block content %}
+<div class="onboarding-stub reveal">
+  <a class="brand" href="{% url 'main_page' %}" aria-label="Ecosystem — home">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
+  <span class="eyebrow">Onboarding</span>
+  <a class="btn btn--ghost btn--sm" href="{% url 'main_page' %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Back</a>
+</div>
+{% endblock %}

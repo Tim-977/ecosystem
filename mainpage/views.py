@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 from tracker.utils.socket_client import send_render_request
+from landing.views import landing_page
 
 
 def _parse_time_str(t_str):
@@ -74,8 +75,11 @@ def _day_summary(log):
     }
 
 
-@login_required
 def main_page_view(request):
+    # Visitors who aren't signed in get the public homepage at the root.
+    if not request.user.is_authenticated:
+        return landing_page(request)
+
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
     server_time = now()
     today = date.today()

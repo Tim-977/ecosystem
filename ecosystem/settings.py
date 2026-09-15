@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'authapp',  # Login app
     'mainpage',  # Main page app
     'tracker',
+    'landing',  # Public homepage
 ]
 
 LOGIN_URL = '/auth/login/'
