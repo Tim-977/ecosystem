@@ -144,10 +144,13 @@
       if (!hasHourly) ribbon.insertAdjacentHTML('beforeend', `<a class="ribbon__hint link-quiet" href="${dayUrl}">No hours logged yet · fill in your day</a>`);
     };
     drawRibbon([]);
+    let lastActs = [];
     if (hasHourly) {
       const res = await Eco.api(`${root.dataset.activitiesApi}?year=${today.getFullYear()}&month=${today.getMonth() + 1}`);
-      drawRibbon(res.ok ? res.data : []);
+      lastActs = res.ok ? res.data : [];
+      drawRibbon(lastActs);
     }
+    document.addEventListener('eco:theme', () => drawRibbon(lastActs));
   }
 
   function renderTrend({ days, byIso, today }) {
