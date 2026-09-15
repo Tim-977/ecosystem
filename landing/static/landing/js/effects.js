@@ -59,7 +59,8 @@
   /* ======================================================================
      Halftone reveal: the image is printed as a dot screen in the page's own
      ink and paper; a lens under the pointer shows it sharp. Scrolling past
-     clears the whole print.
+     clears the whole print (scroll: true), and setClear(0..1) refines the dot
+     screen until the image is fully sharp.
      ====================================================================== */
   const HT_VS = `#version 300 es
 in vec2 position; out vec2 vUv;
@@ -131,7 +132,7 @@ void main(){
   fragColor = vec4(mix(print, sharp, focus), 1.0);
 }`;
 
-  fx.halftone = function (host, { img, hero, radius = 0.3, density = 92, dot = 1.0, angle = 30, tint = 0.55, contrast = 1.12 } = {}) {
+  fx.halftone = function (host, { img, hero, scroll = true, radius = 0.3, density = 92, dot = 1.0, angle = 30, tint = 0.55, contrast = 1.12 } = {}) {
     if (!host || !img) return null;
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
@@ -181,12 +182,13 @@ void main(){
       gl.viewport(0, 0, w, h);
       gl.uniform2f(prog.u('uRes'), w, h);
       // keep the dot pitch similar in CSS pixels across screen sizes
-      gl.uniform1f(prog.u('uDensity'), clamp(host.clientHeight / 12, 48, density));
+      baseDensity = clamp(host.clientHeight / 12, 48, density);
       kick();
     };
 
     /* pointer + intro sweep + scroll-clearing, all eased per frame */
-    const m = { x: 0.5, y: 0.5, sx: 0.5, sy: 0.5, act: 0, target: 0, idle: 0, idleTarget: 0 };
+    const m = { x: 0.5, y: 0.5, sx: 0.5, sy: 0.5, act: 0, target: 0, idle: 0, idleTarget: 0, clear: 0, clearTarget: 0 };
+    let baseDensity = density;
     let intro = reduced() ? null : { t0: 0, dur: 2300 };
     let pointerInside = false;
     let lastInput = 0;
@@ -214,7 +216,7 @@ void main(){
       m.idleTarget = clamp((window.scrollY - h * 0.12) / (h * 0.5), 0, 1);
       kick();
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    if (scroll) window.addEventListener('scroll', onScroll, { passive: true });
 
     let prev = 0;
     const frame = (now) => {
@@ -243,14 +245,17 @@ void main(){
       m.sy += (m.y - m.sy) * follow;
       m.act += (m.target - m.act) * (1 - Math.exp(-dt / 0.2));
       m.idle += (m.idleTarget - m.idle) * (1 - Math.exp(-dt / 0.12));
+      m.clear += (m.clearTarget - m.clear) * (1 - Math.exp(-dt / 0.45));
 
       gl.uniform2f(prog.u('uMouse'), m.sx, m.sy);
       gl.uniform1f(prog.u('uAct'), m.act);
-      gl.uniform1f(prog.u('uIdle'), m.idle);
+      // refining: the screen gets finer first, the sharp image fades in last
+      gl.uniform1f(prog.u('uIdle'), Math.max(m.idle, Math.pow(m.clear, 3)));
+      gl.uniform1f(prog.u('uDensity'), baseDensity * (1 + m.clear * 1.6));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       const moving = Math.abs(m.x - m.sx) + Math.abs(m.y - m.sy) > 0.0005;
-      const settling = Math.abs(m.target - m.act) > 0.002 || Math.abs(m.idleTarget - m.idle) > 0.002;
+      const settling = Math.abs(m.target - m.act) > 0.002 || Math.abs(m.idleTarget - m.idle) > 0.002 || Math.abs(m.clearTarget - m.clear) > 0.002;
       const wandering = coarse() && !reduced() && !pointerInside;
       if (!(intro || moving || settling || wandering)) prev = 0;
       return !!(intro || moving || settling || wandering);
@@ -261,10 +266,13 @@ void main(){
     document.addEventListener('eco:theme', theme);
     theme();
     resize();
-    onScroll();
+    if (scroll) onScroll();
     if (img.complete && img.naturalWidth) upload();
     else img.addEventListener('load', upload, { once: true });
-    return { redraw: kick };
+    return {
+      redraw: kick,
+      setClear(v) { m.clearTarget = clamp(v, 0, 1); kick(); },
+    };
   };
 
   /* ======================================================================

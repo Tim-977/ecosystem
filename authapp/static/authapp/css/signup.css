@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Ecosystem — sign up. Shares the homepage's language (landing.css): a
+   halftone picture that comes into focus as the form is filled in, and a
+   form card with the cursor-aware glow.
+   ========================================================================== */
+
+.signup-page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(460px, 1fr); }
+
+/* ---------- visual side ---------- */
+.signup-visual { position: sticky; top: 0; height: 100vh; overflow: hidden; isolation: isolate; background: var(--bg); border-right: 1px solid var(--line-1); }
+.signup-visual__media { position: absolute; inset: 0; z-index: -2; }
+.signup-visual__media canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 900ms var(--ease-out); }
+.signup-visual__media.is-ready canvas { opacity: 1; }
+.signup-visual__media.is-ready .hero__img { visibility: hidden; }
+.signup-visual__scrim {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 72%, transparent) 0, transparent 140px),
+    linear-gradient(to top, var(--bg) 0%, color-mix(in srgb, var(--bg) 90%, transparent) 20%, color-mix(in srgb, var(--bg) 50%, transparent) 42%, transparent 64%);
+}
+.signup-visual__brand { position: absolute; top: 22px; left: 32px; }
+.signup-visual__copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 clamp(32px, 4vw, 64px) clamp(36px, 7vh, 72px); pointer-events: none; }
+.signup-visual__meter { display: inline-flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-3); }
+.signup-visual__bar { position: relative; width: 120px; height: 3px; border-radius: 3px; background: var(--line-3); overflow: hidden; }
+.signup-visual__bar i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--p, 0)); background: var(--fg-1); border-radius: inherit; transition: transform 700ms var(--ease-out); }
+.signup-visual__title { margin-top: 20px; font-size: clamp(48px, 6.4vw, 96px); font-weight: 560; letter-spacing: -0.05em; line-height: 0.94; }
+.signup-visual__sub { margin-top: 18px; max-width: 40ch; font-size: 16px; line-height: 1.6; color: var(--fg-2); text-wrap: pretty; }
+
+/* ---------- form side ---------- */
+.signup-main { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 88px clamp(24px, 4vw, 56px) 48px; }
+.signup-main__top { position: absolute; top: 14px; left: clamp(24px, 4vw, 56px); right: clamp(16px, 2vw, 24px); display: flex; align-items: center; justify-content: space-between; }
+.signup-card {
+  position: relative; width: 100%; max-width: 420px; padding: 30px 30px 28px;
+  border-radius: var(--l-radius); background: var(--bg-1); border: 1px solid var(--line-2);
+  box-shadow: var(--highlight), 0 40px 80px -40px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme='light'] .signup-card { box-shadow: var(--highlight), 0 40px 80px -44px rgba(20, 20, 40, 0.24); }
+.signup-card__steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 26px; }
+.signup-card__steps i { height: 3px; border-radius: 3px; background: var(--line-2); position: relative; overflow: hidden; }
+.signup-card__steps i::after { content: ''; position: absolute; inset: 0; background: var(--green); border-radius: inherit; transform: scaleX(0); transform-origin: left; transition: transform 500ms var(--ease-out); }
+.signup-card__steps i.is-done::after { transform: none; }
+.signup-card__title { font-size: 28px; font-weight: 570; letter-spacing: -0.032em; }
+.signup-card__sub { margin: 8px 0 26px; font-size: 14px; line-height: 1.55; color: var(--fg-3); }
+.signup-card .alert { margin-bottom: 20px; }
+.signup-card__submit { margin-top: 26px; }
+.signup-card__submit .icon { transition: transform var(--t-2) var(--ease-out); }
+.signup-card__submit:hover .icon { transform: translateX(3px); }
+.signup-card__submit.is-busy .icon { display: none; }
+.signup-main__alt { font-size: 13px; color: var(--fg-3); }
+
+/* entrance: everything comes into focus */
+.fx .signup-visual__copy > *, .fx .signup-card, .fx .signup-main__alt { animation: focus-in 1000ms var(--ease-out) both; }
+.fx .signup-visual__title { animation-delay: 100ms; }
+.fx .signup-visual__sub { animation-delay: 200ms; }
+.fx .signup-card { animation-delay: 160ms; }
+.fx .signup-main__alt { animation-delay: 320ms; }
+
+/* ---------- small screens: picture becomes a band above the form ---------- */
+@media (max-width: 980px) {
+  .signup-page { grid-template-columns: 1fr; }
+  .signup-visual { position: relative; height: 340px; border-right: 0; border-bottom: 1px solid var(--line-1); }
+  .signup-visual__title { font-size: 44px; margin-top: 14px; }
+  .signup-visual__sub { display: none; }
+  .signup-visual__copy { padding: 0 24px 26px; }
+  .signup-visual__brand { left: 20px; top: 18px; }
+  .signup-main { padding: 28px 16px 40px; justify-content: flex-start; }
+  .signup-main__top { position: static; width: 100%; max-width: 420px; }
+  .signup-card { padding: 24px 20px; }
+}
+@media (max-width: 980px) and (hover: none) {
+  .signup-visual__meter { display: none; }
+}

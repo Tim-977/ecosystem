@@ -1,26 +1,43 @@
 {% extends "authapp/auth_base.html" %}
+{% load static %}
 {% block title %}Create account{% endblock %}
+{% block head %}
+  {{ block.super }}
+  <link rel="preload" href="{% static 'landing/images/hero.png' %}" as="image" fetchpriority="high">
+  <link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">
+  <link rel="stylesheet" href="{% static 'authapp/css/signup.css' %}">
+  <script>document.documentElement.classList.add('fx')</script>
+{% endblock %}
+{% block body_class %}signup{% endblock %}
 {% block page_class %}page--auth{% endblock %}
 {% block content %}
-<div class="auth-page">
-  <aside class="auth-aside">
-    <a class="brand" href="{% url 'login' %}">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
-    <div>
-      <h1 class="auth-aside__title">Your days, <span>in one calm place.</span></h1>
-      <div class="auth-pillars">
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-clock"/></svg><b>Day</b><p>Fill in your 24 hours, rate mood and productivity, log sleep.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-book-open"/></svg><b>Journal</b><p>A short thought and a longer reflection for every day.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-repeat"/></svg><b>Routines</b><p>Monthly goals and up to ten habits to check off.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chart-column"/></svg><b>Insights</b><p>See your months and years take shape.</p></div>
-      </div>
+<div class="signup-page">
+
+  {# The picture comes into focus as the form fills in. #}
+  <aside class="signup-visual" data-signup-visual>
+    <div class="signup-visual__media" data-halftone>
+      <img class="hero__img" src="{% static 'landing/images/hero.png' %}" alt="" fetchpriority="high" decoding="async">
     </div>
-    <p class="auth-aside__foot">© 2025 Ecosystem · Beta</p>
+    <div class="signup-visual__scrim" aria-hidden="true"></div>
+    <a class="brand signup-visual__brand" href="{% url 'main_page' %}" aria-label="Ecosystem — home">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
+    <div class="signup-visual__copy">
+      <p class="signup-visual__meter mono" aria-hidden="true"><span class="signup-visual__bar"><i data-focus-bar></i></span><span data-focus-label>Out of focus</span></p>
+      <h1 class="signup-visual__title">Start with today.</h1>
+      <p class="signup-visual__sub">One account, and your first day is a couple of minutes away. The picture sharpens as you go.</p>
+    </div>
   </aside>
-  <div class="auth-main">
-    <div class="auth-main__top"><button type="button" class="nav__icon theme-toggle" data-theme-toggle data-tip="Toggle theme" data-tip-placement="bottom" aria-label="Toggle light or dark theme"><svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg></button></div>
-    <div class="auth-card reveal">
-      <h2 class="auth-card__title">Create your account</h2>
-      <p class="auth-card__sub">It takes a minute. Your data stays yours and can be exported any time.</p>
+
+  <main class="signup-main">
+    <div class="signup-main__top">
+      <a class="link-quiet" href="{% url 'main_page' %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Home</a>
+      <button type="button" class="nav__icon theme-toggle" data-theme-toggle data-tip="Toggle theme" data-tip-placement="bottom" aria-label="Toggle light or dark theme"><svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    </div>
+
+    <div class="signup-card glow" data-glow>
+      <div class="signup-card__steps" aria-hidden="true"><i data-step-seg></i><i data-step-seg></i><i data-step-seg></i><i data-step-seg></i></div>
+      <h2 class="signup-card__title">Create your account</h2>
+      <p class="signup-card__sub">It takes a minute. Your data stays yours and can be exported any time.</p>
+
       <form method="POST" novalidate data-auth-form data-signup>
         {% csrf_token %}
         {% if error_message %}<div class="alert alert--error" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{{ error_message }}</div></div>{% endif %}
@@ -44,7 +61,7 @@
           <label class="field__label" for="password">Password</label>
           <div class="input-group">
             <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
-            <input class="input input--lg" type="password" id="password" name="password" required autocomplete="new-password" >
+            <input class="input input--lg" type="password" id="password" name="password" required autocomplete="new-password">
             <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
           </div>
         </div>
@@ -52,16 +69,23 @@
           <label class="field__label" for="confirm_password">Confirm password</label>
           <div class="input-group">
             <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
-            <input class="input input--lg" type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password" >
+            <input class="input input--lg" type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password">
             <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
           </div>
           <div class="rules" aria-live="polite"><span class="rule" data-rule="match">Passwords match</span></div>
         </div>
         <p class="field__error" data-auth-error hidden></p>
-        <button type="submit" class="btn btn--primary btn--lg btn--block"><span class="spinner"></span>Create account</button>
+        <button type="submit" class="btn btn--primary btn--xl btn--block signup-card__submit"><span class="spinner"></span>Create account<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
       </form>
-      <p class="auth-card__alt">Already have an account? <a class="link" href="{% url 'login' %}">Log in</a></p>
     </div>
-  </div>
+
+    <p class="signup-main__alt">Already have an account? <a class="link" href="{% url 'login' %}">Log in</a></p>
+  </main>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'landing/js/effects.js' %}" defer></script>
+  <script src="{% static 'authapp/js/signup.js' %}" defer></script>
 {% endblock %}

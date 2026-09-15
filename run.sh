@@ -17,6 +17,12 @@ LOG_DIR="logs"
 echo "🔄 Killing previous cpp_server (port $CPP_PORT)..."
 pkill -f "$CPP_EXEC" 2>/dev/null || true
 
+# ─── 2b. Kill old Gunicorn / anything on Django's port ──────────────
+echo "🔄 Killing previous process on port $DJANGO_PORT..."
+pkill -f "gunicorn ecosystem.wsgi" 2>/dev/null || true
+fuser -k "${DJANGO_PORT}/tcp" 2>/dev/null || true
+sleep 1
+
 # ─── 3. Build C++ server ────────────────────────────────────────────
 echo "🛠  Building C++ server..."
 mkdir -p "$BUILD_DIR"
