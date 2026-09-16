@@ -1,16 +1,266 @@
 {% extends "mainpage/base.html" %}
 {% load static %}
-{# Placeholder: the onboarding flow is designed separately. #}
 {% block title %}Get started{% endblock %}
-{% block head %}<meta name="robots" content="noindex"><link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">{% endblock %}
+{% block head %}
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">
+  <link rel="stylesheet" href="{% static 'landing/css/onboarding.css' %}">
+  <script>document.documentElement.classList.add('fx')</script>
+{% endblock %}
 {% block body_class %}onboarding{% endblock %}
-{% block nav %}{% endblock %}
 {% block page_class %}page--onboarding{% endblock %}
+{% block nav %}{% endblock %}
+{% block dock %}{% endblock %}
 
 {% block content %}
-<div class="onboarding-stub reveal">
-  <a class="brand" href="{% url 'main_page' %}" aria-label="Ecosystem — home">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
-  <span class="eyebrow">Onboarding</span>
-  <a class="btn btn--ghost btn--sm" href="{% url 'main_page' %}"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Back</a>
+{{ saved|json_script:"obSaved" }}
+<div class="ob" data-ob data-signup-url="{% url 'signup' %}" data-save-url="{% url 'onboarding_save' %}">
+
+  <div class="ob__aura" aria-hidden="true"></div>
+  <div class="ob__spot" data-spot aria-hidden="true"></div>
+
+  <header class="ob__top">
+    <a class="brand" href="{% url 'landing' %}" aria-label="Ecosystem — home">
+      {% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span>
+    </a>
+    <div class="ob__rail" aria-hidden="true"><i data-ob-rail></i></div>
+    <div class="ob__topright">
+      <p class="ob__count mono" aria-hidden="true"><b data-ob-at>1</b>/<span data-ob-of>5</span></p>
+      <button type="button" class="nav__icon theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
+        <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="ob__body">
+
+    {# ====================== the questions ====================== #}
+    <main class="ob__stage" data-ob-stage>
+
+      <section class="ob-step is-active" data-step="intro" data-untracked>
+        <p class="ob-step__eyebrow"><span class="dot-live" aria-hidden="true"></span>Before you sign up</p>
+        <h1 class="ob-step__q ob-step__q--hero">Let's shape it<em> around you.</em></h1>
+        <p class="ob-step__sub">Five questions. About a minute.</p>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next>Start<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <a class="btn btn--ghost btn--hero" href="{% url 'signup' %}" data-ob-skip>Skip</a>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="name">
+        <p class="ob-step__eyebrow">Question 1</p>
+        <h2 class="ob-step__q">What should we<em> call you?</em></h2>
+        <div class="ob-name">
+          <input class="ob-name__input" type="text" id="obName" maxlength="24" autocomplete="given-name"
+                 placeholder="Type your name" spellcheck="false" data-ob-name aria-label="Your name">
+          <span class="ob-name__rule" aria-hidden="true"></span>
+        </div>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next>Continue<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="btn btn--ghost btn--hero" data-ob-next data-ob-clear="name">Skip</button>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="scale">
+        <p class="ob-step__eyebrow">Question 2</p>
+        <h2 class="ob-step__q">How do you want<em> to rate a day?</em></h2>
+
+        <div class="ob-opts ob-opts--pair" role="radiogroup" aria-label="Rating style" data-ob-opts="scale">
+          <button type="button" class="ob-opt glow" data-glow role="radio" aria-checked="false" data-value="numbers">
+            <span class="ob-opt__title">Numbers</span>
+            <span class="ob-opt__note">1 to 10</span>
+            <span class="ob-opt__demo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>7</b><i></i><i></i></span>
+          </button>
+          <button type="button" class="ob-opt glow" data-glow role="radio" aria-checked="false" data-value="words">
+            <span class="ob-opt__title">Words</span>
+            <span class="ob-opt__note">Rough → Great</span>
+            <span class="ob-opt__demo ob-opt__demo--word" aria-hidden="true"><em>Rough</em><em>Okay</em><em class="is-on">Good</em><em>Great</em></span>
+          </button>
+        </div>
+
+        <div class="ob-try" data-ob-try hidden>
+          <p class="ob-try__ask">So — how's today?</p>
+          <div class="ob-try__numbers" data-ob-try-numbers hidden>
+            <div class="ob-scale">
+              <output class="ob-scale__out" data-ob-scale-out aria-live="polite"><b>7</b></output>
+              <input class="ob-scale__range" type="range" min="1" max="10" step="1" value="7"
+                     aria-label="How today is going, 1 to 10" data-ob-range>
+            </div>
+          </div>
+          <div class="ob-try__words" data-ob-try-words hidden>
+            <div class="ob-words" role="radiogroup" aria-label="How today is going" data-ob-words>
+              <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="3">Rough</button>
+              <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="5">Okay</button>
+              <button type="button" class="ob-word" role="radio" aria-checked="true" data-score="7">Good</button>
+              <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="9">Great</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="ob-react" data-ob-react hidden></p>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next disabled>Continue<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="slip">
+        <p class="ob-step__eyebrow">Question 3</p>
+        <h2 class="ob-step__q">Where do your<em> days slip?</em></h2>
+        <p class="ob-step__sub">Up to three.</p>
+
+        <div class="ob-opts ob-opts--chips" role="group" aria-label="Where days slip" data-ob-opts="slip" data-multi data-max="3">
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="alarms"><svg class="icon" aria-hidden="true"><use href="#i-alarm-clock"/></svg>The alarm wins</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="deadlines"><svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg>Deadlines sneak up</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="hours"><svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg>Hours vanish</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="unfinished"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg>I start, I don't finish</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="consistency"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg>A week, then nothing</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="blur"><svg class="icon" aria-hidden="true"><use href="#i-circle-dashed"/></svg>The week's a blur</button>
+        </div>
+
+        <p class="ob-react" data-ob-react hidden></p>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next disabled>Continue<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="btn btn--ghost btn--hero" data-ob-next data-ob-clear="slip">None</button>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="diary">
+        <p class="ob-step__eyebrow">Question 4</p>
+        <h2 class="ob-step__q">Do you write<em> your days down?</em></h2>
+
+        <div class="ob-opts ob-opts--list" role="radiogroup" aria-label="Journalling" data-ob-opts="diary">
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="keep">I keep a diary now</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="used_to">I used to</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="tried">Tried, didn't stick</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="curious">Never, but I've wanted to</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="no">Not my thing</button>
+        </div>
+
+        <p class="ob-react" data-ob-react hidden></p>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next disabled>Continue<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="streak">
+        <p class="ob-step__eyebrow">Question 5</p>
+        <h2 class="ob-step__q">You miss a day.<em> Then what?</em></h2>
+
+        <div class="ob-opts ob-opts--list" role="radiogroup" aria-label="Missed days" data-ob-opts="streak">
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="protect">Show me the streak I broke</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="gentle">Nothing dramatic</button>
+          <button type="button" class="ob-opt ob-opt--row glow" data-glow role="radio" aria-checked="false" data-value="depends">Depends on the day</button>
+        </div>
+
+        <p class="ob-react" data-ob-react hidden></p>
+        <div class="ob-step__actions">
+          <button type="button" class="btn btn--primary btn--hero" data-ob-next disabled>Build it<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </section>
+
+      <section class="ob-step ob-step--final" data-step="preview" data-untracked>
+        <p class="ob-step__eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Your setup</p>
+        <h2 class="ob-step__q ob-step__q--hero" data-ob-preview-title>Here's yours.</h2>
+        <ul class="ob-sums" role="list" data-ob-summary></ul>
+        <div class="ob-step__actions">
+          <a class="btn btn--primary btn--hero" href="{% url 'signup' %}" data-ob-finish>Create your account<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+          <button type="button" class="btn btn--ghost btn--hero" data-ob-back>Change something</button>
+        </div>
+        <p class="ob-step__fine">Free while we're in beta. <a class="link" href="{% url 'login' %}">Log in</a> if you already have an account.</p>
+      </section>
+
+    </main>
+
+    {# ====================== the living product ====================== #}
+    <aside class="ob__orbit" data-orbit>
+      <p class="sr-only">A preview of Ecosystem: your timeline, habits, tasks, journal and year.</p>
+
+      <article class="ow ow--hours" data-w="hours" style="--x:1%;--y:5%;--z:1.15;--r:-2.4deg;--d:0s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <header class="ow__head"><span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-palette"/></svg>Today</span><span class="ow__meta mono" data-hours-count>24/24h</span></header>
+          <div class="ow-ribbon" data-ribbon role="group" aria-label="Paint your hours"></div>
+          <div class="ow-ribbon__axis mono" aria-hidden="true"><span>00</span><span>12</span><span>24</span></div>
+          <p class="ow__hint mono" data-hours-hint>Drag to paint</p>
+        </div></div>
+      </article>
+
+      <article class="ow ow--mood" data-w="scale" style="--x:66%;--y:1%;--z:1.5;--r:3deg;--d:-2.4s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-smile"/></svg>Mood</span>
+          <p class="ow-mood__value" data-mood-value><b>7</b><small>/10</small></p>
+          <span class="ow-meter"><i data-mood-meter style="--w:70%"></i></span>
+        </div></div>
+      </article>
+
+      <article class="ow ow--habits" data-w="consistency" style="--x:34%;--y:47%;--z:0.8;--r:-1.8deg;--d:-4.8s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <header class="ow__head"><span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-flame"/></svg>Habits</span><span class="ow__meta mono"><b data-habit-streak>9</b> day streak</span></header>
+          <div class="ow-habits" data-habits></div>
+        </div></div>
+      </article>
+
+      <article class="ow ow--tasks" data-w="deadlines unfinished" style="--x:0%;--y:37%;--z:1.05;--r:1.8deg;--d:-1.2s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-list-checks"/></svg>Tasks</span>
+          <ul class="ow-tasks" role="list" data-tasks>
+            <li><button type="button" class="ow-tick" aria-label="Complete: Renew passport"></button><span>Renew passport</span><em class="ow-chip ow-chip--red">Overdue</em></li>
+            <li><button type="button" class="ow-tick" aria-label="Complete: Prep slides"></button><span>Prep slides</span><em class="ow-chip">Today</em></li>
+            <li><button type="button" class="ow-tick" aria-label="Complete: Call the bank"></button><span>Call the bank</span><em class="ow-chip">Fri</em></li>
+          </ul>
+        </div></div>
+      </article>
+
+      <article class="ow ow--journal" data-w="diary blur" style="--x:2%;--y:70%;--z:1.35;--r:-2.2deg;--d:-3.6s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pen-line"/></svg>Sunday</span>
+          <p class="ow-journal" data-journal></p>
+        </div></div>
+      </article>
+
+      <article class="ow ow--sleep" data-w="alarms" style="--x:66%;--y:56%;--z:0.7;--r:2.2deg;--d:-6s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-moon"/></svg>Sleep</span>
+          <p class="ow-sleep__total">7h 35m</p>
+          <div class="ow-sleep__track" aria-hidden="true"><i style="--from:18%;--to:64%"></i></div>
+          <p class="ow__meta mono">23:40 → 07:15</p>
+        </div></div>
+      </article>
+
+      <article class="ow ow--year" data-w="blur" style="--x:33%;--y:22%;--z:0.55;--r:1.2deg;--d:-5.4s">
+        <div class="ow__float"><div class="ow__card glow" data-glow>
+          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-layout-grid"/></svg>Your year</span>
+          <div class="ow-year" data-year aria-hidden="true"></div>
+        </div></div>
+      </article>
+
+      {# Marketing figures — placeholders, swap for real analytics before launch. #}
+      <article class="ow ow--stat" data-w="stat" style="--x:64%;--y:24%;--z:1.65;--r:-3.4deg;--d:-0.8s">
+        <div class="ow__float"><div class="ow__card ow__card--stat glow" data-glow>
+          <b class="num" data-count="1.2" data-suffix="M">1.2M</b>
+          <span>hours logged<br>by people like you</span>
+        </div></div>
+      </article>
+
+      <article class="ow ow--stat ow--stat2" data-w="stat" style="--x:37%;--y:76%;--z:1.5;--r:2.8deg;--d:-4.2s">
+        <div class="ow__float"><div class="ow__card ow__card--stat glow" data-glow>
+          <b class="num" data-count="94" data-suffix="%">94%</b>
+          <span>come back<br>the next day</span>
+        </div></div>
+      </article>
+    </aside>
+
+  </div>
+
+  <footer class="ob__foot">
+    <button type="button" class="ob__back" data-ob-back hidden><svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-left"/></svg>Back</button>
+    <p class="ob__foot-hint mono" aria-hidden="true"><kbd>Enter</kbd> to continue</p>
+  </footer>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'landing/js/effects.js' %}" defer></script>
+<script src="{% static 'landing/js/widgets.js' %}" defer></script>
+<script src="{% static 'landing/js/onboarding.js' %}" defer></script>
 {% endblock %}

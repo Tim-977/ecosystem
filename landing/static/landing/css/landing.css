@@ -568,8 +568,4 @@ button.hd:hover { transform: scale(1.18); }
   .drift__track { transform: none !important; }
 }
 
-/* ==========================================================================
-   Onboarding placeholder
-   ========================================================================== */
-.page--onboarding { max-width: none; min-height: 100vh; padding: 0 var(--gutter); display: grid; place-items: center; }
-.onboarding-stub { display: grid; justify-items: center; gap: 18px; }
+/* The onboarding flow has its own stylesheet — see onboarding.css. */

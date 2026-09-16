@@ -40,6 +40,45 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+def collect_onboarding(request):
+    """Read pre-signup onboarding answers before login() cycles the session.
+
+    Prefers the session copy the onboarding flow wrote; falls back to the
+    hidden field the signup page fills from the visitor's own browser, for
+    people whose session was dropped between the two pages.
+    """
+    from landing.views import SESSION_KEY, clean_answers
+
+    answers = request.session.get(SESSION_KEY) or {}
+    if not answers:
+        try:
+            answers = clean_answers(json.loads(request.POST.get('onboarding') or '{}'))
+        except (ValueError, TypeError):
+            answers = {}
+    return {'answers': answers, 'session_key': request.session.session_key or ''}
+
+
+def attach_onboarding(user, data):
+    """Link onboarding answers to the new account. Nothing reads them yet."""
+    from landing.models import OnboardingResponse
+
+    answers = data.get('answers') or {}
+    if not answers:
+        return
+    try:
+        OnboardingResponse.objects.filter(session_key=data.get('session_key') or '', user=None).delete()
+        OnboardingResponse.objects.update_or_create(
+            user=user,
+            defaults={
+                'answers': answers,
+                'session_key': data.get('session_key') or '',
+                'completed': bool(answers.get('completed')),
+            },
+        )
+    except (ProgrammingError, OperationalError):
+        pass
+
+
 @require_GET
 def logout_view(request):
     logout(request)
@@ -154,7 +193,9 @@ def signup_page(request):
                 SignupAttempt.objects.create(ip_address=ip)
             except (ProgrammingError, OperationalError):
                 pass
+            onboarding = collect_onboarding(request)
             login(request, user)
+            attach_onboarding(user, onboarding)
             return redirect('welcome')
 
     return render(

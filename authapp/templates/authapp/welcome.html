@@ -1,18 +1,19 @@
 {% extends "mainpage/base.html" %}
 {% load static %}
 {% block title %}Welcome{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'authapp/css/settings.css' %}">
+{# the account now holds the onboarding answers, so the browser copy can go #}
+<script>try{localStorage.removeItem('eco-onboarding')}catch(e){}</script>{% endblock %}
 {% block content %}
-{% now "Y" as y %}{% now "n" as m %}
+{# The three-step guide used to live here. It sent people down one branch and
+   lost the other two, so it's gone until there's a guide worth keeping. #}
 <div class="welcome reveal">
   <svg class="brand__mark welcome__mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="mark-ring" cx="12" cy="12" r="7.25"/><circle class="mark-seed" cx="17.1" cy="6.9" r="2.4"/></svg>
   <h1 class="welcome__title">You’re in, {{ user.username }}.</h1>
-  <p class="welcome__sub">Three small steps set up your month. You can do them in any order, or skip straight to today.</p>
-  <div class="welcome-steps">
-    <a class="welcome-step" href="/habits/{{ y }}/{{ m }}/" data-today-href="/habits/{yyyy}/{m}/"><span class="welcome-step__num">1</span><span><b>Pick this month’s habits</b><small>Up to ten, plus a goal for the month</small></span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-    <a class="welcome-step" href="/activities/{{ y }}/{{ m }}/" data-today-href="/activities/{yyyy}/{m}/"><span class="welcome-step__num">2</span><span><b>Create your activities</b><small>Sleep, work, study… the colors of your timeline</small></span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-    <a class="welcome-step" href="#" data-today-href="/day/{yyyy}/{m}/{d}/"><span class="welcome-step__num">3</span><span><b>Log today</b><small>Mood, sleep, hours and a thought</small></span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+  <p class="welcome__sub">Everything starts with one day. Log today, and the months and years build themselves from there.</p>
+  <div class="welcome__actions">
+    <a class="btn btn--primary btn--lg" href="#" data-today-href="/day/{yyyy}/{m}/{d}/">Log today<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+    <a class="btn btn--ghost btn--lg" href="{% url 'main_page' %}">Go to overview</a>
   </div>
-  <a class="btn btn--ghost" href="{% url 'main_page' %}" style="margin-top:28px">Go to overview<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
 </div>
 {% endblock %}
