@@ -15,6 +15,7 @@
   <a class="sr-only" href="#main">Skip to content</a>
   {% include "mainpage/partials/icons.html" %}
   <div hidden>{% csrf_token %}</div>
+  <div class="cursor-glow" data-cursor-glow aria-hidden="true"></div>
 
   {% block nav %}{% include "mainpage/partials/nav.html" %}{% endblock %}
 

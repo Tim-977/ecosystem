@@ -42,6 +42,18 @@
     toggle() { this.set(this.get() === 'dark' ? 'light' : 'dark'); },
   };
 
+  /* ---------------- cursor glow preference (mainpage views only) ---------------- */
+  Eco.cursorGlow = {
+    get() {
+      try { return localStorage.getItem('eco-cursor-glow') !== 'off'; } catch (e) { return true; } // on by default
+    },
+    set(on) {
+      try { localStorage.setItem('eco-cursor-glow', on ? 'on' : 'off'); } catch (e) { /* storage unavailable */ }
+      document.dispatchEvent(new CustomEvent('eco:cursor-glow', { detail: on }));
+    },
+    toggle() { this.set(!this.get()); },
+  };
+
   /* ---------------- sliding indicators (nav + segmented) ---------------- */
   function placeIndicator(container, indicator, target, animate) {
     if (!target) { indicator.style.opacity = '0'; return; }
@@ -73,6 +85,29 @@
     try { sessionStorage.setItem('eco-nav', JSON.stringify(active ? active.dataset.nav : null)); } catch (e) { /* ignore */ }
     window.addEventListener('resize', () => placeIndicator(links, indicator, $('[aria-current="page"]', links), false));
     document.fonts && document.fonts.ready.then(() => placeIndicator(links, indicator, $('[aria-current="page"]', links), false));
+  }
+
+  /* ---------------- cursor glow: a soft light that follows the pointer ---------------- */
+  function initCursorGlow() {
+    const el = $('.cursor-glow');
+    if (!el || !document.body.classList.contains('is-mainpage')) return; // mainpage views only
+    if (!Eco.cursorGlow.get()) return;
+    if (reduceMotion.matches || window.matchMedia('(hover: none)').matches) return;
+
+    let raf = 0;
+    let x = 0;
+    let y = 0;
+    const paint = () => {
+      raf = 0;
+      el.style.setProperty('--sx', `${x}px`);
+      el.style.setProperty('--sy', `${y}px`);
+    };
+    window.addEventListener('pointermove', (e) => {
+      el.classList.add('is-live');
+      x = e.clientX;
+      y = e.clientY;
+      if (!raf) raf = requestAnimationFrame(paint);
+    }, { passive: true });
   }
 
   Eco.segmented = function (el) {
@@ -685,6 +720,7 @@
   /* ---------------- boot ---------------- */
   document.addEventListener('DOMContentLoaded', () => {
     initNav();
+    initCursorGlow();
     initTooltips();
     initMenus();
     initShortcuts();

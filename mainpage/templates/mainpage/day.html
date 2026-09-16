@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}{{ date|date:"j F Y" }}{% endblock %}
+{% block body_class %}is-mainpage{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">
 <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">

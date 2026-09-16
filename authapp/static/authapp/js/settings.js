@@ -61,6 +61,13 @@
     document.addEventListener('eco:theme', renderTheme);
     renderTheme();
 
+    // cursor glow
+    const glowToggle = $('#cursorGlowToggle');
+    if (glowToggle) {
+      glowToggle.checked = Eco.cursorGlow.get();
+      glowToggle.addEventListener('change', () => Eco.cursorGlow.set(glowToggle.checked));
+    }
+
     // scroll-spy
     const links = $$('.settings-nav__link');
     const io = new IntersectionObserver((entries) => entries.forEach((en) => {
