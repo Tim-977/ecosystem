@@ -1,51 +1,97 @@
 {% extends "authapp/auth_base.html" %}
-{% block title %}Log in{% endblock %}
-{% block page_class %}page--auth{% endblock %}
+{% load static %}
+{% block title %}Sign in{% endblock %}
+{% block head %}
+  {# same room as the onboarding and the signup page #}
+  <link rel="stylesheet" href="{% static 'landing/css/scene.css' %}">
+  <link rel="stylesheet" href="{% static 'authapp/css/auth.css' %}">
+  <script>document.documentElement.classList.add('fx')</script>
+{% endblock %}
+{% block body_class %}scene-body{% endblock %}
+{% block page_class %}page--scene{% endblock %}
+
 {% block content %}
-<div class="auth-page">
-  <aside class="auth-aside">
-    <a class="brand" href="{% url 'login' %}">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
-    <div>
-      <h1 class="auth-aside__title">Your days, <span>in one calm place.</span></h1>
-      <div class="auth-pillars">
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-clock"/></svg><b>Day</b><p>Fill in your 24 hours, rate mood and productivity, log sleep.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-book-open"/></svg><b>Journal</b><p>A short thought and a longer reflection for every day.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-repeat"/></svg><b>Routines</b><p>Monthly goals and up to ten habits to check off.</p></div>
-        <div class="auth-pillar"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-chart-column"/></svg><b>Insights</b><p>See your months and years take shape.</p></div>
-      </div>
+<div class="scene" data-scene>
+  <div class="scene__aura" aria-hidden="true"></div>
+  <div class="scene__veil" aria-hidden="true"></div>
+  <div class="scene__spot" data-spot aria-hidden="true"></div>
+
+  {% include "landing/partials/scene_field.html" %}
+
+  <header class="scene__top">
+    <div class="scene__top-l">
+      <a class="scene-link scene-link--back" href="{% url 'landing' %}">
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Home
+      </a>
     </div>
-    <p class="auth-aside__foot">© 2025 Ecosystem · Beta</p>
-  </aside>
-  <div class="auth-main">
-    <div class="auth-main__top"><button type="button" class="nav__icon theme-toggle" data-theme-toggle data-tip="Toggle theme" data-tip-placement="bottom" aria-label="Toggle light or dark theme"><svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg></button></div>
-    <div class="auth-card reveal">
-      <h2 class="auth-card__title">Welcome back</h2>
-      <p class="auth-card__sub">Log in to pick up where you left off.</p>
-      <form method="POST" novalidate data-auth-form>
+    <a class="brand" href="{% url 'landing' %}" aria-label="Ecosystem — home">
+      {% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span>
+    </a>
+    <div class="scene__top-r">
+      <a class="scene-link scene-link--fwd" href="{% url 'onboarding' %}">Create account<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      <button type="button" class="nav__icon theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
+        <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="scene__rail" aria-hidden="true"></div>
+
+  <main class="scene__stage">
+    <div class="auth auth--narrow scene__center">
+      <p class="auth__eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-sunrise"/></svg>Welcome back</p>
+      <h1 class="auth__title">Your day is<em> where you left it.</em></h1>
+
+      <form class="auth__form" method="POST" novalidate data-auth-form>
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
         {% if error_message %}<div class="alert alert--error" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><div>{{ error_message }}</div></div>{% endif %}
         {% if requires_captcha %}<div class="alert alert--warning"><svg class="icon" aria-hidden="true"><use href="#i-shield-check"/></svg><div>For your security, further attempts from this network are paused for a while.</div></div>{% endif %}
-        <div class="field">
-          <label class="field__label" for="username">Username</label>
-          <div class="input-group">
-            <svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>
-            <input class="input input--lg" type="text" id="username" name="username" required autocomplete="username" autocapitalize="off" spellcheck="false" autofocus value="{{ request.POST.username|default:'' }}">
+
+        <div class="auth__grid auth__grid--one">
+          <div class="field">
+            <label class="field__label" for="username">Username</label>
+            <div class="input-group">
+              <svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>
+              <input class="input input--xl" type="text" id="username" name="username" required autocomplete="username" autocapitalize="off" spellcheck="false" autofocus value="{{ request.POST.username|default:'' }}">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="password">Password</label>
+            <div class="input-group">
+              <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+              <input class="input input--xl" type="password" id="password" name="password" required autocomplete="current-password">
+              <span class="input-group__end"><button type="button" class="icon-btn pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label class="field__label" for="password">Password</label>
-          <div class="input-group">
-            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
-            <input class="input input--lg" type="password" id="password" name="password" required autocomplete="current-password" >
-            <span class="input-group__end"><button type="button" class="icon-btn icon-btn--sm pw-toggle" data-pw-toggle aria-label="Show password"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
-          </div>
-        </div>
+
         <p class="field__error" data-auth-error hidden></p>
-        <button type="submit" class="btn btn--primary btn--lg btn--block"><span class="spinner"></span>Log in</button>
+
+        <button type="submit" class="btn btn--primary btn--hero btn--block auth__submit"><span class="spinner"></span>Sign in<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        <p class="auth__alt">New to Ecosystem? <a class="link" href="{% url 'onboarding' %}">Start here</a></p>
       </form>
-      <p class="auth-card__alt">New to Ecosystem? <a class="link" href="{% url 'signup' %}">Create an account</a></p>
+
+      <p class="auth__waiting">
+        <span><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>Today, unlogged</span>
+        <span><svg class="icon" aria-hidden="true"><use href="#i-flame"/></svg>Streaks counting</span>
+        <span><svg class="icon" aria-hidden="true"><use href="#i-book-open"/></svg>The month so far</span>
+      </p>
     </div>
-  </div>
+  </main>
+
+  <footer class="scene__foot">
+    <p class="scene__foot-l">Made for the way your days actually go.</p>
+    <p class="mono">© {% now "Y" %} Ecosystem · Beta</p>
+  </footer>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'landing/js/effects.js' %}" defer></script>
+  <script src="{% static 'landing/js/widgets.js' %}" defer></script>
+  <script src="{% static 'authapp/js/auth-scene.js' %}" defer></script>
 {% endblock %}

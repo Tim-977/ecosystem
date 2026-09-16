@@ -344,9 +344,31 @@
     const bed = $('#bed_time'), wake = $('#wake_up_time'), alarm = $('#first_alarm_time');
     const total = $('#sleepTotal'), totalLabel = $('#sleepTotalLabel');
     const bar = $('#nightBar'), tick = $('#nightAlarm'), note = $('#sleepAlarmNote');
+    const track = $('#nightTrack'), axis = $('#nightAxis'), hint = $('#nightHint');
+    const pin = $('#nightPin'), guide = $('#nightGuide');
+
+    // the night runs 19:00 → 14:00 the next day, one bar per hour
+    const START = 19 * 60, HOURS = 19, SPAN = HOURS * 60, SNAP = 15;
+    const HINT = hint.textContent;
+    let pending = null; // bed time from the first tap, until the second lands
+    const carried = () => alarm.closest('[data-timefield]').hasAttribute('data-default');
+
     const mins = (v) => { const m = /^(\d{2}):(\d{2})$/.exec(v || ''); return m ? +m[1] * 60 + +m[2] : null; };
-    const pos = (m) => { const rel = (m - 18 * 60 + 1440) % 1440; return Math.min(100, (rel / (18 * 60)) * 100); };
+    const hhmm = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+    const rel = (m) => (m - START + 1440) % 1440; // minutes into the night
+    // times in the 14:00–19:00 gap pin to whichever end of the night they're nearer
+    const pos = (m) => { const r = rel(m); return r <= SPAN ? (r / SPAN) * 100 : r < SPAN + (1440 - SPAN) / 2 ? 100 : 0; };
     const dur = (n) => `${Math.floor(n / 60)}h${n % 60 ? ` ${pad(n % 60)}m` : ''}`;
+
+    $('#night').style.setProperty('--hours', HOURS);
+    $('.night__hours', track).innerHTML = Array.from({ length: HOURS - 1 }, (_, i) => `<i style="left:${((i + 1) / HOURS) * 100}%"></i>`).join('');
+    axis.innerHTML = Array.from({ length: HOURS + 1 }, (_, i) => {
+      const h = (START / 60 + i) % 24;
+      return `<span style="--i:${i}"${h === 0 ? ' class="is-midnight"' : ''}>${pad(h)}</span>`;
+    }).join('');
+    // every label fits on a roomy panel; on a tight one keep every other hour
+    if (window.ResizeObserver) new ResizeObserver(() => axis.classList.toggle('is-tight', axis.clientWidth < HOURS * 16)).observe(axis);
+
     const render = () => {
       const b = mins(bed.value), w = mins(wake.value), a = mins(alarm.value);
       if (b != null && w != null) {
@@ -354,15 +376,12 @@
         total.textContent = dur(d);
         total.classList.remove('is-empty');
         totalLabel.textContent = 'asleep';
-        const l = pos(b), r = pos(w);
-        bar.style.opacity = '1';
-        bar.style.left = `${Math.min(l, r)}%`;
-        bar.style.width = `${Math.max(1.5, Math.abs(r - l))}%`;
+        if (pending == null) paintBar(b, w);
       } else {
         total.textContent = '–';
         total.classList.add('is-empty');
         totalLabel.textContent = b == null && w == null ? 'add bed and wake times' : b == null ? 'add a bed time' : 'add a wake time';
-        bar.style.opacity = '0';
+        if (pending == null) bar.style.opacity = '0';
       }
       if (a != null) {
         tick.style.opacity = '1';
@@ -370,9 +389,89 @@
         if (w != null) {
           let late = w - a; if (late < -720) late += 1440; if (late > 720) late -= 1440;
           note.textContent = late > 0 ? `Up ${dur(late).replace('0h ', '')} after first alarm` : late === 0 ? 'Up with the first alarm' : 'Up before the alarm';
-        } else note.textContent = `First alarm ${alarm.value}`;
+        } else note.textContent = `${carried() ? 'Usual alarm' : 'First alarm'} ${alarm.value}`;
       } else { tick.style.opacity = '0'; note.textContent = ''; }
     };
+
+    function paintBar(from, to) {
+      let l = pos(from), r = pos(to);
+      if (r < l) [l, r] = [r, l];
+      bar.style.opacity = '1';
+      bar.style.left = `${l}%`;
+      bar.style.width = `${Math.max(0.8, r - l)}%`;
+    }
+
+    /* ---------- two taps on the track: bed, then wake ---------- */
+    const at = (clientX) => {
+      const box = track.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (clientX - box.left) / box.width));
+      return (START + Math.round((x * SPAN) / SNAP) * SNAP) % 1440;
+    };
+    const place = (el, m) => { el.style.left = `${pos(m)}%`; };
+    const tf = (input) => input.closest('[data-timefield]')._tf;
+    const write = (input, m) => {
+      const v = hhmm(m);
+      const field = tf(input);
+      if (field) field.set(v); else input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true })); // autosave + render
+    };
+    const say = (text) => { hint.textContent = text; };
+
+    const cancel = () => {
+      if (pending == null) return;
+      pending = null;
+      pin.hidden = true;
+      track.classList.remove('is-pending');
+      say(HINT);
+      render();
+    };
+
+    track.addEventListener('pointermove', (e) => {
+      const m = at(e.clientX);
+      if (e.pointerType === 'mouse') { // a finger has nothing to hover with
+        guide.hidden = false;
+        place(guide, m);
+        guide.firstElementChild.textContent = hhmm(m);
+      }
+      if (pending != null) paintBar(pending, m);
+    });
+    track.addEventListener('pointerleave', () => {
+      guide.hidden = true;
+      if (pending != null) paintBar(pending, pending);
+    });
+
+    track.addEventListener('click', (e) => {
+      const m = at(e.clientX);
+      if (pending == null) {
+        pending = m;
+        pin.hidden = false;
+        place(pin, m);
+        paintBar(m, m);
+        track.classList.add('is-pending');
+        say(`Bed ${hhmm(m)} — now tap when you woke up.`);
+        return;
+      }
+      if (m === pending) return; // a night needs some length
+      // tapped wake before bed: they meant the other way round
+      const [from, to] = rel(m) < rel(pending) ? [m, pending] : [pending, m];
+      pending = null;
+      pin.hidden = true;
+      track.classList.remove('is-pending');
+      write(bed, from);
+      write(wake, to);
+      say(`Slept ${hhmm(from)} → ${hhmm(to)}. Tap twice to change it.`);
+    });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cancel(); });
+    document.addEventListener('pointerdown', (e) => { if (!track.contains(e.target)) cancel(); });
+
+    // a carried-over alarm stops being "usual" the moment it's edited
+    alarm.addEventListener('input', () => {
+      const field = alarm.closest('[data-timefield]');
+      field.removeAttribute('data-default');
+      field.removeAttribute('title');
+    }, { once: true });
+
     [bed, wake, alarm].forEach((i) => i.addEventListener('input', render));
     render();
   }

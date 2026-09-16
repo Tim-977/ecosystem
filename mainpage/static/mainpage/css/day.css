@@ -159,10 +159,44 @@
 .sleep__fields .field + .field { margin-top: 0; }
 .sleep__fields .timefield { width: 100%; padding: 0 2px 0 8px; }
 .sleep__fields .timefield__seg { font-size: 14px; }
-.night__track { position: relative; height: 10px; border-radius: 99px; background: var(--bg-3); }
-.night__bar { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 99px; background: linear-gradient(90deg, color-mix(in srgb, var(--sky) 55%, transparent), var(--sky)); transition: left var(--t-3) var(--ease-out), width var(--t-3) var(--ease-out), opacity var(--t-2); }
-.night__alarm { position: absolute; top: -4px; width: 2px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--orange); opacity: 0; transition: left var(--t-3) var(--ease-out), opacity var(--t-2); }
-.night__axis { display: flex; justify-content: space-between; margin-top: 7px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-4); }
+/* the night, 19:00 → 14:00: one bar per hour, tap twice for bed and wake */
+.night { display: grid; gap: 7px; }
+.night__track {
+  position: relative; height: 34px; border-radius: 7px;
+  background: var(--bg-3); cursor: pointer;
+  touch-action: manipulation; -webkit-user-select: none; user-select: none;
+  transition: box-shadow var(--t-2);
+}
+.night__track:hover { box-shadow: inset 0 0 0 1px var(--line-3); }
+.night__bar {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 7px; opacity: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sky) 50%, var(--bg-3)), var(--sky));
+  transition: left var(--t-3) var(--ease-out), width var(--t-3) var(--ease-out), opacity var(--t-2);
+}
+/* while the second tap is pending the bar follows the cursor, so no easing */
+.night__track.is-pending .night__bar { transition: opacity var(--t-2); background: color-mix(in srgb, var(--sky) 38%, var(--bg-3)); }
+/* the panel colour cuts a thin gap at every hour */
+.night__hours { position: absolute; inset: 0; pointer-events: none; }
+.night__hours i { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--bg-1); }
+.night__pin, .night__guide, .night__alarm { position: absolute; pointer-events: none; }
+.night__pin { top: -5px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--fg-1); }
+.night__pin::before { content: ''; position: absolute; top: -3px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--fg-1); }
+.night__guide { top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--fg-1) 55%, transparent); }
+.night__guide span {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 2px 6px; border-radius: 6px; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--inverse-fg); background: var(--inverse-bg);
+}
+.night__alarm { top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--orange); opacity: 0; transition: left var(--t-3) var(--ease-out), opacity var(--t-2); }
+.night__axis { position: relative; height: 13px; font-family: var(--font-mono); font-size: 9.5px; line-height: 13px; color: var(--fg-4); }
+.night__axis span { position: absolute; top: 0; left: calc(var(--i) * 100% / var(--hours)); transform: translateX(-50%); }
+.night__axis span.is-midnight { color: var(--fg-2); }
+/* on a narrow panel: every other hour, always keeping the last */
+.night__axis.is-tight span:nth-child(even):not(:last-child),
+.night__axis.is-tight span:nth-last-child(2) { visibility: hidden; }
+.night__hint { font-size: 12px; line-height: 1.4; color: var(--fg-4); }
+/* an alarm carried over from the last night that had one, until it's touched */
+.timefield[data-default] .timefield__seg { color: var(--fg-3); }
 
 .habit-progress { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
 .habit-progress__count { font-size: 18px; font-weight: 560; letter-spacing: -0.02em; }

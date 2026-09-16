@@ -26,6 +26,28 @@
   Eco.moodWords = WORDS;
   Eco.moodTone = tone;
 
+  /* Count a figure up to the number already in the markup, so a stalled rAF
+     leaves the real figure on screen rather than a zero. Runs once per element. */
+  Eco.countUp = function (els) {
+    Array.from(els).forEach((el, i) => {
+      if (reduced() || el.dataset.counted) return;
+      el.dataset.counted = '1';
+      const target = +el.dataset.count;
+      const suffix = el.dataset.suffix || '';
+      const dp = (el.dataset.count.split('.')[1] || '').length;
+      const dur = 1400, delay = 420 + i * 180;
+      let t0 = 0;
+      const tick = (now) => {
+        if (!t0) t0 = now;
+        const p = Math.min(1, (now - t0) / dur);
+        el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dp) + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      setTimeout(() => requestAnimationFrame(tick), delay);
+      setTimeout(() => { el.textContent = target.toFixed(dp) + suffix; }, delay + dur + 500);
+    });
+  };
+
   Eco.widgets = function (orbit, { spot = null, live = null } = {}) {
     if (!orbit) return { focus() {}, mood() {} };
     const widgets = $$('.ow', orbit);
@@ -168,24 +190,7 @@
     }
 
     /* ---------- the marketing figures ---------- */
-    $$('[data-count]', orbit).forEach((el, i) => {
-      const target = +el.dataset.count;
-      const suffix = el.dataset.suffix || '';
-      const dp = (el.dataset.count.split('.')[1] || '').length;
-      if (reduced()) return;
-      // the real figure is already in the markup; the first frame winds it back
-      // to zero, so a stalled rAF leaves the number right rather than at 0
-      const dur = 1400, delay = 420 + i * 180;
-      let t0 = 0;
-      const tick = (now) => {
-        if (!t0) t0 = now;
-        const p = Math.min(1, (now - t0) / dur);
-        el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dp) + suffix;
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      setTimeout(() => requestAnimationFrame(tick), delay);
-      setTimeout(() => { el.textContent = target.toFixed(dp) + suffix; }, delay + dur + 500);
-    });
+    Eco.countUp($$('[data-count]', orbit));
 
     /* ---------- mood: mirrors whatever the visitor picked ---------- */
     const moodValue = $('[data-mood-value]', orbit);

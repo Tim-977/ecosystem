@@ -121,9 +121,17 @@
           <span class="sleep__hours" id="sleepTotal">–</span>
           <span class="muted" id="sleepTotalLabel">asleep</span>
         </div>
-        <div class="night" id="night" aria-hidden="true">
-          <div class="night__track"><div class="night__bar" id="nightBar"></div><div class="night__alarm" id="nightAlarm"></div></div>
-          <div class="night__axis"><span>18</span><span>21</span><span>00</span><span>03</span><span>06</span><span>09</span><span>12</span></div>
+        {# the typed fields below stay the accessible way in; the track is a shortcut #}
+        <div class="night" id="night">
+          <div class="night__track" id="nightTrack" aria-hidden="true">
+            <div class="night__bar" id="nightBar"></div>
+            <div class="night__hours"></div>
+            <div class="night__pin" id="nightPin" hidden></div>
+            <div class="night__guide" id="nightGuide" hidden><span></span></div>
+            <div class="night__alarm" id="nightAlarm"></div>
+          </div>
+          <div class="night__axis" id="nightAxis" aria-hidden="true"></div>
+          <p class="night__hint" id="nightHint">Tap the bar twice: bedtime, then wake-up.</p>
         </div>
         <div class="sleep__fields">
           <div class="field">
@@ -148,7 +156,7 @@
           </div>
           <div class="field">
             <label class="field__label" for="alarmH">First alarm</label>
-            <div class="timefield" data-timefield>
+            <div class="timefield" data-timefield{% if alarm_is_default %} data-default title="Your last alarm — change it if today was different"{% endif %}>
               <input class="timefield__seg" id="alarmH" inputmode="numeric" aria-label="First alarm hours" placeholder="--" autocomplete="off">
               <span class="timefield__colon">:</span>
               <input class="timefield__seg" inputmode="numeric" aria-label="First alarm minutes" placeholder="--" autocomplete="off">

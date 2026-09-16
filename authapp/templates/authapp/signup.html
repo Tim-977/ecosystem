@@ -2,37 +2,49 @@
 {% load static %}
 {% block title %}Create account{% endblock %}
 {% block head %}
-  {{ block.super }}
-  <link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">
-  {# the widget cluster and hero button live in the onboarding sheet — same scene #}
-  <link rel="stylesheet" href="{% static 'landing/css/onboarding.css' %}">
-  <link rel="stylesheet" href="{% static 'authapp/css/signup.css' %}">
+  {# the scene — shell, ambient light and the floating widgets — is shared with the onboarding flow #}
+  <link rel="stylesheet" href="{% static 'landing/css/scene.css' %}">
+  <link rel="stylesheet" href="{% static 'authapp/css/auth.css' %}">
   <script>document.documentElement.classList.add('fx')</script>
 {% endblock %}
-{% block body_class %}signup{% endblock %}
-{% block page_class %}page--auth{% endblock %}
-{% block content %}
-<div class="su" data-su>
-  <div class="su__aura" aria-hidden="true"></div>
-  <div class="su__spot" data-spot aria-hidden="true"></div>
+{% block body_class %}scene-body{% endblock %}
+{% block page_class %}page--scene{% endblock %}
 
-  <header class="su__top">
+{% block content %}
+<div class="scene" data-scene data-su>
+  <div class="scene__aura" aria-hidden="true"></div>
+  <div class="scene__veil" aria-hidden="true"></div>
+  <div class="scene__spot" data-spot aria-hidden="true"></div>
+
+  {% include "landing/partials/scene_field.html" %}
+
+  <header class="scene__top">
+    <div class="scene__top-l">
+      <a class="scene-link scene-link--back" href="{% url 'onboarding' %}">
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Back
+      </a>
+    </div>
     <a class="brand" href="{% url 'landing' %}" aria-label="Ecosystem — home">
       {% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span>
     </a>
-    <button type="button" class="nav__icon theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
-      <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
-      <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
-    </button>
+    <div class="scene__top-r">
+      <a class="scene-link scene-link--fwd" href="{% url 'login' %}">Sign in<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      <button type="button" class="nav__icon theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
+        <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+    </div>
   </header>
 
-  <div class="su__body">
-    <main class="su__main">
-      <p class="su__from" data-su-from hidden></p>
-      <h1 class="su__title" data-su-title>Create your<em> account.</em></h1>
-      <p class="su__sub" data-su-sub>Last step. Then today is the first day you log.</p>
+  <div class="scene__rail" aria-hidden="true"></div>
 
-      <form class="su__form" method="POST" novalidate data-auth-form data-signup>
+  <main class="scene__stage">
+    <div class="auth scene__center" data-su-col>
+      <p class="auth__from" data-su-from hidden></p>
+      <h1 class="auth__title" data-su-title>Create your<em> account.</em></h1>
+      <p class="auth__sub" data-su-sub>Last step. Then today is the first day you log.</p>
+
+      <form class="auth__form" method="POST" novalidate data-auth-form data-signup>
         {% csrf_token %}
         <input type="hidden" name="onboarding" data-su-onboarding value="">
 
@@ -43,7 +55,7 @@
           <div class="alert alert--warning"><svg class="icon" aria-hidden="true"><use href="#i-shield-check"/></svg><div>For your security, further attempts from this network are paused for a while.</div></div>
         {% endif %}
 
-        <div class="su__grid">
+        <div class="auth__grid">
           <div class="field">
             <label class="field__label" for="username">Username <span class="field__count" data-count-for="username" data-max="12"></span></label>
             <div class="input-group">
@@ -83,66 +95,23 @@
 
         <p class="field__error" data-auth-error hidden></p>
 
-        <div class="su__progress" aria-hidden="true"><i data-su-bar></i></div>
-        <button type="submit" class="btn btn--primary btn--hero btn--block su__submit"><span class="spinner"></span>Create account<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-        <p class="su__alt">Already have an account? <a class="link" href="{% url 'login' %}">Log in</a> · Free while we're in beta</p>
+        <div class="auth__progress" aria-hidden="true"><i data-su-bar></i></div>
+        <button type="submit" class="btn btn--primary btn--hero btn--block auth__submit"><span class="spinner"></span>Create account<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        <p class="auth__alt">Already have an account? <a class="link" href="{% url 'login' %}">Sign in</a> · Free while we're in beta</p>
       </form>
-    </main>
+    </div>
+  </main>
 
-    {# the same cluster as the onboarding, calmer, so the two screens read as one #}
-    <aside class="su__orbit" data-orbit aria-hidden="true">
-      <article class="ow ow--stat" style="--x:54%;--y:0%;--z:1.5;--r:-3deg;--d:-0.6s">
-        <div class="ow__float"><div class="ow__card ow__card--stat">
-          <b class="num" data-count="1.2" data-suffix="M">1.2M</b><span>hours logged<br>by people like you</span>
-        </div></div>
-      </article>
-      <article class="ow ow--hours" style="--x:4%;--y:34%;--z:1.1;--r:2deg;--d:-2.2s">
-        <div class="ow__float"><div class="ow__card">
-          <header class="ow__head"><span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-palette"/></svg>Today</span><span class="ow__meta mono">24/24h</span></header>
-          <div class="ow-ribbon" data-ribbon></div>
-          <div class="ow-ribbon__axis mono"><span>00</span><span>12</span><span>24</span></div>
-        </div></div>
-      </article>
-      <article class="ow ow--habits" style="--x:50%;--y:46%;--z:0.8;--r:1.6deg;--d:-4.4s">
-        <div class="ow__float"><div class="ow__card">
-          <header class="ow__head"><span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-flame"/></svg>Habits</span><span class="ow__meta mono"><b data-habit-streak>9</b> day streak</span></header>
-          <div class="ow-habits" data-habits></div>
-        </div></div>
-      </article>
-      <article class="ow ow--tasks" style="--x:0%;--y:4%;--z:0.95;--r:-1.8deg;--d:-1.6s">
-        <div class="ow__float"><div class="ow__card">
-          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-list-checks"/></svg>Tasks</span>
-          <ul class="ow-tasks" role="list" data-tasks>
-            <li><button type="button" class="ow-tick" aria-label="Complete: Renew passport"></button><span>Renew passport</span><em class="ow-chip ow-chip--red">Overdue</em></li>
-            <li><button type="button" class="ow-tick" aria-label="Complete: Prep slides"></button><span>Prep slides</span><em class="ow-chip">Today</em></li>
-          </ul>
-        </div></div>
-      </article>
-      <article class="ow ow--mood" style="--x:52%;--y:23%;--z:1.25;--r:2.4deg;--d:-2.8s">
-        <div class="ow__float"><div class="ow__card">
-          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-smile"/></svg>Mood</span>
-          <p class="ow-mood__value" data-mood-value><b>8</b><small>/10</small></p>
-          <span class="ow-meter"><i data-mood-meter style="--w:80%"></i></span>
-        </div></div>
-      </article>
-      <article class="ow ow--journal" style="--x:6%;--y:60%;--z:1.3;--r:-2deg;--d:-3.2s">
-        <div class="ow__float"><div class="ow__card">
-          <span class="ow__label"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pen-line"/></svg>Sunday</span>
-          <p class="ow-journal" data-journal>Walked home the long way. Worth it.</p>
-        </div></div>
-      </article>
-      <article class="ow ow--stat" style="--x:50%;--y:75%;--z:1.45;--r:2.6deg;--d:-5.2s">
-        <div class="ow__float"><div class="ow__card ow__card--stat">
-          <b class="num" data-count="94" data-suffix="%">94%</b><span>come back<br>the next day</span>
-        </div></div>
-      </article>
-    </aside>
-  </div>
+  <footer class="scene__foot">
+    <p class="scene__foot-l">Made for the way your days actually go.</p>
+    <p class="mono">Free while we're in beta</p>
+  </footer>
 </div>
 {% endblock %}
 
 {% block scripts %}
   {{ block.super }}
-    <script src="{% static 'landing/js/widgets.js' %}" defer></script>
+  <script src="{% static 'landing/js/effects.js' %}" defer></script>
+  <script src="{% static 'landing/js/widgets.js' %}" defer></script>
   <script src="{% static 'authapp/js/signup.js' %}" defer></script>
 {% endblock %}

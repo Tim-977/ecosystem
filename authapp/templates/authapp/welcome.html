@@ -5,15 +5,14 @@
 {# the account now holds the onboarding answers, so the browser copy can go #}
 <script>try{localStorage.removeItem('eco-onboarding')}catch(e){}</script>{% endblock %}
 {% block content %}
-{# The three-step guide used to live here. It sent people down one branch and
-   lost the other two, so it's gone until there's a guide worth keeping. #}
 <div class="welcome reveal">
   <svg class="brand__mark welcome__mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="mark-ring" cx="12" cy="12" r="7.25"/><circle class="mark-seed" cx="17.1" cy="6.9" r="2.4"/></svg>
-  <h1 class="welcome__title">You’re in, {{ user.username }}.</h1>
+  <h1 class="welcome__title">You’re in, {{ user.preferred_name|default:user.username }}.</h1>
   <p class="welcome__sub">Everything starts with one day. Log today, and the months and years build themselves from there.</p>
   <div class="welcome__actions">
-    <a class="btn btn--primary btn--lg" href="#" data-today-href="/day/{yyyy}/{m}/{d}/">Log today<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-    <a class="btn btn--ghost btn--lg" href="{% url 'main_page' %}">Go to overview</a>
+    <button type="button" class="btn btn--primary btn--lg" data-tour-start>Show me around<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+    <a class="btn btn--ghost btn--lg" href="#" data-today-href="/day/{yyyy}/{m}/{d}/">Skip — log today</a>
   </div>
+  <p class="welcome__fine">The tour takes about two minutes, and it's in Settings whenever you want it again.</p>
 </div>
 {% endblock %}

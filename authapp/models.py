@@ -37,6 +37,10 @@ class CustomUser(AbstractUser):
     b_day = models.DateField(null=True, blank=True)
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True, blank=True)
 
+    # the guided tour runs once, on the first visit to the overview, and can be
+    # replayed from Settings afterwards
+    has_seen_tour = models.BooleanField(default=False)
+
     # Make sure to call super().clean() plus any additional checks if needed
     def clean(self):
         super().clean()

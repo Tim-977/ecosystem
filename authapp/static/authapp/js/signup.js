@@ -14,6 +14,8 @@
 
     /* the cluster keeps floating — same module as the onboarding flow */
     const orb = Eco.widgets ? Eco.widgets($('[data-orbit]', page), { spot: $('[data-spot]', page), live: page }) : null;
+    const fx = Eco.fx || {};
+    if (fx.glow) fx.glow($$('[data-glow]', page), { radius: 340 });
 
     /* ---------- bring the onboarding answers with us ---------- */
     let answers = null;

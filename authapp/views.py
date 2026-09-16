@@ -6,10 +6,10 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 from .forms import GeneralSettingsForm, PersonalizationForm
@@ -278,6 +278,24 @@ def clear_logs_view(request):
 @login_required
 def welcome_page(request):
     return render(request, 'authapp/welcome.html')
+
+
+@login_required
+@require_POST
+def tour_state_view(request):
+    """Remember whether the guided tour still needs to run for this account.
+
+    Posting {"seen": false} is what the Replay button uses, so the tour can be
+    taken again from another device.
+    """
+    try:
+        seen = bool(json.loads(request.body or '{}').get('seen', True))
+    except (ValueError, TypeError):
+        seen = True
+
+    request.user.has_seen_tour = seen
+    request.user.save(update_fields=['has_seen_tour'])
+    return JsonResponse({'ok': True, 'seen': seen})
 
 
 @login_required
