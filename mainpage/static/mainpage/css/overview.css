@@ -30,6 +30,7 @@
 .today-stat__value { font-size: 30px; font-weight: 540; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
 .today-stat__value small { margin-left: 2px; font-size: 13px; font-weight: 450; letter-spacing: 0; color: var(--fg-3); }
 .today-stat__value.is-empty { color: var(--fg-4); }
+.today-stat__value.is-word { font-size: 22px; letter-spacing: -0.025em; white-space: nowrap; }
 a.today-stat__value.is-empty { font-size: 13px; letter-spacing: 0; color: var(--fg-3); }
 .today-ring { position: absolute; right: 0; bottom: 2px; }
 .today-quote { display: flex; gap: 12px; padding-top: 22px; }
@@ -51,10 +52,37 @@ a.today-stat__value.is-empty { font-size: 13px; letter-spacing: 0; color: var(--
 .week__day.is-today .week__dow { color: var(--indigo); }
 .week__mood { font-size: 18px; font-weight: 540; letter-spacing: -0.02em; line-height: 1; }
 .week__day.is-empty .week__mood { color: var(--fg-4); }
+.week__mood.is-word { font-size: 12.5px; letter-spacing: -0.005em; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .week__bar { height: 3px; border-radius: 3px; background: var(--bg-4); overflow: hidden; }
 .week__bar i { display: block; height: 100%; width: var(--w); background: var(--green); border-radius: inherit; }
 .today-quote .icon { color: var(--fg-4); margin-top: 3px; }
 .today-quote p { font-size: 16px; line-height: 1.5; letter-spacing: -0.01em; color: var(--fg-1); }
+
+/* an empty Today is an invitation: on hover a soft light follows the pointer
+   and the rim warms up. Once anything is logged it's an ordinary panel. */
+.today.is-empty { isolation: isolate; transition: border-color 420ms var(--ease-out), box-shadow 520ms var(--ease-out), transform 520ms var(--ease-out); }
+.today.is-empty::before, .today.is-empty::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity 520ms var(--ease-out);
+}
+.today.is-empty::before {
+  z-index: -1;
+  background:
+    radial-gradient(360px circle at var(--gx, 30%) var(--gy, 40%), rgba(var(--glow-rgb), 0.11), transparent 65%),
+    linear-gradient(160deg, rgba(var(--glow-rgb), 0.05), transparent 55%);
+}
+.today.is-empty::after {
+  padding: 1px;
+  background: radial-gradient(300px circle at var(--gx, 30%) var(--gy, 40%), rgba(var(--glow-rgb), 0.75), rgba(var(--glow-rgb), 0.18) 45%, transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.today.is-empty:hover { border-color: var(--line-2); box-shadow: var(--highlight), 0 28px 60px -38px rgba(var(--glow-rgb), 0.55); transform: translateY(-1px); }
+.today.is-empty:hover::before, .today.is-empty:hover::after { opacity: 1; }
+.today.is-empty:hover .today-empty__lead .btn--primary { box-shadow: 0 10px 26px -12px rgba(var(--glow-rgb), 0.8); }
+.today-empty__lead .btn--primary { transition: box-shadow 520ms var(--ease-out), background-color var(--t-1), transform var(--t-1) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .today.is-empty:hover { transform: none; } }
 
 .today-empty { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: center; }
 .today-empty__title { font-size: 22px; font-weight: 560; letter-spacing: -0.025em; }

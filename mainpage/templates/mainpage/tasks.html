@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Tasks{% endblock %}
+{% block body_class %}is-mainpage{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">{% endblock %}
 
 {% block content %}
@@ -58,14 +59,6 @@
       <div class="panel capacity">
         <div class="capacity__row"><span data-role="capacity-label">–</span><span data-tip="The list keeps up to 30 tasks, open and done together">Limit 30</span></div>
         <div class="bar" data-role="capacity"><i></i></div>
-      </div>
-      <div class="panel panel--pad tasks-help">
-        <p class="eyebrow" style="margin-bottom:12px">Deadlines</p>
-        <dl class="help-list">
-          <div><dt><span class="tag tag--amber">Today</span></dt><dd>Stays marked for today until you finish it.</dd></div>
-          <div><dt><span class="tag">By date</span></dt><dd>Due any time before the end of that day.</dd></div>
-          <div><dt><span class="tag">Date &amp; time</span></dt><dd>Turns orange 30 minutes before, red once it passes.</dd></div>
-        </dl>
       </div>
     </aside>
   </div>

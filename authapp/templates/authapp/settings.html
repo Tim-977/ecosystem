@@ -16,6 +16,7 @@
   <nav class="settings-nav reveal" aria-label="Settings sections">
     <a href="#profile" class="settings-nav__link is-active"><svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>Profile</a>
     <a href="#personal" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg>Personal</a>
+    <a href="#checkin" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Check-in</a>
     <a href="#appearance" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Appearance</a>
     <a href="#data" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>Data &amp; privacy</a>
     <a href="#about" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>About</a>
@@ -108,6 +109,27 @@
       </form>
     </section>
 
+    {# ---------------- check-in ---------------- #}
+    <section class="settings-section" id="checkin" aria-labelledby="checkinTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="checkinTitle">Check-in</h2>
+        <p class="settings-section__text">How you rate each day. Your past ratings carry over either way.</p>
+      </div>
+      <div class="panel settings-card settings-list">
+        <div class="settings-row">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-smile"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Mood &amp; productivity</p>
+            <p class="settings-row__text" data-rating-hint>{% if user.rating_format == "words" %}In words, from “Terrible” to “Excellent!”{% else %}On a scale from 1 to 10.{% endif %}</p>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label="Rate mood and productivity with" id="ratingFormat" data-url="{% url 'rating_format' %}">
+            <button type="button" role="radio" class="segmented__opt" data-value="numbers" aria-checked="{% if user.rating_format != 'words' %}true{% else %}false{% endif %}" tabindex="{% if user.rating_format != 'words' %}0{% else %}-1{% endif %}">Numbers</button>
+            <button type="button" role="radio" class="segmented__opt" data-value="words" aria-checked="{% if user.rating_format == 'words' %}true{% else %}false{% endif %}" tabindex="{% if user.rating_format == 'words' %}0{% else %}-1{% endif %}">Words</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     {# ---------------- appearance ---------------- #}
     <section class="settings-section" id="appearance" aria-labelledby="appearanceTitle">
       <div class="settings-section__intro">
@@ -124,6 +146,24 @@
             <span class="theme-option__preview theme-option__preview--light" aria-hidden="true"><i></i><i></i><i></i></span>
             <span class="theme-option__label"><span>Light</span><span class="muted">Warm paper tones</span></span>
           </button>
+        </div>
+      </div>
+      <div class="panel settings-card settings-list">
+        <div class="settings-row">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Cursor glow</p>
+            <p class="settings-row__text">A soft light that follows your cursor on the day, overview and month/year views.</p>
+          </div>
+          <label class="switch"><input type="checkbox" id="cursorGlowToggle" aria-label="Cursor glow"></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Replay the tour</p>
+            <p class="settings-row__text">The guided walk through your day, tasks, routines, journal and insights. About two minutes.</p>
+          </div>
+          <button type="button" class="btn btn--sm" data-tour-start>Take the tour</button>
         </div>
       </div>
     </section>

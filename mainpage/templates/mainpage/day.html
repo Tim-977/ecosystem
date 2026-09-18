@@ -1,7 +1,8 @@
 {% extends "mainpage/base.html" %}
-{% load static %}
+{% load static ecosystem_extras %}
 
 {% block title %}{{ date|date:"j F Y" }}{% endblock %}
+{% block body_class %}is-mainpage{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{% static 'mainpage/css/tasks.css' %}">
 <link rel="stylesheet" href="{% static 'mainpage/css/day.css' %}">
@@ -74,39 +75,42 @@
       <div class="panel__head">
         <h2 class="panel__title" id="checkinTitle"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Check-in</h2>
       </div>
+      {% rating_scales as scales %}
+      {% with words=user.rating_format|stringformat:"s" %}
       <div class="checkin">
-        <div class="slider" data-slider data-scale="mood">
+        <div class="slider" data-slider data-scale="mood"{% if words == "words" %} data-words="mood"{% endif %}>
           <div class="slider__top">
             <label class="slider__label" for="moodRange">Mood</label>
             <div class="slider__end">
               <button type="button" class="icon-btn icon-btn--sm slider__clear" data-tip="Clear rating" aria-label="Clear rating"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
-              <div class="slider__value"><b data-slider-out>–</b><span>/10</span></div>
+              <div class="slider__value"><b data-slider-out>–</b>{% if words != "words" %}<span>/10</span>{% endif %}</div>
             </div>
           </div>
           <div class="slider__control">
-            <div class="slider__ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="slider__ticks" aria-hidden="true">{% if words == "words" %}{% for o in scales.mood %}<i></i>{% endfor %}{% else %}<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>{% endif %}</div>
             <input type="range" id="moodRange" min="1" max="10" step="1" value="5">
           </div>
-          <div class="slider__scale"><span>Low</span><span>Great</span></div>
+          <div class="slider__scale">{% if words == "words" %}<span>{{ scales.mood.0.word }}</span><span>{{ scales.mood.4.word }}</span>{% else %}<span>Low</span><span>Great</span>{% endif %}</div>
           <input type="hidden" name="mood_rating" value="{{ daily_obj.mood_rating|default_if_none:'' }}">
         </div>
 
-        <div class="slider" data-slider data-scale="energy">
+        <div class="slider" data-slider data-scale="energy"{% if words == "words" %} data-words="productivity"{% endif %}>
           <div class="slider__top">
             <label class="slider__label" for="prodRange">Productivity</label>
             <div class="slider__end">
               <button type="button" class="icon-btn icon-btn--sm slider__clear" data-tip="Clear rating" aria-label="Clear rating"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg></button>
-              <div class="slider__value"><b data-slider-out>–</b><span>/10</span></div>
+              <div class="slider__value"><b data-slider-out>–</b>{% if words != "words" %}<span>/10</span>{% endif %}</div>
             </div>
           </div>
           <div class="slider__control">
-            <div class="slider__ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="slider__ticks" aria-hidden="true">{% if words == "words" %}{% for o in scales.productivity %}<i></i>{% endfor %}{% else %}<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>{% endif %}</div>
             <input type="range" id="prodRange" min="1" max="10" step="1" value="5">
           </div>
-          <div class="slider__scale"><span>Idle</span><span>Focused</span></div>
+          <div class="slider__scale">{% if words == "words" %}<span>{{ scales.productivity.0.word }}</span><span>{{ scales.productivity.4.word }}</span>{% else %}<span>Idle</span><span>Focused</span>{% endif %}</div>
           <input type="hidden" name="productivity_score" value="{{ daily_obj.productivity_score|default_if_none:'' }}">
         </div>
       </div>
+      {% endwith %}
     </section>
 
     {# ============ sleep ============ #}
@@ -120,9 +124,17 @@
           <span class="sleep__hours" id="sleepTotal">–</span>
           <span class="muted" id="sleepTotalLabel">asleep</span>
         </div>
-        <div class="night" id="night" aria-hidden="true">
-          <div class="night__track"><div class="night__bar" id="nightBar"></div><div class="night__alarm" id="nightAlarm"></div></div>
-          <div class="night__axis"><span>18</span><span>21</span><span>00</span><span>03</span><span>06</span><span>09</span><span>12</span></div>
+        {# the typed fields below stay the accessible way in; the track is a shortcut #}
+        <div class="night" id="night">
+          <div class="night__track" id="nightTrack" aria-hidden="true">
+            <div class="night__bar" id="nightBar"></div>
+            <div class="night__hours"></div>
+            <div class="night__pin" id="nightPin" hidden></div>
+            <div class="night__guide" id="nightGuide" hidden><span></span></div>
+            <div class="night__alarm" id="nightAlarm"></div>
+          </div>
+          <div class="night__axis" id="nightAxis" aria-hidden="true"></div>
+          <p class="night__hint" id="nightHint">Tap the bar twice: bedtime, then wake-up.</p>
         </div>
         <div class="sleep__fields">
           <div class="field">
@@ -147,7 +159,7 @@
           </div>
           <div class="field">
             <label class="field__label" for="alarmH">First alarm</label>
-            <div class="timefield" data-timefield>
+            <div class="timefield" data-timefield{% if alarm_is_default %} data-default title="Your last alarm — change it if today was different"{% endif %}>
               <input class="timefield__seg" id="alarmH" inputmode="numeric" aria-label="First alarm hours" placeholder="--" autocomplete="off">
               <span class="timefield__colon">:</span>
               <input class="timefield__seg" inputmode="numeric" aria-label="First alarm minutes" placeholder="--" autocomplete="off">
@@ -254,10 +266,7 @@
   </button>
   <input type="hidden" id="jumpDate" value="{{ date|date:'Y-m-d' }}">
   <span class="dock__sep"></span>
-  <span class="dock__status" id="saveStatus" aria-live="polite"><span class="status-dot" data-state="saved"></span><span class="dock__status-text">All changes saved</span></span>
-  <button type="submit" form="dayForm" class="dock__btn dock__btn--primary" id="saveBtn" data-tip="Save now" data-kbd="Ctrl S">
-    <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Save
-  </button>
+  <span class="dock__status" id="saveStatus" aria-live="polite"><span class="status-dot" data-state="saved"></span><span class="dock__status-text">Saved</span></span>
 </div>
 {% endblock %}
 

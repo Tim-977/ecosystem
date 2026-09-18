@@ -42,6 +42,56 @@
     toggle() { this.set(this.get() === 'dark' ? 'light' : 'dark'); },
   };
 
+  /* ---------------- cursor glow preference (mainpage views only) ---------------- */
+  Eco.cursorGlow = {
+    get() {
+      try { return localStorage.getItem('eco-cursor-glow') !== 'off'; } catch (e) { return true; } // on by default
+    },
+    set(on) {
+      try { localStorage.setItem('eco-cursor-glow', on ? 'on' : 'off'); } catch (e) { /* storage unavailable */ }
+      document.dispatchEvent(new CustomEvent('eco:cursor-glow', { detail: on }));
+    },
+    toggle() { this.set(!this.get()); },
+  };
+
+  /* ---------------- page zoom ----------------
+     A page may scale itself with CSS `zoom` (the public homepage does).
+     Pointer and rect coordinates arrive in screen pixels, but lengths written
+     back into a zoomed element are multiplied again, so divide on the way in. */
+  Eco.pageZoom = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--page-zoom')) || 1;
+
+  /* ---------------- mood & productivity: numbers or words ----------------
+     Both are always stored 1–10. In word mode each word maps to one value and
+     any stored value reads back as the nearest word (ties round up). */
+  Eco.rating = (() => {
+    let scales = null;
+    const load = () => {
+      if (scales) return scales;
+      try { scales = JSON.parse((document.getElementById('ratingScales') || {}).textContent || 'null'); } catch (e) { scales = null; }
+      return scales || {};
+    };
+    const api = {
+      words: () => document.body.dataset.rating === 'words',
+      scale: (kind) => load()[kind] || [],
+      word(kind, v) {
+        if (v == null || v === '' || Number.isNaN(+v)) return '';
+        const list = api.scale(kind);
+        if (!list.length) return String(v);
+        return list.reduce((best, o) => {
+          const d = Math.abs(o.value - v), bd = Math.abs(best.value - v);
+          return d < bd || (d === bd && o.value > best.value) ? o : best;
+        }).word;
+      },
+      /* a stored or averaged value, as the person reads it */
+      label(kind, v, digits = 1) {
+        if (v == null || v === '') return '–';
+        if (api.words()) return api.word(kind, v);
+        return (+v).toFixed(digits).replace(/\.0+$/, '');
+      },
+    };
+    return api;
+  })();
+
   /* ---------------- sliding indicators (nav + segmented) ---------------- */
   function placeIndicator(container, indicator, target, animate) {
     if (!target) { indicator.style.opacity = '0'; return; }
@@ -73,6 +123,29 @@
     try { sessionStorage.setItem('eco-nav', JSON.stringify(active ? active.dataset.nav : null)); } catch (e) { /* ignore */ }
     window.addEventListener('resize', () => placeIndicator(links, indicator, $('[aria-current="page"]', links), false));
     document.fonts && document.fonts.ready.then(() => placeIndicator(links, indicator, $('[aria-current="page"]', links), false));
+  }
+
+  /* ---------------- cursor glow: a soft light that follows the pointer ---------------- */
+  function initCursorGlow() {
+    const el = $('.cursor-glow');
+    if (!el || !document.body.classList.contains('is-mainpage')) return; // mainpage views only
+    if (!Eco.cursorGlow.get()) return;
+    if (reduceMotion.matches || window.matchMedia('(hover: none)').matches) return;
+
+    let raf = 0;
+    let x = 0;
+    let y = 0;
+    const paint = () => {
+      raf = 0;
+      el.style.setProperty('--sx', `${x}px`);
+      el.style.setProperty('--sy', `${y}px`);
+    };
+    window.addEventListener('pointermove', (e) => {
+      el.classList.add('is-live');
+      x = e.clientX;
+      y = e.clientY;
+      if (!raf) raf = requestAnimationFrame(paint);
+    }, { passive: true });
   }
 
   Eco.segmented = function (el) {
@@ -130,8 +203,9 @@
     if (placement !== 'top' && top + r.height > vh - 8) top = anchorRect.top - r.height - gap;
     let left = anchorRect.left + anchorRect.width / 2 - r.width / 2;
     left = Math.max(8, Math.min(left, vw - r.width - 8));
-    el.style.top = `${Math.round(top)}px`;
-    el.style.left = `${Math.round(left)}px`;
+    const z = Eco.pageZoom();
+    el.style.top = `${Math.round(top / z)}px`;
+    el.style.left = `${Math.round(left / z)}px`;
   }
   Eco.positionFloating = positionFloating;
   function showTip(target) {
@@ -270,8 +344,9 @@
       if (placement.startsWith('top') && top < 12) { top = a.bottom + gap; origin = 'top'; }
       let left = placement.endsWith('end') ? a.right - r.width : placement.endsWith('center') ? a.left + a.width / 2 - r.width / 2 : a.left;
       left = Math.max(12, Math.min(left, vw - r.width - 12));
-      el.style.top = `${Math.round(top)}px`;
-      el.style.left = `${Math.round(left)}px`;
+      const z = Eco.pageZoom();
+      el.style.top = `${Math.round(top / z)}px`;
+      el.style.left = `${Math.round(left / z)}px`;
       el.style.setProperty('--origin', `${origin} ${placement.endsWith('end') ? 'right' : 'left'}`);
     };
     place();
@@ -448,32 +523,39 @@
     const hidden = $('input[type="hidden"]', root);
     const out = $('[data-slider-out]', root);
     const clear = $('.slider__clear', root);
+    // word mode: the range walks the word stops, the hidden input keeps 1–10
+    const stops = root.dataset.words ? Eco.rating.scale(root.dataset.words) : null;
+    const nearest = (v) => stops.reduce((bi, o, i) => {
+      const d = Math.abs(o.value - v), bd = Math.abs(stops[bi].value - v);
+      return d < bd || (d === bd && o.value > stops[bi].value) ? i : bi;
+    }, 0);
+    if (stops && stops.length) { range.min = 0; range.max = stops.length - 1; range.step = 1; }
     const min = +range.min, max = +range.max;
     const scale = root.dataset.scale;
-    const color = (v) => {
-      const p = (v - min) / (max - min);
+    const color = () => {
       if (scale === 'mood') return 'var(--green)';
       if (scale === 'sky') return 'var(--sky)';
       return 'var(--indigo)';
     };
     const render = () => {
       const empty = hidden.value === '';
-      const v = empty ? Math.round((min + max) / 2) : +hidden.value;
+      const v = empty ? Math.round((min + max) / 2) : stops ? nearest(+hidden.value) : +hidden.value;
       if (!empty) range.value = v;
       root.classList.toggle('is-empty', empty);
       root.style.setProperty('--pct', empty ? '0%' : `${((v - min) / (max - min)) * 100}%`);
       root.style.setProperty('--fill', color(v));
-      out.textContent = empty ? '–' : v;
-      range.setAttribute('aria-valuetext', empty ? 'Not rated' : `${v} of ${max}`);
+      const shown = stops ? stops[v].word : v;
+      out.textContent = empty ? '–' : shown;
+      range.setAttribute('aria-valuetext', empty ? 'Not rated' : stops ? shown : `${v} of ${max}`);
     };
     const commit = () => {
-      hidden.value = range.value;
+      hidden.value = stops ? stops[+range.value].value : range.value;
       render();
       hidden.dispatchEvent(new Event('input', { bubbles: true }));
     };
     range.addEventListener('input', commit);
     range.addEventListener('pointerdown', () => { if (hidden.value === '') requestAnimationFrame(commit); });
-    range.addEventListener('keydown', (e) => { if (hidden.value === '' && /Arrow|Page|Home|End/.test(e.key)) { hidden.value = range.value; } });
+    range.addEventListener('keydown', (e) => { if (hidden.value === '' && /Arrow|Page|Home|End/.test(e.key)) { hidden.value = stops ? stops[+range.value].value : range.value; } });
     clear && clear.addEventListener('click', () => { hidden.value = ''; render(); hidden.dispatchEvent(new Event('input', { bubbles: true })); range.focus(); });
     render();
     return { render };
@@ -685,6 +767,7 @@
   /* ---------------- boot ---------------- */
   document.addEventListener('DOMContentLoaded', () => {
     initNav();
+    initCursorGlow();
     initTooltips();
     initMenus();
     initShortcuts();

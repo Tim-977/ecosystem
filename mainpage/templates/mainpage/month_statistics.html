@@ -2,6 +2,7 @@
 {% load static ecosystem_extras %}
 
 {% block title %}Insights · {{ month|month_name }} {{ year }}{% endblock %}
+{% block body_class %}is-mainpage{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/insights.css' %}">{% endblock %}
 
 {% block content %}
@@ -119,8 +120,8 @@
           {% for d in days_data %}
             <tr class="row-link" data-href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}">
               <td class="log__date"><a href="{% url 'day_view' d.date_obj.year d.date_obj.month d.date_obj.day %}"><span class="num">{{ d.date_obj|date:"j" }}</span><span class="muted">{{ d.date_obj|date:"D" }}</span></a></td>
-              <td>{% if d.mood_val %}<span class="score" style="--v:{{ d.mood_val }}"><i style="background:var(--green)"></i>{{ d.mood_val }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
-              <td>{% if d.prod_val %}<span class="score" style="--v:{{ d.prod_val }}"><i style="background:var(--indigo)"></i>{{ d.prod_val }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td>{% if d.mood_val %}<span class="score" style="--v:{{ d.mood_val }}"><i style="background:var(--green)"></i>{% if user.rating_format == "words" %}{{ d.mood_val|rating_word:"mood" }}{% else %}{{ d.mood_val }}{% endif %}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+              <td>{% if d.prod_val %}<span class="score" style="--v:{{ d.prod_val }}"><i style="background:var(--indigo)"></i>{% if user.rating_format == "words" %}{{ d.prod_val|rating_word:"productivity" }}{% else %}{{ d.prod_val }}{% endif %}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
               <td><span class="hdots">{% for habit_name, is_done in d.habit_statuses %}{% if habit_name %}<i class="{% if is_done %}is-done{% endif %}" data-tip="{{ habit_name }}{% if is_done %} · done{% else %} · not done{% endif %}"></i>{% endif %}{% endfor %}</span></td>
               <td class="log__thought">{{ d.thoughts|default:"" }}</td>
             </tr>

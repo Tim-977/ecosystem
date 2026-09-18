@@ -1,0 +1,411 @@
+/* ==========================================================================
+   Ecosystem — pre-signup onboarding.
+
+   One question at a time, centred in the viewport, with the product floating
+   at both edges (scene.css). Steps live on top of each other and dissolve, so
+   nothing ever stacks up or scrolls away. Answering commits in place: the
+   options you didn't pick shed, the one you did settles, and the line
+   Ecosystem answers with takes their place before the next question arrives.
+   ========================================================================== */
+
+/* ==========================================================================
+   The step machine
+   ========================================================================== */
+.ob-step {
+  position: absolute; inset: 0;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translate3d(0, 26px, 0) scale(0.98);
+  filter: blur(7px);
+  transition:
+    opacity 560ms var(--ease-out),
+    transform 660ms var(--ease-out),
+    filter 480ms var(--ease-out),
+    visibility 0s linear 660ms;
+}
+.ob-step::-webkit-scrollbar { width: 0; height: 0; }
+.ob-step.is-active {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: none; filter: none;
+  transition-delay: 0s;
+}
+/* a step you've walked back past waits above, so retracing reads as retracing */
+.ob-step.is-back { transform: translate3d(0, -26px, 0) scale(0.98); }
+
+/* the pieces inside arrive a beat behind the step itself */
+.ob-step > * {
+  opacity: 0; transform: translate3d(0, 16px, 0);
+  transition: opacity 520ms var(--ease-out), transform 640ms var(--ease-out);
+}
+.ob-step.is-active > * { opacity: 1; transform: none; }
+.ob-step.is-active > *:nth-child(1) { transition-delay: 100ms; }
+.ob-step.is-active > *:nth-child(2) { transition-delay: 160ms; }
+.ob-step.is-active > *:nth-child(3) { transition-delay: 220ms; }
+.ob-step.is-active > *:nth-child(4) { transition-delay: 280ms; }
+.ob-step.is-active > *:nth-child(n+5) { transition-delay: 340ms; }
+
+/* while the answer is being spoken back, the question steps aside for it */
+.ob-step.is-echoing .ob-step__eyebrow { opacity: 0.35; }
+.ob-step.is-echoing .ob-step__q { opacity: 0.42; transform: scale(0.975); }
+.ob-step.is-echoing .ob-step__sub, .ob-step.is-echoing .ob-step__fine { opacity: 0.25; }
+
+/* ==========================================================================
+   Type — the question owns the middle of the screen
+   ========================================================================== */
+.ob-step__eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-4);
+}
+.ob-step__eyebrow .icon { width: 14px; height: 14px; color: var(--indigo); }
+.ob-step__q {
+  margin-top: 20px; max-width: 18ch;
+  font-size: clamp(36px, 4.6vw, 62px); font-weight: 560; letter-spacing: -0.045em; line-height: 1.0;
+  text-wrap: balance;
+}
+.ob-step__q em { font-style: normal; color: var(--fg-3); }
+.ob-step__q--hero { font-size: clamp(38px, 5vw, 70px); letter-spacing: -0.05em; max-width: 17ch; }
+.ob-step__sub {
+  margin-top: 18px; max-width: 46ch;
+  font-size: clamp(15px, 1.15vw, 17.5px); line-height: 1.55; color: var(--fg-3); text-wrap: pretty;
+}
+.ob-step__body { position: relative; width: 100%; margin-top: clamp(24px, 3.6vh, 44px); }
+.ob-step__foot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px;
+  margin-top: clamp(24px, 3.4vh, 40px);
+}
+.ob-step__fine { margin-top: 22px; font-size: 13px; color: var(--fg-4); }
+
+/* ==========================================================================
+   1 · name
+   ========================================================================== */
+.ob-name { position: relative; width: min(520px, 100%); margin-inline: auto; }
+.ob-name__input {
+  width: 100%; padding: 6px 0 16px; border: 0; background: none; outline: none; text-align: center;
+  font-size: clamp(30px, 3.6vw, 50px); font-weight: 540; letter-spacing: -0.035em; color: var(--fg-1);
+}
+.ob-name__input::placeholder { color: var(--fg-4); }
+.ob-name__rule { display: block; height: 2px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.ob-name__rule::after {
+  content: ''; display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--indigo) 30%, var(--fg-1));
+  transform: scaleX(0); transform-origin: center; transition: transform 560ms var(--ease-out);
+}
+.ob-name__input:focus + .ob-name__rule::after,
+.ob-name__input:not(:placeholder-shown) + .ob-name__rule::after { transform: none; }
+.ob-name__hint {
+  margin-top: 14px; font-size: 13.5px; line-height: 1.5; color: var(--fg-4);
+  transition: color 360ms var(--ease-out), transform 460ms var(--ease-out);
+}
+/* asked to continue without a name: a small nudge, a warmer line, a clearer hint */
+.ob-name.is-wanting .ob-name__input { animation: ob-nudge 420ms var(--ease-out); }
+.ob-name.is-wanting .ob-name__rule::after { transform: none; background: linear-gradient(90deg, transparent, var(--amber) 30%, var(--amber) 70%, transparent); }
+.ob-name.is-wanting .ob-name__hint { color: var(--fg-2); transform: translateY(2px); }
+.ob-name.is-wanting .ob-name__input::placeholder { color: var(--fg-3); }
+@keyframes ob-nudge { 20% { transform: translateX(-7px); } 45% { transform: translateX(6px); } 70% { transform: translateX(-3px); } 100% { transform: none; } }
+
+/* ==========================================================================
+   2 · tracking format — two cards; the one you pick opens into a preview
+   ========================================================================== */
+.ob-swap { position: relative; display: grid; }
+.ob-swap > [data-swap-face] { grid-area: 1 / 1; transition: opacity 420ms var(--ease-out), transform 520ms var(--ease-out), filter 420ms var(--ease-out); }
+/* the face that isn't showing leaves the flow, so the area is exactly as tall as what you see */
+.ob-swap > [data-swap-face][hidden] { display: grid; position: absolute; top: 0; left: 0; right: 0; opacity: 0; pointer-events: none; transform: scale(0.97); filter: blur(6px); }
+/* while the preview grows out of the card, the clip does the moving */
+.ob-swap > .ob-try.is-morphing { transition: none; }
+
+.ob-cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
+  width: min(560px, 100%); margin-inline: auto;
+}
+.ob-card {
+  position: relative; overflow: hidden; text-align: left; color: var(--fg-1);
+  display: grid; gap: 4px; align-content: start; padding: 22px;
+  border-radius: 20px; border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transition: border-color var(--t-2), background-color var(--t-2), transform 420ms var(--ease-out), box-shadow var(--t-2);
+}
+.ob-card:hover { border-color: var(--line-3); transform: translateY(-4px); }
+.ob-card[aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--indigo) 62%, transparent);
+  background: color-mix(in srgb, var(--indigo) 11%, var(--bg-1));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 12%, transparent), 0 24px 50px -30px rgba(var(--l-glow), 0.9);
+}
+.ob-card__title { font-size: clamp(19px, 1.5vw, 22px); font-weight: 560; letter-spacing: -0.025em; }
+.ob-card__note { font-size: 13.5px; color: var(--fg-3); }
+.ob-card__demo { display: flex; align-items: center; gap: 4px; height: 28px; margin-top: 16px; }
+.ob-card__demo i { flex: 1; height: 7px; border-radius: 4px; background: var(--bg-4); transition: background-color var(--t-2); }
+.ob-card__demo b {
+  display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px;
+  font-size: 13px; font-weight: 600; color: var(--inverse-fg); background: var(--inverse-bg); border-radius: var(--r-pill);
+}
+.ob-card[aria-checked='true'] .ob-card__demo i:nth-child(-n+7) { background: color-mix(in srgb, var(--indigo) 65%, var(--bg-4)); }
+.ob-card__demo--word { flex-wrap: wrap; gap: 5px; height: auto; }
+.ob-card__demo--word em { font-style: normal; font-size: 12px; padding: 5px 10px; border-radius: var(--r-pill); color: var(--fg-3); background: var(--bg-3); }
+.ob-card__demo--word em.is-on { color: var(--inverse-fg); background: var(--inverse-bg); }
+
+/* the preview: the picked card, opened up */
+.ob-try {
+  position: relative; display: grid; gap: 18px; align-content: start;
+  width: min(560px, 100%); margin-inline: auto; padding: 20px 22px 22px;
+  text-align: left;
+  border-radius: 20px; border: 1px solid color-mix(in srgb, var(--indigo) 55%, transparent);
+  background: color-mix(in srgb, var(--indigo) 9%, color-mix(in srgb, var(--bg-1) 86%, transparent));
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 9%, transparent), 0 30px 60px -36px rgba(var(--l-glow), 0.8);
+}
+.ob-try__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ob-try__picked { display: inline-flex; align-items: center; gap: 8px; font-size: clamp(18px, 1.4vw, 21px); font-weight: 560; letter-spacing: -0.025em; }
+.ob-try__picked .icon { width: 16px; height: 16px; padding: 3px; box-sizing: content-box; border-radius: 50%; color: var(--inverse-fg); background: var(--indigo); }
+.ob-try__note { font-size: 12.5px; color: var(--fg-3); }
+.ob-try__rows { display: grid; gap: 14px; }
+.ob-try__rows[hidden] { display: none; }
+.ob-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 30px; align-items: center; gap: 14px; }
+.ob-row__label { font-size: 13.5px; font-weight: 520; color: var(--fg-2); }
+.ob-row__out { font-size: 22px; font-weight: 560; letter-spacing: -0.03em; text-align: right; transition: color var(--t-2); }
+.ob-row--words { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+.ob-try__rows:has(.ob-row--words) { gap: 16px; }
+
+.ob-scale__range { -webkit-appearance: none; appearance: none; width: 100%; height: 30px; background: none; cursor: grab; }
+.ob-scale__range:active { cursor: grabbing; }
+.ob-scale__range::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--track-c, var(--indigo)) var(--p, 70%), var(--bg-4) var(--p, 70%));
+}
+.ob-scale__range::-moz-range-track { height: 8px; border-radius: 4px; background: var(--bg-4); }
+.ob-scale__range::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--track-c, var(--indigo)); }
+.ob-scale__range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 24px; height: 24px; margin-top: -8px; border-radius: 50%;
+  background: var(--fg-1); border: 3px solid var(--bg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  transition: transform var(--t-1) var(--ease-out);
+}
+.ob-scale__range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--bg); background: var(--fg-1); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
+.ob-scale__range:active::-webkit-slider-thumb { transform: scale(1.16); }
+:root[data-theme='light'] .ob-scale__range::-webkit-slider-thumb { box-shadow: 0 3px 10px rgba(20, 20, 40, 0.22); }
+:root[data-theme='light'] .ob-scale__range::-moz-range-thumb { box-shadow: 0 3px 10px rgba(20, 20, 40, 0.22); }
+
+.ob-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.ob-word {
+  height: 36px; padding: 0 13px; font-size: 13.5px; font-weight: 500; color: var(--fg-2); white-space: nowrap;
+  background: color-mix(in srgb, var(--bg-1) 70%, transparent); border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  transition: color var(--t-1), background-color var(--t-1), border-color var(--t-1), transform 380ms var(--ease-out);
+}
+.ob-word:hover { color: var(--fg-1); border-color: var(--line-3); transform: translateY(-1px); }
+.ob-word[aria-checked='true'] { color: var(--inverse-fg); background: var(--inverse-bg); border-color: transparent; }
+
+/* the other format, one step away — visible, but quieter than Continue */
+.ob-switch {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; margin-top: 16px; padding: 0 15px 0 12px;
+  font-size: 13.5px; font-weight: 500; color: var(--fg-2);
+  background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+  border: 1px solid var(--line-2); border-radius: var(--r-pill); cursor: pointer;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  transition: color var(--t-1), border-color var(--t-1), background-color var(--t-1), transform 380ms var(--ease-out);
+}
+.ob-switch .icon { color: var(--indigo); transition: transform 520ms var(--ease-out); }
+.ob-switch:hover { color: var(--fg-1); border-color: var(--line-3); background: var(--bg-3); }
+.ob-switch:hover .icon { transform: rotate(180deg); }
+.ob-switch[hidden] { display: inline-flex; visibility: hidden; }
+
+/* ==========================================================================
+   3 · chips
+   ========================================================================== */
+.ob-chips {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  width: min(720px, 100%); margin-inline: auto;
+}
+.ob-chip {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 60px; padding: 12px 18px; text-align: left;
+  font-size: clamp(14.5px, 1.1vw, 15.5px); font-weight: 500; line-height: 1.35; color: var(--fg-2); text-wrap: pretty;
+  border: 1px solid var(--line-2); border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-1) 70%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transition: color var(--t-2), border-color var(--t-2), background-color var(--t-2), transform 380ms var(--ease-out), box-shadow var(--t-2), opacity var(--t-2);
+}
+.ob-chip .icon { flex: none; width: 17px; height: 17px; color: var(--fg-4); transition: color var(--t-2), transform 380ms var(--ease-out); }
+.ob-chip:hover { color: var(--fg-1); border-color: var(--line-3); transform: translateY(-2px); }
+.ob-chip[aria-pressed='true'] {
+  color: var(--fg-1);
+  background: color-mix(in srgb, var(--indigo) 14%, var(--bg-1));
+  border-color: color-mix(in srgb, var(--indigo) 58%, transparent);
+  box-shadow: 0 18px 40px -26px rgba(var(--l-glow), 0.9);
+}
+.ob-chip[aria-pressed='true'] .icon { color: var(--indigo); transform: scale(1.12); }
+.ob-chip.is-spent { opacity: 0.34; }
+.ob-chip.is-spent:hover { transform: none; }
+
+/* ==========================================================================
+   4 & 5 · answers that commit in place
+   ========================================================================== */
+.ob-picks { display: grid; gap: 10px; width: min(540px, 100%); margin-inline: auto; }
+.ob-picks--wide { width: min(600px, 100%); }
+.ob-pick {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 22px; text-align: left; color: var(--fg-1);
+  font-size: clamp(15.5px, 1.3vw, 18px); font-weight: 500; letter-spacing: -0.018em;
+  border-radius: 16px; border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transition:
+    border-color var(--t-2), background-color var(--t-2), color var(--t-2),
+    transform 460ms var(--ease-out), box-shadow var(--t-2), opacity 380ms var(--ease-out), filter 380ms var(--ease-out);
+}
+.ob-pick .icon {
+  flex: none; margin-left: auto; width: 17px; height: 17px; color: var(--fg-4);
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity var(--t-2), transform 420ms var(--ease-out), color var(--t-2);
+}
+.ob-pick:hover { border-color: var(--line-3); transform: translateY(-3px); }
+.ob-pick:hover .icon { opacity: 1; transform: none; }
+.ob-pick[aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--indigo) 60%, transparent);
+  background: color-mix(in srgb, var(--indigo) 13%, var(--bg-1));
+}
+.ob-pick[aria-checked='true'] .icon { opacity: 1; transform: none; color: var(--indigo); }
+
+/* the commit: everything you didn't pick sheds, what you did settles */
+.ob-picks.is-committing .ob-pick { pointer-events: none; }
+.ob-pick.is-shed { opacity: 0; filter: blur(5px); transform: scale(0.96); }
+.ob-pick.is-chosen {
+  border-color: color-mix(in srgb, var(--indigo) 70%, transparent);
+  background: color-mix(in srgb, var(--indigo) 18%, var(--bg-1));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 12%, transparent), 0 26px 60px -30px rgba(var(--l-glow), 0.9);
+  transform: scale(1.02);
+}
+.ob-pick.is-gone { opacity: 0; filter: blur(6px); transform: scale(1.04) translateY(-8px); }
+
+/* ==========================================================================
+   The line Ecosystem answers with — it takes the answer's place, never
+   stacks below it
+   ========================================================================== */
+.ob-echo {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; align-content: center; justify-items: center;
+  margin: 0; padding: 0 12px;
+  font-size: clamp(18px, 1.7vw, 26px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.3;
+  color: var(--fg-1); text-wrap: balance;
+  opacity: 0; transform: translate3d(0, 10px, 0) scale(0.99); pointer-events: none;
+  transition: opacity 460ms var(--ease-out), transform 560ms var(--ease-out);
+}
+.ob-echo::before {
+  content: ''; width: 26px; height: 2px; margin-bottom: 18px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--indigo), transparent);
+  opacity: 0; transform: scaleX(0.3); transition: opacity 460ms var(--ease-out) 60ms, transform 620ms var(--ease-out) 60ms;
+}
+.ob-echo.is-on { opacity: 1; transform: none; }
+.ob-echo.is-on::before { opacity: 1; transform: none; }
+
+/* on the steps that keep their controls, the echo sits under them as one
+   quiet line rather than an overlay */
+.ob-echo--line {
+  position: static; min-height: 2.4em; margin-top: 24px;
+  font-size: clamp(15px, 1.25vw, 18px); font-weight: 450; color: var(--fg-2);
+  transform: translate3d(0, 6px, 0);
+}
+.ob-echo--line::before { display: none; }
+
+/* ==========================================================================
+   The moment — a beat between the questions
+   ========================================================================== */
+.ob-step--moment .ob-step__q { margin-top: 16px; }
+.ob-step--moment .ob-step__sub { margin-top: 22px; }
+.ob-step--moment .ob-step__foot { margin-top: clamp(30px, 4.6vh, 52px); }
+.ob-moment__art { width: clamp(200px, 22vw, 260px); margin-bottom: 10px; }
+.ob-moment__art svg { width: 100%; height: auto; overflow: visible; }
+.ob-moment__bars rect { fill: color-mix(in srgb, var(--indigo) 26%, var(--bg-2)); transform-box: fill-box; transform-origin: bottom; }
+.ob-moment__bars rect:nth-child(3) { fill: color-mix(in srgb, var(--indigo) 44%, var(--bg-2)); }
+.ob-moment__bars rect:nth-child(4) { fill: color-mix(in srgb, var(--indigo) 68%, var(--bg-2)); }
+.ob-moment__line, .ob-moment__tip { stroke: var(--fg-1); fill: none; }
+.ob-moment__shadow { fill: rgba(var(--l-glow), 0.09); }
+
+.ob-step--moment.is-active .ob-moment__bars rect { animation: ob-grow 900ms var(--ease-out) backwards; }
+.ob-step--moment.is-active .ob-moment__bars rect:nth-child(1) { animation-delay: 240ms; }
+.ob-step--moment.is-active .ob-moment__bars rect:nth-child(2) { animation-delay: 320ms; }
+.ob-step--moment.is-active .ob-moment__bars rect:nth-child(3) { animation-delay: 400ms; }
+.ob-step--moment.is-active .ob-moment__bars rect:nth-child(4) { animation-delay: 480ms; }
+@keyframes ob-grow { from { transform: scaleY(0.05); opacity: 0; } }
+.ob-step--moment.is-active .ob-moment__line { stroke-dasharray: 260; animation: ob-draw 1200ms var(--ease-out) 200ms backwards; }
+.ob-step--moment.is-active .ob-moment__tip { animation: ob-fade 500ms var(--ease-out) 1100ms backwards; }
+@keyframes ob-draw { from { stroke-dashoffset: 260; } to { stroke-dashoffset: 0; } }
+@keyframes ob-fade { from { opacity: 0; } }
+
+/* ==========================================================================
+   The finale — the answers arrive as a composition, not a list
+   ========================================================================== */
+.ob-fan {
+  display: flex; align-items: stretch; justify-content: center;
+  width: 100%; margin-top: clamp(26px, 4vh, 44px);
+  perspective: 1000px;
+}
+.ob-fan__card {
+  position: relative; flex: 0 0 auto;
+  width: clamp(146px, 13vw, 178px); min-height: 156px;
+  display: grid; gap: 9px; align-content: start;
+  padding: 16px; text-align: left;
+  border-radius: 18px; border: 1px solid var(--glass-line);
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: var(--highlight), 0 38px 70px -40px rgba(0, 0, 0, 0.85);
+  transform: rotate(var(--r, 0deg)) translateY(var(--ty, 0px));
+  transition: transform 560ms var(--ease-out), box-shadow 460ms var(--ease-out), border-color 300ms;
+}
+.ob-fan__card + .ob-fan__card { margin-left: clamp(-14px, -0.9vw, -6px); }
+.ob-fan__card:hover {
+  z-index: 3; transform: rotate(0deg) translateY(-10px) scale(1.04);
+  border-color: color-mix(in srgb, var(--indigo) 40%, var(--glass-line));
+  box-shadow: var(--highlight), 0 46px 90px -40px rgba(var(--l-glow), 0.8);
+}
+:root[data-theme='light'] .ob-fan__card { box-shadow: var(--highlight), 0 38px 70px -42px rgba(20, 20, 40, 0.32); }
+.ob-fan__icon {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px;
+  background: color-mix(in srgb, var(--indigo) 16%, var(--bg-2)); color: var(--indigo);
+}
+.ob-fan__label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-4); }
+.ob-fan__text { font-size: 13.5px; line-height: 1.45; color: var(--fg-1); letter-spacing: -0.012em; }
+.ob-fan__text b { font-weight: 560; }
+
+/* each card flies in from the edge it was floating at */
+.ob-step--final.is-active .ob-fan__card { animation: ob-converge 900ms var(--ease-out) backwards; }
+.ob-step--final.is-active .ob-fan__card:nth-child(1) { animation-delay: 220ms; --from-x: -180px; }
+.ob-step--final.is-active .ob-fan__card:nth-child(2) { animation-delay: 300ms; --from-x: 180px; }
+.ob-step--final.is-active .ob-fan__card:nth-child(3) { animation-delay: 380ms; --from-x: -140px; }
+.ob-step--final.is-active .ob-fan__card:nth-child(4) { animation-delay: 460ms; --from-x: 200px; }
+.ob-step--final.is-active .ob-fan__card:nth-child(n+5) { animation-delay: 540ms; --from-x: 160px; }
+@keyframes ob-converge {
+  from { opacity: 0; transform: translate3d(var(--from-x, 120px), 24px, 0) rotate(0deg) scale(0.92); filter: blur(8px); }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 940px) {
+  .ob-step { position: relative; inset: auto; }
+  .ob-step:not(.is-active) { position: absolute; }
+  .ob-fan { flex-wrap: wrap; gap: 12px; }
+  .ob-fan__card + .ob-fan__card { margin-left: 0; }
+  .ob-fan__card { --r: 0deg; width: clamp(140px, 42vw, 180px); min-height: 0; }
+}
+
+@media (max-width: 620px) {
+  .ob-cards { grid-template-columns: 1fr; gap: 12px; }
+  .ob-chips { grid-template-columns: 1fr; }
+  .ob-chip { min-height: 52px; padding: 10px 16px; }
+  .ob-try { padding: 18px; }
+  .ob-row { grid-template-columns: minmax(0, 1fr) 30px; gap: 6px 12px; }
+  .ob-row__label { grid-column: 1 / -1; }
+  .ob-step__foot .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-step, .ob-step > *, .ob-echo, .ob-pick, .ob-swap > [data-swap-face], .ob-name__hint { transition-duration: 1ms !important; }
+  .ob-name.is-wanting .ob-name__input { animation: none; }
+  .ob-step--final.is-active .ob-fan__card,
+  .ob-step--moment.is-active .ob-moment__bars rect,
+  .ob-step--moment.is-active .ob-moment__line,
+  .ob-step--moment.is-active .ob-moment__tip { animation: none; }
+}

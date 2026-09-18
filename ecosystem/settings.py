@@ -32,7 +32,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '192.168.1.72', '7835-138-51-69-77.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '192.168.1.72', '.ngrok-free.app', '.ngrok.app']
 
 # ngrok terminates HTTPS and forwards plain HTTP to us, and its free URLs
 # change on every restart — trust any *.ngrok-free.app origin for CSRF so
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'authapp',  # Login app
     'mainpage',  # Main page app
     'tracker',
+    'landing',  # Public homepage
 ]
 
 LOGIN_URL = '/auth/login/'

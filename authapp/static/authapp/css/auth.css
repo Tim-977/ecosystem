@@ -1,0 +1,107 @@
+/* ==========================================================================
+   Ecosystem — sign up and sign in.
+
+   The last two screens of the same room the onboarding runs in: shell,
+   ambient light and floating widgets all come from landing/css/scene.css.
+   Here it's just the column in the middle — one title, one form, nothing
+   boxed in a card.
+   ========================================================================== */
+
+.auth {
+  width: min(var(--auth-w, 640px), calc(100% - 2 * var(--scene-pad)));
+  margin-inline: auto;
+  max-height: 100%;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  padding: clamp(12px, 3vh, 44px) 0 clamp(20px, 4vh, 48px);
+  text-align: center;
+}
+.auth::-webkit-scrollbar { width: 0; height: 0; }
+.auth--narrow { --auth-w: 420px; }
+
+.auth__eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-4);
+}
+.auth__eyebrow .icon { width: 14px; height: 14px; color: var(--indigo); }
+
+/* "Your setup is saved" rides along in the subtitle: same size, a touch brighter */
+.auth__saved { display: inline-flex; align-items: baseline; gap: 6px; color: var(--fg-2); white-space: nowrap; }
+.auth__saved .icon { width: 14px; height: 14px; align-self: center; color: var(--green); }
+.fx .auth__saved { animation: auth-saved 900ms var(--ease-out) 420ms backwards; }
+@keyframes auth-saved { from { opacity: 0; } }
+
+.auth__title {
+  margin-top: 18px;
+  font-size: clamp(36px, 4.4vw, 58px); font-weight: 560; letter-spacing: -0.045em; line-height: 1.0;
+  text-wrap: balance;
+}
+.auth__title em { font-style: normal; color: var(--fg-3); }
+.auth__sub {
+  margin: 16px auto 0; max-width: 42ch;
+  font-size: clamp(14.5px, 1.1vw, 17px); line-height: 1.55; color: var(--fg-3);
+}
+
+/* ---------- the form ---------- */
+.auth__form { margin-top: clamp(26px, 4vh, 44px); text-align: left; }
+.auth__form .alert { margin-bottom: 20px; }
+
+.auth__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.auth__grid--one { grid-template-columns: 1fr; gap: 16px; }
+/* fields must not stretch, or the inputs in a row stop lining up */
+.auth__grid .field { align-content: start; }
+.auth__grid .field + .field { margin-top: 0; }
+.auth__grid .rules { min-height: 0; }
+
+.input--xl { height: 54px; font-size: 16px; padding: 0 16px; border-radius: 13px; }
+.auth__form .input-group > .icon ~ .input--xl { padding-left: 44px; }
+.auth__form .input-group > .icon { left: 16px; }
+.auth__form .input-group__end { right: 8px; }
+.auth__form [data-auth-error] { margin-top: 14px; }
+
+.auth__progress { height: 2px; margin: 26px 0 18px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.auth__progress i {
+  display: block; height: 100%; border-radius: inherit;
+  transform: scaleX(var(--p, 0)); transform-origin: left;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--indigo) 70%, var(--fg-1)), var(--fg-1));
+  transition: transform 520ms var(--ease-out);
+}
+.auth__submit { margin-top: 26px; }
+/* on signup the progress line already carries the gap above the button */
+.auth__progress + .auth__submit { margin-top: 4px; }
+.auth__submit.is-busy .icon { display: none; }
+.auth__alt { margin-top: 18px; font-size: 13.5px; color: var(--fg-4); text-align: center; }
+.auth__alt .link { color: var(--fg-2); }
+
+/* the small print that keeps the page honest, centred under the form */
+.auth__fine { margin-top: 22px; font-size: 12.5px; color: var(--fg-4); text-align: center; }
+
+/* ---------- a returning face: three quiet lines of what's waiting ---------- */
+.auth__waiting {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  margin-top: 28px;
+}
+.auth__waiting span {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 11px; border-radius: var(--r-pill);
+  font-size: 11.5px; color: var(--fg-3); white-space: nowrap;
+  border: 1px solid var(--line-1);
+  background: color-mix(in srgb, var(--bg-1) 60%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.auth__waiting .icon { width: 14px; height: 14px; color: var(--fg-4); }
+
+/* ---------- entrance ---------- */
+.fx .auth > * { animation: focus-in 900ms var(--ease-out) backwards; }
+.fx .auth__title { animation-delay: 80ms; }
+.fx .auth__sub { animation-delay: 140ms; }
+.fx .auth__form { animation-delay: 200ms; }
+.fx .auth__waiting { animation-delay: 240ms; }
+.fx .auth__fine { animation-delay: 280ms; }
+
+@media (max-width: 620px) {
+  .auth__grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx .auth > *, .fx .auth__saved { animation: none; }
+}

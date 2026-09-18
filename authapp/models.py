@@ -37,6 +37,17 @@ class CustomUser(AbstractUser):
     b_day = models.DateField(null=True, blank=True)
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True, blank=True)
 
+    # the guided tour runs once, on the first visit to the overview, and can be
+    # replayed from Settings afterwards
+    has_seen_tour = models.BooleanField(default=False)
+
+    # mood and productivity are always entered and shown the same way; the
+    # stored values stay 1–10 either way, so switching never touches records
+    RATING_NUMBERS = 'numbers'
+    RATING_WORDS = 'words'
+    RATING_FORMAT_CHOICES = [(RATING_NUMBERS, 'Numbers'), (RATING_WORDS, 'Words')]
+    rating_format = models.CharField(max_length=8, choices=RATING_FORMAT_CHOICES, default=RATING_NUMBERS)
+
     # Make sure to call super().clean() plus any additional checks if needed
     def clean(self):
         super().clean()

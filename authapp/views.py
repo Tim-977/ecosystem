@@ -6,10 +6,10 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
 from .forms import GeneralSettingsForm, PersonalizationForm
@@ -38,6 +38,57 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(obj, (date, datetime)):
             return obj.isoformat()
         return super().default(obj)
+
+
+def collect_onboarding(request):
+    """Read pre-signup onboarding answers before login() cycles the session.
+
+    Prefers the session copy the onboarding flow wrote; falls back to the
+    hidden field the signup page fills from the visitor's own browser, for
+    people whose session was dropped between the two pages.
+    """
+    from landing.views import SESSION_KEY, clean_answers
+
+    answers = request.session.get(SESSION_KEY) or {}
+    if not answers:
+        try:
+            answers = clean_answers(json.loads(request.POST.get('onboarding') or '{}'))
+        except (ValueError, TypeError):
+            answers = {}
+    return {'answers': answers, 'session_key': request.session.session_key or ''}
+
+
+def attach_onboarding(user, data):
+    """Link onboarding answers to the new account and apply the ones that
+    shape it: the rating format and the name they asked to be called."""
+    from landing.models import OnboardingResponse
+
+    answers = data.get('answers') or {}
+    if not answers:
+        return
+
+    changed = []
+    if answers.get('scale') in dict(User.RATING_FORMAT_CHOICES):
+        user.rating_format = answers['scale']
+        changed.append('rating_format')
+    if answers.get('name') and not user.preferred_name:
+        user.preferred_name = answers['name'][:100]
+        changed.append('preferred_name')
+    if changed:
+        user.save(update_fields=changed)
+
+    try:
+        OnboardingResponse.objects.filter(session_key=data.get('session_key') or '', user=None).delete()
+        OnboardingResponse.objects.update_or_create(
+            user=user,
+            defaults={
+                'answers': answers,
+                'session_key': data.get('session_key') or '',
+                'completed': bool(answers.get('completed')),
+            },
+        )
+    except (ProgrammingError, OperationalError):
+        pass
 
 
 @require_GET
@@ -154,8 +205,10 @@ def signup_page(request):
                 SignupAttempt.objects.create(ip_address=ip)
             except (ProgrammingError, OperationalError):
                 pass
+            onboarding = collect_onboarding(request)
             login(request, user)
-            return redirect('welcome')
+            attach_onboarding(user, onboarding)
+            return redirect('main_page')
 
     return render(
         request,
@@ -235,8 +288,38 @@ def clear_logs_view(request):
 
 
 @login_required
-def welcome_page(request):
-    return render(request, 'authapp/welcome.html')
+@require_POST
+def tour_state_view(request):
+    """Remember whether the guided tour still needs to run for this account.
+
+    Posting {"seen": false} is what the Replay button uses, so the tour can be
+    taken again from another device.
+    """
+    try:
+        seen = bool(json.loads(request.body or '{}').get('seen', True))
+    except (ValueError, TypeError):
+        seen = True
+
+    request.user.has_seen_tour = seen
+    request.user.save(update_fields=['has_seen_tour'])
+    return JsonResponse({'ok': True, 'seen': seen})
+
+
+@login_required
+@require_POST
+def rating_format_view(request):
+    """Switch how mood and productivity are entered and shown. Stored ratings
+    are 1–10 in both formats, so nothing else changes."""
+    try:
+        value = json.loads(request.body or '{}').get('format')
+    except (ValueError, TypeError, AttributeError):
+        value = None
+    if value not in dict(User.RATING_FORMAT_CHOICES):
+        return JsonResponse({'ok': False}, status=400)
+
+    request.user.rating_format = value
+    request.user.save(update_fields=['rating_format'])
+    return JsonResponse({'ok': True, 'format': value})
 
 
 @login_required

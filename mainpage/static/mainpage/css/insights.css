@@ -75,3 +75,6 @@
 .cal-legend i { width: 11px; height: 11px; border-radius: 3px; }
 .cal-legend span:first-child { margin-right: 4px; }
 .cal-legend span:last-child { margin-left: 4px; }
+
+/* word-mode averages read as a word rather than a figure */
+.kpis .metric__value.is-word { font-size: 25px; letter-spacing: -0.025em; white-space: nowrap; }

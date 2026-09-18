@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 from .models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 from tracker.utils.socket_client import send_render_request
+from landing.views import landing_page
 
 
 def _parse_time_str(t_str):
@@ -61,6 +62,29 @@ def _hourly_ids(log):
     return hours
 
 
+def _readd_colon(t):
+    """'715' / '0715' as stored in DailyData.sleep -> '07:15'."""
+    t = t.strip()
+    if len(t) == 4:
+        return t[:2] + ":" + t[2:]
+    elif len(t) == 3:
+        return "0" + t[0] + ":" + t[1:]
+    return t
+
+
+def _latest_alarm(user_id, exclude_date):
+    """The first alarm from the most recent night that has one, as 'HH:MM'."""
+    sleep = (
+        DailyData.objects
+        .filter(user_id=user_id, sleep__regex=r'^[^,]*,[^,]*,[0-9]{3,4}')
+        .exclude(date=exclude_date)
+        .order_by('-date')
+        .values_list('sleep', flat=True)
+        .first()
+    )
+    return _readd_colon(sleep.split(',')[2]) if sleep else ''
+
+
 def _day_summary(log):
     """Read-only, JSON-friendly summary of one DailyData row for charts."""
     return {
@@ -74,8 +98,11 @@ def _day_summary(log):
     }
 
 
-@login_required
 def main_page_view(request):
+    # Visitors who aren't signed in get the public homepage at the root.
+    if not request.user.is_authenticated:
+        return landing_page(request)
+
     all_data = DailyData.objects.filter(user_id=request.user.id).order_by('-date')
     server_time = now()
     today = date.today()
@@ -220,17 +247,17 @@ def day_view(request, year, month, day):
     sleep_data = daily_obj.sleep or ""
     splitted = sleep_data.split(',')
 
-    def readd_colon(t):
-        t = t.strip()
-        if len(t) == 4:
-            return t[:2] + ":" + t[2:]
-        elif len(t) == 3:
-            return "0" + t[0] + ":" + t[1:]
-        return t
+    bed_time_form = _readd_colon(splitted[0]) if len(splitted) > 0 else ''
+    wake_up_time_form = _readd_colon(splitted[1]) if len(splitted) > 1 else ''
+    first_alarm_time_form = _readd_colon(splitted[2]) if len(splitted) > 2 else ''
 
-    bed_time_form = readd_colon(splitted[0]) if len(splitted) > 0 else ''
-    wake_up_time_form = readd_colon(splitted[1]) if len(splitted) > 1 else ''
-    first_alarm_time_form = readd_colon(splitted[2]) if len(splitted) > 2 else ''
+    # People mostly keep one alarm, so an untouched night starts from the last
+    # one they entered. A night with bed/wake but no alarm is left alone —
+    # that's a deliberate "no alarm today".
+    alarm_is_default = False
+    if not (bed_time_form or wake_up_time_form or first_alarm_time_form):
+        first_alarm_time_form = _latest_alarm(request.user.id, current_date)
+        alarm_is_default = bool(first_alarm_time_form)
 
     habits_binary = daily_obj.habits_completed or ""
     habits_binary = habits_binary.ljust(10, '0')[:10]
@@ -253,6 +280,7 @@ def day_view(request, year, month, day):
         "bed_time_form": bed_time_form,
         "wake_up_time_form": wake_up_time_form,
         "first_alarm_time_form": first_alarm_time_form,
+        "alarm_is_default": alarm_is_default,
         "habits_status": habits_status,
         "monthly_obj": monthly_obj,
         "hourly_data": hourly_data,

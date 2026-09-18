@@ -10,6 +10,8 @@
   const isLogged = (d) => d && (d.mood != null || d.productivity != null || d.sleep > 0 || (d.habits || '').includes('1') || d.thoughts || d.has_reflection);
   const emptyState = (glyph, title, text) => `<div class="empty empty--compact"><div class="empty__glyph">${icon(glyph, 'icon icon--lg')}</div><p class="empty__title">${title}</p><p class="empty__text">${text}</p></div>`;
   const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  /* mood and productivity read as the person rates them; charts stay numeric */
+  const R = (kind, v) => Eco.rating.label(kind, v);
   const SEP = '|';
 
   function kpi(key, value, unit, foot, series, color, o = {}) {
@@ -17,6 +19,7 @@
     if (!tile) return;
     const v = $('.metric__value', tile);
     if (value == null) { v.textContent = '–'; v.classList.add('is-empty'); }
+    else if (o.word) { v.textContent = Eco.rating.word(o.word, value); v.classList.add('is-word'); }
     else v.innerHTML = `<span data-count-to="${value}" data-decimals="${o.decimals ?? 1}">${(+value).toFixed(o.decimals ?? 1)}</span>${unit ? `<small>${unit}</small>` : ''}`;
     $('.metric__foot span', tile).textContent = foot || '';
     if (series) Eco.charts.spark($('.metric__spark', tile), series, { color, min: o.min, max: o.max });
@@ -86,8 +89,13 @@
     // KPIs
     const bestIdx = (vals) => { let bi = -1; vals.forEach((v, i) => { if (v != null && (bi < 0 || v > vals[bi])) bi = i; }); return bi; };
     const bm = bestIdx(mood), bp = bestIdx(prod);
-    kpi('mood', S().avg(mood), '/10', bm >= 0 ? `Best ${mood[bm]} · ${Eco.fmt(dayDate(bm + 1), { month: 'short', day: 'numeric' })}` : 'No ratings yet', mood, 'var(--green)', { min: 0, max: 10 });
-    kpi('productivity', S().avg(prod), '/10', bp >= 0 ? `Best ${prod[bp]} · ${Eco.fmt(dayDate(bp + 1), { month: 'short', day: 'numeric' })}` : 'No ratings yet', prod, 'var(--indigo)', { min: 0, max: 10 });
+    const words = Eco.rating.words();
+    const best = (kind, vals, i) => {
+      const on = Eco.fmt(dayDate(i + 1), { month: 'short', day: 'numeric' });
+      return words ? `Best on ${on}` : `Best ${vals[i]} · ${on}`;
+    };
+    kpi('mood', S().avg(mood), words ? '' : '/10', bm >= 0 ? best('mood', mood, bm) : 'No ratings yet', mood, 'var(--green)', { min: 0, max: 10, word: words && 'mood' });
+    kpi('productivity', S().avg(prod), words ? '' : '/10', bp >= 0 ? best('productivity', prod, bp) : 'No ratings yet', prod, 'var(--indigo)', { min: 0, max: 10, word: words && 'productivity' });
     const nights = sleep.filter((v) => v != null);
     const avgSleep = S().avg(sleep);
     if (avgSleep == null) kpi('sleep', null, '', 'No nights tracked', null);
@@ -108,8 +116,8 @@
     if (summary) summary.textContent = loggedDays.length ? `${loggedDays.length} days logged · ${written.length} journal entries · ${nights.length} nights of sleep tracked.` : `Nothing logged in ${monthName} yet.`;
 
     const tipFor = (i) => Eco.tt(Eco.fmt(dayDate(i + 1), { weekday: 'long', day: 'numeric', month: 'short' }), [
-      { label: 'Mood', value: mood[i] ?? '–', color: 'var(--green)' },
-      { label: 'Productivity', value: prod[i] ?? '–', color: 'var(--indigo)' },
+      { label: 'Mood', value: R('mood', mood[i]), color: 'var(--green)' },
+      { label: 'Productivity', value: R('productivity', prod[i]), color: 'var(--indigo)' },
       { label: 'Sleep', value: sleep[i] != null ? S().hours(sleep[i]) : '–', color: 'var(--sky)' },
     ]);
     const openDay = (i) => { if (dayDate(i + 1) <= today) window.location.href = Eco.dayUrl(dayDate(i + 1)); };
@@ -134,7 +142,7 @@
     const top = Math.max(...wAvg.filter((v) => v != null));
     $('#weekday').innerHTML = wAvg.some((v) => v != null)
       ? WEEKDAYS.map((name, i) => `
-        <div class="weekday__row${wAvg[i] === top ? ' is-top' : ''}" data-tip="${name} · mood ${wAvg[i] != null ? S().fmt(wAvg[i]) : '–'} · productivity ${wk[i].pn ? S().fmt(wk[i].p / wk[i].pn) : '–'} · ${wk[i].n} days">
+        <div class="weekday__row${wAvg[i] === top ? ' is-top' : ''}" data-tip="${name} · mood ${R('mood', wAvg[i])} · productivity ${R('productivity', wk[i].pn ? wk[i].p / wk[i].pn : null)} · ${wk[i].n} days">
           <span class="weekday__name">${name}</span>
           <span class="weekday__track"><i style="--w:${wAvg[i] != null ? wAvg[i] * 10 : 0}%"></i>${wk[i].pn ? `<b style="left:${(wk[i].p / wk[i].pn) * 10}%"></b>` : ''}</span>
           <span class="weekday__val num">${wAvg[i] != null ? S().fmt(wAvg[i]) : '–'}</span>
@@ -220,8 +228,9 @@
     const prods = summaries.map((d) => d.productivity).filter((v) => v != null);
     const sleeps = summaries.map((d) => (d.sleep > 0 ? d.sleep : null)).filter((v) => v != null);
 
-    kpi('mood', S().avg(moods), '/10', bestMonth(mMood) >= 0 ? `Best: ${Eco.fmt(new Date(yr, bestMonth(mMood), 1), { month: 'short' })}` : 'No ratings yet', mMood, 'var(--green)', { min: 0, max: 10 });
-    kpi('productivity', S().avg(prods), '/10', bestMonth(mProd) >= 0 ? `Best: ${Eco.fmt(new Date(yr, bestMonth(mProd), 1), { month: 'short' })}` : 'No ratings yet', mProd, 'var(--indigo)', { min: 0, max: 10 });
+    const words = Eco.rating.words();
+    kpi('mood', S().avg(moods), words ? '' : '/10', bestMonth(mMood) >= 0 ? `Best: ${Eco.fmt(new Date(yr, bestMonth(mMood), 1), { month: 'short' })}` : 'No ratings yet', mMood, 'var(--green)', { min: 0, max: 10, word: words && 'mood' });
+    kpi('productivity', S().avg(prods), words ? '' : '/10', bestMonth(mProd) >= 0 ? `Best: ${Eco.fmt(new Date(yr, bestMonth(mProd), 1), { month: 'short' })}` : 'No ratings yet', mProd, 'var(--indigo)', { min: 0, max: 10, word: words && 'productivity' });
     kpi('sleep', null, '', sleeps.length ? `${sleeps.length} nights tracked` : 'No nights tracked', sleeps.length ? mSleep : null, 'var(--sky)', { min: 0 });
     if (sleeps.length) { const v = $('[data-kpi="sleep"] .metric__value'); v.classList.remove('is-empty'); v.textContent = S().hours(S().avg(sleeps)); }
     const hoursIn = (rows) => rows.reduce((n, r) => n + (grid[r.date] || []).filter((x) => x != null).length, 0);
@@ -239,8 +248,8 @@
     const valueOf = (pick) => (d) => { const r = byIso.get(Eco.iso(d)); return r ? pick(r) : null; };
     const shade = (token, t) => Eco.charts.mix(Eco.charts.css('--bg-3'), Eco.charts.css(token), t);
     const metrics = {
-      mood: { label: 'Mood', value: valueOf((r) => r.mood), color: (v) => shade('--green', 0.15 + (v / 10) * 0.85), fmt: (v) => `${v}/10`, samples: [2, 4, 6, 8, 10] },
-      productivity: { label: 'Productivity', value: valueOf((r) => r.productivity), color: (v) => shade('--indigo', 0.15 + (v / 10) * 0.85), fmt: (v) => `${v}/10`, samples: [2, 4, 6, 8, 10] },
+      mood: { label: 'Mood', value: valueOf((r) => r.mood), color: (v) => shade('--green', 0.15 + (v / 10) * 0.85), fmt: (v) => (words ? R('mood', v) : `${v}/10`), samples: [2, 4, 6, 8, 10] },
+      productivity: { label: 'Productivity', value: valueOf((r) => r.productivity), color: (v) => shade('--indigo', 0.15 + (v / 10) * 0.85), fmt: (v) => (words ? R('productivity', v) : `${v}/10`), samples: [2, 4, 6, 8, 10] },
       sleep: { label: 'Sleep', value: valueOf((r) => (r.sleep > 0 ? r.sleep : null)), color: (v) => shade('--sky', Math.max(0.12, Math.min(1, (v - 3) / 6))), fmt: (v) => S().hours(v), samples: [4, 6, 7, 8, 9] },
       habits: { label: 'Habits done', value: valueOf((r) => { const n = (r.habits || '').split('').filter((b) => b === '1').length; return n || null; }), color: (v) => shade('--orange', 0.18 + Math.min(1, v / 8) * 0.82), fmt: (v) => v, samples: [1, 2, 4, 6, 8] },
     };
@@ -272,8 +281,8 @@
         formatX: (i) => Eco.fmt(new Date(yr, i, 1), { month: 'short' }),
         series: [{ color: 'var(--green)', values: mMood }, { color: 'var(--indigo)', values: mProd, areaOpacity: 0.1 }],
         tooltip: (i) => Eco.tt(mName(i), [
-          { label: 'Mood', value: mMood[i] != null ? S().fmt(mMood[i]) : '–', color: 'var(--green)' },
-          { label: 'Productivity', value: mProd[i] != null ? S().fmt(mProd[i]) : '–', color: 'var(--indigo)' },
+          { label: 'Mood', value: R('mood', mMood[i]), color: 'var(--green)' },
+          { label: 'Productivity', value: R('productivity', mProd[i]), color: 'var(--indigo)' },
           { label: 'Sleep', value: mSleep[i] != null ? S().hours(mSleep[i]) : '–', color: 'var(--sky)' },
           { label: 'Days logged', value: monthly[i].filter(isLogged).length },
         ]),

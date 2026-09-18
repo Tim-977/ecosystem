@@ -133,7 +133,6 @@
         const what = hours[h] == null ? 'Unlogged' : act ? act.name : 'Unknown activity';
         c.dataset.tip = `${hh(h)}–${hh(h + 1)} · ${what}`;
         c.setAttribute('aria-label', `${hh(h)} to ${hh(h + 1)}: ${what}`);
-        c.setAttribute('aria-selected', sel && h >= Math.min(sel.a, sel.b) && h <= Math.max(sel.a, sel.b) ? 'true' : 'false');
       });
 
       // totals
@@ -160,6 +159,7 @@
     }
 
     function renderSelection() {
+      cells.forEach((c, h) => c.setAttribute('aria-selected', sel && h >= Math.min(sel.a, sel.b) && h <= Math.max(sel.a, sel.b) ? 'true' : 'false'));
       if (!sel) { selEl.hidden = true; return; }
       const a = Math.min(sel.a, sel.b), b = Math.max(sel.a, sel.b);
       selEl.hidden = false;
@@ -238,7 +238,15 @@
         }
       });
       const close = () => { Eco.closePopover(); };
-      Eco.popover(selEl, wrap, { placement: 'bottom-start', focus: false, onClose: () => { sel = null; renderSelection(); cells[focusHour].focus({ preventScroll: true }); } });
+      Eco.popover(selEl, wrap, {
+        placement: 'bottom-start', focus: false,
+        onClose: () => {
+          // a new drag closes this menu on its way in; it owns the selection now
+          if (dragging) return;
+          sel = null; renderSelection();
+          if (list.contains(document.activeElement)) cells[focusHour].focus({ preventScroll: true });
+        },
+      });
       const first = list.querySelector('.menu__item, a');
       first && first.focus({ preventScroll: true });
     }
@@ -252,10 +260,14 @@
     track.addEventListener('pointerdown', (e) => {
       if (e.button !== 0 || !e.target.closest('.canvas__cell')) return;
       e.preventDefault();
-      Eco.closePopover();
       dragging = true;
+      Eco.closePopover();
       track.setPointerCapture(e.pointerId);
       const h = hourAt(e.clientX);
+      // nothing from the last selection may linger: not its focus ring, not its range
+      if (track.contains(document.activeElement)) document.activeElement.blur();
+      cells.forEach((c, k) => { c.tabIndex = k === h ? 0 : -1; });
+      canvas.classList.add('is-dragging');
       focusHour = h;
       sel = { a: h, b: h };
       if (brush !== null) assign(h, h, brush === 'erase' ? null : brush);
@@ -272,11 +284,12 @@
     const endDrag = () => {
       if (!dragging) return;
       dragging = false;
+      canvas.classList.remove('is-dragging');
       if (brush !== null) { sel = null; render(); return; }
       openAssignMenu();
     };
     track.addEventListener('pointerup', endDrag);
-    track.addEventListener('pointercancel', () => { dragging = false; sel = null; renderSelection(); });
+    track.addEventListener('pointercancel', () => { dragging = false; canvas.classList.remove('is-dragging'); sel = null; renderSelection(); });
 
     // keyboard
     track.addEventListener('keydown', (e) => {
@@ -344,9 +357,31 @@
     const bed = $('#bed_time'), wake = $('#wake_up_time'), alarm = $('#first_alarm_time');
     const total = $('#sleepTotal'), totalLabel = $('#sleepTotalLabel');
     const bar = $('#nightBar'), tick = $('#nightAlarm'), note = $('#sleepAlarmNote');
+    const track = $('#nightTrack'), axis = $('#nightAxis'), hint = $('#nightHint');
+    const pin = $('#nightPin'), guide = $('#nightGuide');
+
+    // the night runs 19:00 → 14:00 the next day, one bar per hour
+    const START = 19 * 60, HOURS = 19, SPAN = HOURS * 60, SNAP = 15;
+    const HINT = hint.textContent;
+    let pending = null; // bed time from the first tap, until the second lands
+    const carried = () => alarm.closest('[data-timefield]').hasAttribute('data-default');
+
     const mins = (v) => { const m = /^(\d{2}):(\d{2})$/.exec(v || ''); return m ? +m[1] * 60 + +m[2] : null; };
-    const pos = (m) => { const rel = (m - 18 * 60 + 1440) % 1440; return Math.min(100, (rel / (18 * 60)) * 100); };
+    const hhmm = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+    const rel = (m) => (m - START + 1440) % 1440; // minutes into the night
+    // times in the 14:00–19:00 gap pin to whichever end of the night they're nearer
+    const pos = (m) => { const r = rel(m); return r <= SPAN ? (r / SPAN) * 100 : r < SPAN + (1440 - SPAN) / 2 ? 100 : 0; };
     const dur = (n) => `${Math.floor(n / 60)}h${n % 60 ? ` ${pad(n % 60)}m` : ''}`;
+
+    $('#night').style.setProperty('--hours', HOURS);
+    $('.night__hours', track).innerHTML = Array.from({ length: HOURS - 1 }, (_, i) => `<i style="left:${((i + 1) / HOURS) * 100}%"></i>`).join('');
+    axis.innerHTML = Array.from({ length: HOURS + 1 }, (_, i) => {
+      const h = (START / 60 + i) % 24;
+      return `<span style="--i:${i}"${h === 0 ? ' class="is-midnight"' : ''}>${pad(h)}</span>`;
+    }).join('');
+    // every label fits on a roomy panel; on a tight one keep every other hour
+    if (window.ResizeObserver) new ResizeObserver(() => axis.classList.toggle('is-tight', axis.clientWidth < HOURS * 16)).observe(axis);
+
     const render = () => {
       const b = mins(bed.value), w = mins(wake.value), a = mins(alarm.value);
       if (b != null && w != null) {
@@ -354,15 +389,12 @@
         total.textContent = dur(d);
         total.classList.remove('is-empty');
         totalLabel.textContent = 'asleep';
-        const l = pos(b), r = pos(w);
-        bar.style.opacity = '1';
-        bar.style.left = `${Math.min(l, r)}%`;
-        bar.style.width = `${Math.max(1.5, Math.abs(r - l))}%`;
+        if (pending == null) paintBar(b, w);
       } else {
         total.textContent = '–';
         total.classList.add('is-empty');
         totalLabel.textContent = b == null && w == null ? 'add bed and wake times' : b == null ? 'add a bed time' : 'add a wake time';
-        bar.style.opacity = '0';
+        if (pending == null) bar.style.opacity = '0';
       }
       if (a != null) {
         tick.style.opacity = '1';
@@ -370,9 +402,89 @@
         if (w != null) {
           let late = w - a; if (late < -720) late += 1440; if (late > 720) late -= 1440;
           note.textContent = late > 0 ? `Up ${dur(late).replace('0h ', '')} after first alarm` : late === 0 ? 'Up with the first alarm' : 'Up before the alarm';
-        } else note.textContent = `First alarm ${alarm.value}`;
+        } else note.textContent = `${carried() ? 'Usual alarm' : 'First alarm'} ${alarm.value}`;
       } else { tick.style.opacity = '0'; note.textContent = ''; }
     };
+
+    function paintBar(from, to) {
+      let l = pos(from), r = pos(to);
+      if (r < l) [l, r] = [r, l];
+      bar.style.opacity = '1';
+      bar.style.left = `${l}%`;
+      bar.style.width = `${Math.max(0.8, r - l)}%`;
+    }
+
+    /* ---------- two taps on the track: bed, then wake ---------- */
+    const at = (clientX) => {
+      const box = track.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (clientX - box.left) / box.width));
+      return (START + Math.round((x * SPAN) / SNAP) * SNAP) % 1440;
+    };
+    const place = (el, m) => { el.style.left = `${pos(m)}%`; };
+    const tf = (input) => input.closest('[data-timefield]')._tf;
+    const write = (input, m) => {
+      const v = hhmm(m);
+      const field = tf(input);
+      if (field) field.set(v); else input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true })); // autosave + render
+    };
+    const say = (text) => { hint.textContent = text; };
+
+    const cancel = () => {
+      if (pending == null) return;
+      pending = null;
+      pin.hidden = true;
+      track.classList.remove('is-pending');
+      say(HINT);
+      render();
+    };
+
+    track.addEventListener('pointermove', (e) => {
+      const m = at(e.clientX);
+      if (e.pointerType === 'mouse') { // a finger has nothing to hover with
+        guide.hidden = false;
+        place(guide, m);
+        guide.firstElementChild.textContent = hhmm(m);
+      }
+      if (pending != null) paintBar(pending, m);
+    });
+    track.addEventListener('pointerleave', () => {
+      guide.hidden = true;
+      if (pending != null) paintBar(pending, pending);
+    });
+
+    track.addEventListener('click', (e) => {
+      const m = at(e.clientX);
+      if (pending == null) {
+        pending = m;
+        pin.hidden = false;
+        place(pin, m);
+        paintBar(m, m);
+        track.classList.add('is-pending');
+        say(`Bed ${hhmm(m)} — now tap when you woke up.`);
+        return;
+      }
+      if (m === pending) return; // a night needs some length
+      // tapped wake before bed: they meant the other way round
+      const [from, to] = rel(m) < rel(pending) ? [m, pending] : [pending, m];
+      pending = null;
+      pin.hidden = true;
+      track.classList.remove('is-pending');
+      write(bed, from);
+      write(wake, to);
+      say(`Slept ${hhmm(from)} → ${hhmm(to)}. Tap twice to change it.`);
+    });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cancel(); });
+    document.addEventListener('pointerdown', (e) => { if (!track.contains(e.target)) cancel(); });
+
+    // a carried-over alarm stops being "usual" the moment it's edited
+    alarm.addEventListener('input', () => {
+      const field = alarm.closest('[data-timefield]');
+      field.removeAttribute('data-default');
+      field.removeAttribute('title');
+    }, { once: true });
+
     [bed, wake, alarm].forEach((i) => i.addEventListener('input', render));
     render();
   }
@@ -399,21 +511,25 @@
     render();
   }
 
-  /* ---------------- autosave ---------------- */
+  /* ---------------- autosave ----------------
+     The dock only ever says "Saving…" or "Saved": pending edits count as
+     saving, since they're on their way. A failed save keeps saying "Saving…",
+     explains itself in a toast and retries on its own. */
   function initAutosave(form) {
     const status = $('#saveStatus');
     const dot = $('.status-dot', status);
     const text = $('.dock__status-text', status);
     // version counts edits; a save only reports "Saved" if nothing changed while it was in flight
-    let state = 'saved', timer = null, inflight = null, again = false, lastSaved = null, version = 0;
+    let state = 'saved', timer = null, retry = null, inflight = null, again = false, version = 0;
 
-    const setState = (s, msg) => {
+    const setState = (s) => {
       state = s;
-      dot.dataset.state = s;
-      text.textContent = msg || { saved: lastSaved ? 'Saved' : 'All changes saved', dirty: 'Unsaved changes', saving: 'Saving…', error: 'Couldn’t save' }[s];
+      dot.dataset.state = s === 'saved' ? 'saved' : s === 'error' ? 'error' : 'saving';
+      const label = s === 'saved' ? 'Saved' : 'Saving…';
+      if (text.textContent !== label) text.textContent = label;
     };
     const inTasks = (el) => el.closest('[data-tasks-compact]');
-    const schedule = (ms) => { version++; if (state !== 'saving') setState('dirty'); clearTimeout(timer); timer = setTimeout(save, ms); };
+    const schedule = (ms) => { version++; clearTimeout(retry); if (state !== 'saving') setState('dirty'); clearTimeout(timer); timer = setTimeout(save, ms); };
 
     form.addEventListener('input', (e) => { if (!inTasks(e.target)) schedule(e.target.matches('textarea') ? 1200 : 700); });
     form.addEventListener('change', (e) => { if (!inTasks(e.target) && e.target.type === 'checkbox') schedule(250); });
@@ -423,6 +539,7 @@
 
     async function save() {
       clearTimeout(timer);
+      clearTimeout(retry);
       if (inflight) { again = true; return inflight; }
       setState('saving');
       const sent = version;
@@ -437,12 +554,12 @@
           const errors = $$('[data-flash]', doc).filter((m) => /error/.test(m.dataset.flash));
           $$('[data-flash]', doc).forEach((m) => Eco.toast(m.textContent.trim(), { type: /error/.test(m.dataset.flash) ? 'error' : 'info' }));
           if (errors.length) throw new Error(null);
-          lastSaved = new Date();
           if (version !== sent) { setState('dirty'); again = true; }
-          else setState('saved', `Saved ${pad(lastSaved.getHours())}:${pad(lastSaved.getMinutes())}`);
+          else setState('saved');
         } catch (err) {
           setState('error');
           if (err.message && err.message !== 'null') Eco.toast(err.message.startsWith('Failed to fetch') ? 'You appear to be offline. Changes are kept on this page.' : err.message, { type: 'error', action: { label: 'Retry', onClick: save } });
+          retry = setTimeout(save, 8000);
         } finally {
           inflight = null;
           if (again && state !== 'error') { again = false; clearTimeout(timer); save(); }

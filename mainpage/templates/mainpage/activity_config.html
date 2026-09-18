@@ -2,6 +2,7 @@
 {% load static ecosystem_extras %}
 
 {% block title %}Activities · {{ month|month_name }} {{ year }}{% endblock %}
+{% block body_class %}is-mainpage{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% static 'mainpage/css/routines.css' %}">{% endblock %}
 
 {% block content %}

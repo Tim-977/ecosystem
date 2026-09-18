@@ -100,7 +100,7 @@ class PageTests(TestCase):
             reverse('day_view', args=[2025, 3, 4]), reverse('diary_view', args=[2025, 3]),
             reverse('set_habits', args=[2025, 3]), reverse('activity_config_view', args=[2025, 3]),
             reverse('settings'), reverse('changelog'), reverse('license'), reverse('developer_info'),
-            reverse('feedback'), reverse('confirm_password_download'), reverse('welcome'),
+            reverse('feedback'), reverse('confirm_password_download'),
         ]
         for url in urls:
             with self.subTest(url=url):

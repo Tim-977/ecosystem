@@ -1,0 +1,123 @@
+/* ==========================================================================
+   Ecosystem — the guided tour.
+
+   Driver.js ships a plain white tooltip; this makes it one of ours: the same
+   glass panel as the rest of the app, a softer spotlight, and a footer that
+   reads as chapters rather than "1 of 17".
+   ========================================================================== */
+
+/* On the near-black dark theme a dark scrim barely registers, so it goes
+   deeper there and the cut-out gets a faint rim; the app stays readable
+   underneath. Light mode already reads clearly. */
+:root { --tour-scrim: #000; --tour-scrim-opacity: 0.76; }
+:root[data-theme='light'] { --tour-scrim: #1a1a22; --tour-scrim-opacity: 0.62; }
+
+/* ---------- the spotlight ---------- */
+.driver-overlay, .driver-overlay * { transition: none; }
+.driver-active-element, .driver-active-element:focus, .driver-active-element:focus-visible {
+  outline: none !important;
+  border-radius: 16px;
+}
+/* the cut-out gets a rim so the highlight reads as deliberate, not a hole */
+:root:not([data-theme='light']) .driver-active-element {
+  outline: 1.5px solid rgba(255, 255, 255, 0.34) !important;
+  outline-offset: 7px;
+  transition: outline-color 200ms var(--ease-out);
+}
+
+/* ---------- popover ---------- */
+.driver-popover.eco-tour {
+  max-width: 356px; padding: 20px 20px 16px;
+  border-radius: 18px;
+  color: var(--fg-1);
+  background: color-mix(in srgb, var(--bg-1) 88%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--highlight), 0 30px 70px -28px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(var(--glow-rgb), 0.06);
+  font-family: var(--font-sans);
+  animation: tour-in 320ms var(--ease-out);
+}
+:root[data-theme='light'] .driver-popover.eco-tour {
+  box-shadow: var(--highlight), 0 30px 70px -30px rgba(20, 20, 40, 0.34), 0 0 0 1px rgba(var(--glow-rgb), 0.08);
+}
+@keyframes tour-in { from { opacity: 0; transform: translateY(6px) scale(0.985); } }
+
+.driver-popover.eco-tour .driver-popover-title {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 17px; font-weight: 560; letter-spacing: -0.025em; line-height: 1.25;
+  color: var(--fg-1);
+}
+.driver-popover.eco-tour .driver-popover-description {
+  margin-top: 8px;
+  font-size: 13.5px; line-height: 1.55; color: var(--fg-2); text-wrap: pretty;
+}
+
+/* ---------- footer: chapter dots · skip · back · next ---------- */
+.driver-popover.eco-tour .driver-popover-footer {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--line-1);
+}
+.driver-popover.eco-tour .driver-popover-footer .driver-popover-navigation-btns {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.driver-popover.eco-tour .driver-popover-footer button {
+  all: unset;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 14px; border-radius: var(--r-pill);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+  color: var(--fg-2); background: var(--bg-3);
+  cursor: pointer; text-shadow: none;
+  transition: background-color var(--t-2), color var(--t-2), transform var(--t-1) var(--ease-out);
+}
+.driver-popover.eco-tour .driver-popover-footer button:hover { color: var(--fg-1); background: var(--bg-4); }
+.driver-popover.eco-tour .driver-popover-footer button:active { transform: scale(0.97); }
+.driver-popover.eco-tour .driver-popover-next-btn {
+  color: var(--inverse-fg); background: var(--inverse-bg); font-weight: 540;
+}
+.driver-popover.eco-tour .driver-popover-next-btn:hover {
+  color: var(--inverse-fg); background: color-mix(in srgb, var(--inverse-bg) 88%, var(--bg));
+}
+
+/* chapter dots take the first row of the footer, the buttons the second */
+.eco-tour__bar { order: -2; flex: 1 0 100%; display: flex; align-items: center; gap: 6px; }
+.eco-tour__dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--line-3);
+  transition: background-color var(--t-3), width var(--t-3) var(--ease-out);
+}
+.eco-tour__dot.is-done { background: var(--fg-3); }
+.eco-tour__dot.is-at { width: 16px; border-radius: 3px; background: var(--indigo); }
+.eco-tour__count {
+  margin-left: 6px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--fg-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.driver-popover.eco-tour .eco-tour__skip {
+  all: unset;
+  order: -1; cursor: pointer;
+  font-family: var(--font-sans); font-size: 12.5px; color: var(--fg-4);
+  transition: color var(--t-2);
+}
+.driver-popover.eco-tour .eco-tour__skip:hover { color: var(--fg-2); background: none; }
+
+/* ---------- arrow ---------- */
+.driver-popover.eco-tour .driver-popover-arrow { border-width: 7px; }
+.driver-popover.eco-tour .driver-popover-arrow-side-top { border-top-color: color-mix(in srgb, var(--bg-1) 88%, transparent); }
+.driver-popover.eco-tour .driver-popover-arrow-side-bottom { border-bottom-color: color-mix(in srgb, var(--bg-1) 88%, transparent); }
+.driver-popover.eco-tour .driver-popover-arrow-side-left { border-left-color: color-mix(in srgb, var(--bg-1) 88%, transparent); }
+.driver-popover.eco-tour .driver-popover-arrow-side-right { border-right-color: color-mix(in srgb, var(--bg-1) 88%, transparent); }
+
+/* the app's own floating furniture must not sit over the spotlight */
+body.driver-active .dock-wrap, body.driver-active .toasts { z-index: 1; }
+
+@media (max-width: 620px) {
+  .driver-popover.eco-tour { max-width: min(340px, calc(100vw - 32px)); }
+  .eco-tour__count { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover.eco-tour { animation: none; }
+  .eco-tour__dot { transition: none; }
+}

@@ -40,3 +40,15 @@ def month_name(month):
         return calendar.month_name[int(month)]
     except (TypeError, ValueError, IndexError):
         return ""
+
+
+@register.simple_tag
+def rating_scales():
+    from mainpage.ratings import SCALES
+    return {kind: [{'value': v, 'word': w} for v, w in pairs] for kind, pairs in SCALES.items()}
+
+
+@register.filter
+def rating_word(value, kind):
+    from mainpage.ratings import nearest_word
+    return nearest_word(kind, value)

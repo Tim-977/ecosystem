@@ -61,6 +61,35 @@
     document.addEventListener('eco:theme', renderTheme);
     renderTheme();
 
+    // cursor glow
+    const glowToggle = $('#cursorGlowToggle');
+    if (glowToggle) {
+      glowToggle.checked = Eco.cursorGlow.get();
+      glowToggle.addEventListener('change', () => Eco.cursorGlow.set(glowToggle.checked));
+    }
+
+    // mood & productivity format: saved as soon as it's picked
+    const format = $('#ratingFormat');
+    if (format) {
+      const hint = $('[data-rating-hint]');
+      const HINT = { numbers: 'On a scale from 1 to 10.', words: 'In words, from “Terrible” to “Excellent!”' };
+      let saved = $('[aria-checked="true"]', format).dataset.value;
+      format.addEventListener('eco:change', async (e) => {
+        const value = e.detail;
+        if (value === saved) return;
+        const res = await Eco.api(format.dataset.url, { method: 'POST', json: { format: value } });
+        if (res.ok) {
+          saved = value;
+          document.body.dataset.rating = value;
+          hint.textContent = HINT[value];
+          Eco.toast(value === 'words' ? 'Check-ins now use words.' : 'Check-ins now use numbers.', { type: 'success' });
+        } else {
+          Eco.segmented(format).select($(`[data-value="${saved}"]`, format), false);
+          Eco.toast('That didn’t save. Try again in a moment.', { type: 'error' });
+        }
+      });
+    }
+
     // scroll-spy
     const links = $$('.settings-nav__link');
     const io = new IntersectionObserver((entries) => entries.forEach((en) => {
