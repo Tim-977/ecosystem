@@ -86,7 +86,8 @@
     const visuals = steps.map((s) => $('.story-step__visual', s));
     const stage = $('[data-stage]', grid);
     const dots = $$('.story__progress i', stage);
-    const wide = window.matchMedia('(min-width: 981px)');
+    // the stage needs 981px of layout; the page is drawn at 120% (landing.css)
+    const wide = window.matchMedia('(min-width: 1177px)');
     let current = -1;
 
     const setActive = (i) => {
@@ -435,7 +436,6 @@
     const hero = $('[data-hero]');
     const media = $('[data-halftone]');
     fx.halftone && fx.halftone(media, { img: $('.hero__img', media), hero });
-    fx.chroma && fx.chroma($('[data-chroma]'));
     fx.drift && fx.drift($('[data-drift]'));
     fx.ghost && fx.ghost($('[data-ghost]'));
     fx.glow && fx.glow($$('[data-glow]'));

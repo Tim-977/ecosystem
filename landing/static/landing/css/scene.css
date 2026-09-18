@@ -252,11 +252,6 @@ body.scene-body { overflow: hidden; }
 .ow-year { display: grid; grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 2px; }
 .ow-year i { aspect-ratio: 1; border-radius: 1.5px; background: var(--empty-cell); }
 
-/* the marketing figures */
-.ow__card--stat { gap: 6px; padding: 18px; }
-.ow__card--stat b { font-size: clamp(30px, 3vw, 42px); font-weight: 560; letter-spacing: -0.045em; line-height: 1; }
-.ow__card--stat span { font-size: 12px; line-height: 1.4; color: var(--fg-3); }
-
 /* widgets arrive from their own edge */
 .fx .ow { animation: ow-arrive 1100ms var(--ease-out) backwards; animation-delay: calc(140ms + var(--i, 0) * 90ms); }
 .fx .ow--l { --from-x: -60px; }
@@ -333,7 +328,7 @@ body.scene-body { overflow: hidden; }
   .scene__foot { justify-content: center; }
   .scene__foot .scene__foot-l { display: none; }
   .scene__field { opacity: 0.14; }
-  .scene__field .ow--mood, .scene__field .ow--stat { display: none; }
+  .scene__field .ow--mood { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

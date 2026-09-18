@@ -90,7 +90,7 @@
         {
           el: ['.checkin', '#checkinTitle'],
           title: 'How the day felt',
-          text: 'Two sliders — mood and productivity. They take a second, and they\'re what every chart in Insights is built from.',
+          text: 'Mood and productivity. They take a second, and they\'re what every chart in Insights is built from.',
           side: 'left', align: 'start',
         },
         {
@@ -268,7 +268,10 @@
         if (here() > 0) drv.movePrevious();
         else if (index > 0) hop(index - 1, 'last');
       };
-      const skipTour = () => { clear(); remember(true); drv.destroy(); };
+      const skipTour = () => {
+        clear(); remember(true); drv.destroy();
+        if (Eco.toast) Eco.toast('Tour skipped. You can replay it any time from Settings.', { duration: 4200 });
+      };
 
       /* driver's own arrow keys would walk off the end of a chapter, so the
          tour takes the keyboard itself and routes it through the same doors */
@@ -295,7 +298,7 @@
         allowClose: false, // no accidental exits — Skip and Escape are explicit
         allowKeyboardControl: false,
         overlayColor: getComputedStyle(document.documentElement).getPropertyValue('--tour-scrim').trim() || '#05050a',
-        overlayOpacity: 0.62,
+        overlayOpacity: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tour-scrim-opacity')) || 0.62,
         stagePadding: 8,
         stageRadius: 16,
         popoverOffset: 14,
@@ -359,6 +362,9 @@
       });
 
       place(index, first);
+      // the account counts the tour as taken once it starts, so a first run
+      // (or a replay) never ambushes them again on a later visit
+      if (body.hasAttribute('data-tour-new')) { body.removeAttribute('data-tour-new'); remember(true); }
       drv.drive(first);
     }
 
@@ -378,7 +384,7 @@
     }
   });
 
-  /* Settings (and the welcome screen) start the tour from scratch */
+  /* Settings starts the tour from scratch */
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-tour-start]');
     if (!btn) return;

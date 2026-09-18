@@ -80,6 +80,8 @@
 .canvas__cell:hover::after { background: color-mix(in srgb, var(--fg-1) 7%, transparent); }
 .canvas__cell:focus-visible::after { box-shadow: inset 0 0 0 2px var(--indigo); }
 .brushing .canvas__cell { cursor: cell; }
+/* while dragging, the live selection is the only highlight on the track */
+.canvas.is-dragging .canvas__cell::after { box-shadow: none; background: none; }
 
 .canvas__segments { z-index: 1; pointer-events: none; }
 .seg {

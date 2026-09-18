@@ -21,32 +21,10 @@
     'Slept badly. Coffee after four again.',
     'Finally finished the thing I kept moving.',
   ];
-  const WORDS = [[3, 'Rough'], [5, 'Okay'], [7, 'Good'], [9, 'Great']];
+  const WORDS = [[1, 'Terrible'], [3, 'Rough'], [6, 'Okay'], [8, 'Good'], [10, 'Excellent!']];
   const tone = (n) => (n >= 8 ? 'var(--green)' : n >= 5 ? 'var(--indigo)' : 'var(--amber)');
   Eco.moodWords = WORDS;
   Eco.moodTone = tone;
-
-  /* Count a figure up to the number already in the markup, so a stalled rAF
-     leaves the real figure on screen rather than a zero. Runs once per element. */
-  Eco.countUp = function (els) {
-    Array.from(els).forEach((el, i) => {
-      if (reduced() || el.dataset.counted) return;
-      el.dataset.counted = '1';
-      const target = +el.dataset.count;
-      const suffix = el.dataset.suffix || '';
-      const dp = (el.dataset.count.split('.')[1] || '').length;
-      const dur = 1400, delay = 420 + i * 180;
-      let t0 = 0;
-      const tick = (now) => {
-        if (!t0) t0 = now;
-        const p = Math.min(1, (now - t0) / dur);
-        el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dp) + suffix;
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      setTimeout(() => requestAnimationFrame(tick), delay);
-      setTimeout(() => { el.textContent = target.toFixed(dp) + suffix; }, delay + dur + 500);
-    });
-  };
 
   Eco.widgets = function (orbit, { spot = null, live = null } = {}) {
     if (!orbit) return { focus() {}, mood() {} };
@@ -188,9 +166,6 @@
     } else if (journal && !journal.textContent.trim()) {
       journal.textContent = THOUGHTS[0]; // reduced motion: no typing, but never an empty card
     }
-
-    /* ---------- the marketing figures ---------- */
-    Eco.countUp($$('[data-count]', orbit));
 
     /* ---------- mood: mirrors whatever the visitor picked ---------- */
     const moodValue = $('[data-mood-value]', orbit);

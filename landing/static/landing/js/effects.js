@@ -1,5 +1,5 @@
 /* Ecosystem — homepage effects. Dependency-free takes on a few ReactBits
-   ideas (Halftone Reveal, Ghost Cursor, Drift Wall, Chroma Grid, Magic Bento),
+   ideas (Halftone Reveal, Ghost Cursor, Drift Wall, Magic Bento),
    rebuilt for this page: theme-aware, paused when off-screen, and quiet under
    prefers-reduced-motion. Each returns early when it can't run, leaving the
    static markup in place. */
@@ -10,6 +10,8 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const coarse = () => window.matchMedia('(hover: none)').matches;
+  // lengths written back into a zoomed page are scaled again (see Eco.pageZoom)
+  const zoom = () => (Eco.pageZoom ? Eco.pageZoom() : 1);
 
   /* CSS color (any syntax, including var-resolved tokens) → [r, g, b] in 0..1 */
   function cssColor(name) {
@@ -175,7 +177,7 @@ void main(){
     };
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const dpr = Math.min((window.devicePixelRatio || 1) * zoom(), 2);
       const w = Math.max(1, Math.round(host.clientWidth * dpr));
       const h = Math.max(1, Math.round(host.clientHeight * dpr));
       canvas.width = w; canvas.height = h;
@@ -462,44 +464,6 @@ void main(){
   };
 
   /* ======================================================================
-     Chroma grid: the gallery rests in grayscale; color follows the pointer.
-     ====================================================================== */
-  fx.chroma = function (root, { damping = 0.45 } = {}) {
-    if (!root) return null;
-    const pos = { x: 0, y: 0, tx: 0, ty: 0 };
-    const set = () => { root.style.setProperty('--x', `${pos.x}px`); root.style.setProperty('--y', `${pos.y}px`); };
-    const center = () => { const r = root.getBoundingClientRect(); pos.x = pos.tx = r.width / 2; pos.y = pos.ty = r.height / 2; set(); };
-    center();
-    let raf = 0, prev = 0;
-    const step = (now) => {
-      const dt = Math.min(0.05, (now - (prev || now)) / 1000);
-      prev = now;
-      const k = 1 - Math.exp(-dt / (damping / 3));
-      pos.x += (pos.tx - pos.x) * k;
-      pos.y += (pos.ty - pos.y) * k;
-      set();
-      raf = Math.abs(pos.tx - pos.x) + Math.abs(pos.ty - pos.y) > 0.5 ? requestAnimationFrame(step) : (prev = 0);
-    };
-    root.addEventListener('pointermove', (e) => {
-      const r = root.getBoundingClientRect();
-      pos.tx = e.clientX - r.left;
-      pos.ty = e.clientY - r.top;
-      root.classList.add('is-active');
-      root.classList.remove('is-leaving');
-      if (!raf) raf = requestAnimationFrame(step);
-      const card = e.target.closest('.chroma__card');
-      if (card) {
-        const cr = card.getBoundingClientRect();
-        card.style.setProperty('--mx', `${e.clientX - cr.left}px`);
-        card.style.setProperty('--my', `${e.clientY - cr.top}px`);
-      }
-    }, { passive: true });
-    root.addEventListener('pointerleave', () => { root.classList.remove('is-active'); root.classList.add('is-leaving'); });
-    window.addEventListener('resize', () => { if (!root.classList.contains('is-active')) center(); });
-    return {};
-  };
-
-  /* ======================================================================
      Magic glow: cards near the pointer pick up a border light that tracks it.
      ====================================================================== */
   fx.glow = function (cards, { radius = 300 } = {}) {
@@ -523,8 +487,9 @@ void main(){
         const gi = dist <= 0 ? 1 : dist >= fade ? 0 : clamp((fade - dist) / (fade - proximity), 0, 1);
         card.style.setProperty('--gi', gi.toFixed(3));
         if (gi > 0) {
-          card.style.setProperty('--gx', `${px - r.left}px`);
-          card.style.setProperty('--gy', `${py - r.top}px`);
+          const z = zoom();
+          card.style.setProperty('--gx', `${(px - r.left) / z}px`);
+          card.style.setProperty('--gy', `${(py - r.top) / z}px`);
         }
       });
     };
@@ -539,8 +504,8 @@ void main(){
           const r = card.getBoundingClientRect();
           const dot = document.createElement('span');
           dot.className = 'glow-ripple';
-          dot.style.left = `${e.clientX - r.left}px`;
-          dot.style.top = `${e.clientY - r.top}px`;
+          dot.style.left = `${(e.clientX - r.left) / zoom()}px`;
+          dot.style.top = `${(e.clientY - r.top) / zoom()}px`;
           card.appendChild(dot);
           dot.addEventListener('animationend', () => dot.remove(), { once: true });
         });

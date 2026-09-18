@@ -16,6 +16,7 @@
   <nav class="settings-nav reveal" aria-label="Settings sections">
     <a href="#profile" class="settings-nav__link is-active"><svg class="icon" aria-hidden="true"><use href="#i-user-round"/></svg>Profile</a>
     <a href="#personal" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg>Personal</a>
+    <a href="#checkin" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>Check-in</a>
     <a href="#appearance" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Appearance</a>
     <a href="#data" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>Data &amp; privacy</a>
     <a href="#about" class="settings-nav__link"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>About</a>
@@ -106,6 +107,27 @@
           <button type="submit" name="save_personalization" class="btn btn--primary btn--sm" data-save disabled><span class="spinner"></span>Save details</button>
         </div>
       </form>
+    </section>
+
+    {# ---------------- check-in ---------------- #}
+    <section class="settings-section" id="checkin" aria-labelledby="checkinTitle">
+      <div class="settings-section__intro">
+        <h2 class="settings-section__title" id="checkinTitle">Check-in</h2>
+        <p class="settings-section__text">How you rate each day. Your past ratings carry over either way.</p>
+      </div>
+      <div class="panel settings-card settings-list">
+        <div class="settings-row">
+          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-smile"/></svg></div>
+          <div class="settings-row__body">
+            <p class="settings-row__title">Mood &amp; productivity</p>
+            <p class="settings-row__text" data-rating-hint>{% if user.rating_format == "words" %}In words, from “Terrible” to “Excellent!”{% else %}On a scale from 1 to 10.{% endif %}</p>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label="Rate mood and productivity with" id="ratingFormat" data-url="{% url 'rating_format' %}">
+            <button type="button" role="radio" class="segmented__opt" data-value="numbers" aria-checked="{% if user.rating_format != 'words' %}true{% else %}false{% endif %}" tabindex="{% if user.rating_format != 'words' %}0{% else %}-1{% endif %}">Numbers</button>
+            <button type="button" role="radio" class="segmented__opt" data-value="words" aria-checked="{% if user.rating_format == 'words' %}true{% else %}false{% endif %}" tabindex="{% if user.rating_format == 'words' %}0{% else %}-1{% endif %}">Words</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     {# ---------------- appearance ---------------- #}

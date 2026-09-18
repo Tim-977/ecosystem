@@ -12,7 +12,7 @@ from .models import OnboardingResponse
 CHOICES = {
     'scale': {'numbers', 'words'},
     'diary': {'keep', 'used_to', 'tried', 'curious', 'no'},
-    'streak': {'protect', 'gentle', 'depends'},
+    'focus': {'time', 'mood', 'habits', 'story'},
 }
 SLIPS = {'alarms', 'deadlines', 'hours', 'unfinished', 'consistency', 'blur'}
 SESSION_KEY = 'onboarding'
@@ -38,16 +38,6 @@ def clean_answers(raw):
         picked = [s for s in slip if s in SLIPS][:3]
         if picked:
             out['slip'] = picked
-
-    rating = raw.get('rating')
-    if isinstance(rating, dict):
-        scores = {}
-        for key in ('mood', 'productivity'):
-            value = rating.get(key)
-            if isinstance(value, int) and 1 <= value <= 10:
-                scores[key] = value
-        if scores:
-            out['rating'] = scores
 
     if raw.get('completed') is True:
         out['completed'] = True

@@ -59,12 +59,24 @@ def collect_onboarding(request):
 
 
 def attach_onboarding(user, data):
-    """Link onboarding answers to the new account. Nothing reads them yet."""
+    """Link onboarding answers to the new account and apply the ones that
+    shape it: the rating format and the name they asked to be called."""
     from landing.models import OnboardingResponse
 
     answers = data.get('answers') or {}
     if not answers:
         return
+
+    changed = []
+    if answers.get('scale') in dict(User.RATING_FORMAT_CHOICES):
+        user.rating_format = answers['scale']
+        changed.append('rating_format')
+    if answers.get('name') and not user.preferred_name:
+        user.preferred_name = answers['name'][:100]
+        changed.append('preferred_name')
+    if changed:
+        user.save(update_fields=changed)
+
     try:
         OnboardingResponse.objects.filter(session_key=data.get('session_key') or '', user=None).delete()
         OnboardingResponse.objects.update_or_create(
@@ -196,7 +208,7 @@ def signup_page(request):
             onboarding = collect_onboarding(request)
             login(request, user)
             attach_onboarding(user, onboarding)
-            return redirect('welcome')
+            return redirect('main_page')
 
     return render(
         request,
@@ -276,11 +288,6 @@ def clear_logs_view(request):
 
 
 @login_required
-def welcome_page(request):
-    return render(request, 'authapp/welcome.html')
-
-
-@login_required
 @require_POST
 def tour_state_view(request):
     """Remember whether the guided tour still needs to run for this account.
@@ -296,6 +303,23 @@ def tour_state_view(request):
     request.user.has_seen_tour = seen
     request.user.save(update_fields=['has_seen_tour'])
     return JsonResponse({'ok': True, 'seen': seen})
+
+
+@login_required
+@require_POST
+def rating_format_view(request):
+    """Switch how mood and productivity are entered and shown. Stored ratings
+    are 1–10 in both formats, so nothing else changes."""
+    try:
+        value = json.loads(request.body or '{}').get('format')
+    except (ValueError, TypeError, AttributeError):
+        value = None
+    if value not in dict(User.RATING_FORMAT_CHOICES):
+        return JsonResponse({'ok': False}, status=400)
+
+    request.user.rating_format = value
+    request.user.save(update_fields=['rating_format'])
+    return JsonResponse({'ok': True, 'format': value})
 
 
 @login_required

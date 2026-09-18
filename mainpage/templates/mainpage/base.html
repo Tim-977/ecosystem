@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static ecosystem_extras %}<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
@@ -10,16 +10,19 @@
   <link rel="preload" href="{% static 'mainpage/fonts/Geist-Variable.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'mainpage/css/app.css' %}">
   {% if user.is_authenticated %}
+  {# the account now holds the onboarding answers, so the browser copy can go #}
+  <script>try{localStorage.removeItem('eco-onboarding')}catch(e){}</script>
   <link rel="stylesheet" href="{% static 'mainpage/vendor/driver.css' %}">
   <link rel="stylesheet" href="{% static 'mainpage/css/tour.css' %}">
   {% endif %}
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}"
-      {% if user.is_authenticated %}data-page="{{ request.resolver_match.url_name }}" data-tour-state="{% url 'tour_state' %}"{% if not user.has_seen_tour %} data-tour-new{% endif %}{% endif %}>
+      {% if user.is_authenticated %}data-page="{{ request.resolver_match.url_name }}" data-rating="{{ user.rating_format }}" data-tour-state="{% url 'tour_state' %}"{% if not user.has_seen_tour %} data-tour-new{% endif %}{% endif %}>
   <a class="sr-only" href="#main">Skip to content</a>
   {% include "mainpage/partials/icons.html" %}
   <div hidden>{% csrf_token %}</div>
+  {% if user.is_authenticated %}{% rating_scales as scales %}{{ scales|json_script:"ratingScales" }}{% endif %}
   <div class="cursor-glow" data-cursor-glow aria-hidden="true"></div>
 
   {% block nav %}{% include "mainpage/partials/nav.html" %}{% endblock %}

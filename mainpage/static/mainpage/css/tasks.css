@@ -117,11 +117,6 @@
 
 .board-empty { margin-top: 18px; }
 
-.help-list { display: grid; gap: 12px; margin: 0; }
-.help-list > div { display: grid; gap: 6px; }
-.help-list dt { margin: 0; }
-.help-list dd { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--fg-3); }
-
 /* board rows: meta on the right, one line per task */
 .task-group .task { align-items: center; }
 .task-group .task__check { margin-top: 0; }

@@ -11,6 +11,9 @@
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 
   let dayIndex = new Map();
+  const words = () => Eco.rating.words();
+  const moodOf = (v) => Eco.rating.label('mood', v);
+  const prodOf = (v) => Eco.rating.label('productivity', v);
 
   /* the last seven days, ending today: a quick sense of the week around today */
   function renderWeek(host, today, habitNames) {
@@ -21,10 +24,10 @@
       const logged = isLogged(r);
       const mood = r && r.mood != null ? r.mood : null;
       const h = r ? ones(r.habits) : 0;
-      const tip = logged ? `${Eco.fmt(d, { weekday: 'long' })} · mood ${mood ?? '–'} · ${h} habits` : `${Eco.fmt(d, { weekday: 'long' })} · nothing logged`;
+      const tip = logged ? `${Eco.fmt(d, { weekday: 'long' })} · mood ${moodOf(mood)} · ${h} habits` : `${Eco.fmt(d, { weekday: 'long' })} · nothing logged`;
       return `<a class="week__day${k === 6 ? ' is-today' : ''}${logged ? '' : ' is-empty'}" href="${Eco.dayUrl(d)}" data-tip="${esc(tip)}">
         <span class="week__dow">${Eco.fmt(d, { weekday: 'short' })}</span>
-        <span class="week__mood num">${mood ?? '–'}</span>
+        <span class="week__mood num${words() && mood != null ? ' is-word' : ''}">${esc(moodOf(mood))}</span>
         <span class="week__bar"><i style="--w:${Math.min(100, (h / named) * 100)}%"></i></span>
       </a>`;
     }).join('')}</div>`;
@@ -74,7 +77,7 @@
     const named = habitNames.filter(Boolean).length;
     const parts = [];
     if (todayRow) {
-      if (todayRow.mood != null) parts.push(`mood ${todayRow.mood}/10`);
+      if (todayRow.mood != null) parts.push(words() ? `mood ${moodOf(todayRow.mood)}` : `mood ${todayRow.mood}/10`);
       if (named && ones(todayRow.habits)) parts.push(`${ones(todayRow.habits)} of ${named} habits`);
       if (todayRow.sleep > 0) parts.push(`${Eco.stats.hours(todayRow.sleep)} of sleep`);
     }
@@ -90,7 +93,10 @@
     const body = $('#todayBody');
     const dayUrl = Eco.dayUrl(today);
     const logged = isLogged(todayRow) || hasHourly;
+    const panel = $('#todayPanel');
+    panel.classList.toggle('is-empty', !logged);
     if (!logged) {
+      invite(panel);
       $('#todayOpen').hidden = true;
       body.innerHTML = `
         <div class="today-empty">
@@ -111,13 +117,15 @@
 
     const named = habitNames.map((n, i) => ({ n, i })).filter((x) => x.n);
     const doneHabits = todayRow ? named.filter((x) => (todayRow.habits || '')[x.i] === '1').length : 0;
-    const stat = (label, value, unit, empty) => `<div class="today-stat"><span class="eyebrow">${label}</span><span class="today-stat__value${empty ? ' is-empty' : ''}">${value}${unit && !empty ? `<small>${unit}</small>` : ''}</span></div>`;
+    const stat = (label, value, unit, empty, cls = '') => `<div class="today-stat"><span class="eyebrow">${label}</span><span class="today-stat__value${empty ? ' is-empty' : ''}${cls}">${value}${unit && !empty ? `<small>${unit}</small>` : ''}</span></div>`;
+    const rated = (k) => todayRow && todayRow[k] != null;
+    const unit = words() ? '' : '/10', wordCls = words() ? ' is-word' : '';
     body.innerHTML = `
       <div class="ribbon" id="ribbon" aria-label="Hours logged today"></div>
       <div class="ribbon__axis" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
       <div class="today-stats">
-        ${stat('Mood', todayRow && todayRow.mood != null ? todayRow.mood : '–', '/10', !(todayRow && todayRow.mood != null))}
-        ${stat('Productivity', todayRow && todayRow.productivity != null ? todayRow.productivity : '–', '/10', !(todayRow && todayRow.productivity != null))}
+        ${stat('Mood', rated('mood') ? esc(moodOf(todayRow.mood)) : '–', unit, !rated('mood'), rated('mood') ? wordCls : '')}
+        ${stat('Productivity', rated('productivity') ? esc(prodOf(todayRow.productivity)) : '–', unit, !rated('productivity'), rated('productivity') ? wordCls : '')}
         ${stat('Sleep', todayRow && todayRow.sleep > 0 ? Eco.stats.hours(todayRow.sleep) : '–', '', !(todayRow && todayRow.sleep > 0))}
         <div class="today-stat today-stat--habits">
           <span class="eyebrow">Habits</span>
@@ -153,6 +161,18 @@
     document.addEventListener('eco:theme', () => drawRibbon(lastActs));
   }
 
+  /* an empty Today invites a start: a soft light follows the pointer across it */
+  function invite(panel) {
+    if (panel._invite || Eco.reduceMotion() || window.matchMedia('(hover: none)').matches) return;
+    panel._invite = true;
+    let raf = 0, x = 0, y = 0;
+    panel.addEventListener('pointermove', (e) => {
+      const r = panel.getBoundingClientRect();
+      x = e.clientX - r.left; y = e.clientY - r.top;
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; panel.style.setProperty('--gx', `${x}px`); panel.style.setProperty('--gy', `${y}px`); });
+    }, { passive: true });
+  }
+
   function renderTrend({ days, byIso, today }) {
     const rated = (d) => d && (d.mood != null || d.productivity != null || d.sleep > 0);
     let end = today;
@@ -173,7 +193,7 @@
     } else {
       const moods = []; for (let i = 0; i < 30; i++) { const d = byIso.get(Eco.iso(addDays(end, -i))); if (d && d.mood != null) moods.push(d.mood); }
       const avg = Eco.stats.avg(moods);
-      note.textContent = avg != null ? `${count} check-ins · average mood ${Eco.stats.fmt(avg)}` : `${count} check-ins`;
+      note.textContent = avg != null ? `${count} check-ins · average mood ${moodOf(avg)}` : `${count} check-ins`;
     }
     const dates = Array.from({ length: 30 }, (_, i) => addDays(end, i - 29));
     const rows = dates.map((d) => byIso.get(Eco.iso(d)));
@@ -181,8 +201,8 @@
     const prod = rows.map((r) => (r ? r.productivity : null));
     const sleep = rows.map((r) => (r && r.sleep > 0 ? r.sleep : null));
     const tooltip = (i) => Eco.tt(Eco.fmt(dates[i], { weekday: 'short', day: 'numeric', month: 'short' }), [
-      { label: 'Mood', value: mood[i] ?? '–', color: 'var(--green)' },
-      { label: 'Productivity', value: prod[i] ?? '–', color: 'var(--indigo)' },
+      { label: 'Mood', value: moodOf(mood[i]), color: 'var(--green)' },
+      { label: 'Productivity', value: prodOf(prod[i]), color: 'var(--indigo)' },
       { label: 'Sleep', value: sleep[i] != null ? Eco.stats.hours(sleep[i]) : '–', color: 'var(--sky)' },
     ]);
     const go = (i) => { window.location.href = Eco.dayUrl(dates[i]); };
@@ -215,7 +235,7 @@
       start, end: today, gap: 3, maxCell: 16,
       value: (d) => level(byIso.get(Eco.iso(d))),
       color,
-      tooltip: (d, v) => { const r = byIso.get(Eco.iso(d)); return Eco.tt(Eco.fmt(d, { weekday: 'short', day: 'numeric', month: 'short' }), v == null ? [{ label: 'Nothing logged', value: '' }] : [{ label: 'Habits done', value: ones(r.habits) }, { label: 'Mood', value: r.mood ?? '–' }]); },
+      tooltip: (d, v) => { const r = byIso.get(Eco.iso(d)); return Eco.tt(Eco.fmt(d, { weekday: 'short', day: 'numeric', month: 'short' }), v == null ? [{ label: 'Nothing logged', value: '' }] : [{ label: 'Habits done', value: ones(r.habits) }, { label: 'Mood', value: moodOf(r.mood) }]); },
       onClick: (d) => { if (d <= today) window.location.href = Eco.dayUrl(d); },
       label: 'Days logged over the last 16 weeks',
     });
@@ -235,7 +255,7 @@
       return `<a class="thought" href="${Eco.dayUrl(date)}#journal">
         <span class="thought__date"><span class="eyebrow">${Eco.fmt(date, { weekday: 'short' })}</span><span>${Eco.fmt(date, { day: 'numeric', month: 'short', year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined })}</span></span>
         <p class="thought__text"></p>
-        <span class="thought__meta">${d.mood != null ? `<span class="tag"><span class="dot" style="background:var(--green)"></span>Mood ${d.mood}</span>` : ''}${d.has_reflection ? `<span class="tag">${icon('pen-line', 'icon')}Reflection</span>` : ''}</span>
+        <span class="thought__meta">${d.mood != null ? `<span class="tag"><span class="dot" style="background:var(--green)"></span>${words() ? esc(moodOf(d.mood)) : `Mood ${d.mood}`}</span>` : ''}${d.has_reflection ? `<span class="tag">${icon('pen-line', 'icon')}Reflection</span>` : ''}</span>
       </a>`;
     }).join('');
     host.querySelectorAll('.thought__text').forEach((p, i) => { p.textContent = written[i].thoughts; });

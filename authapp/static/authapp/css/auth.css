@@ -24,15 +24,11 @@
 }
 .auth__eyebrow .icon { width: 14px; height: 14px; color: var(--indigo); }
 
-.auth__from {
-  display: inline-flex; align-items: center; gap: 9px;
-  margin-bottom: 20px; padding: 8px 16px 8px 12px;
-  font-size: 13px; color: var(--fg-2);
-  background: color-mix(in srgb, var(--indigo) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--indigo) 34%, transparent);
-  border-radius: var(--r-pill);
-}
-.auth__from .icon { color: var(--indigo); }
+/* "Your setup is saved" rides along in the subtitle: same size, a touch brighter */
+.auth__saved { display: inline-flex; align-items: baseline; gap: 6px; color: var(--fg-2); white-space: nowrap; }
+.auth__saved .icon { width: 14px; height: 14px; align-self: center; color: var(--green); }
+.fx .auth__saved { animation: auth-saved 900ms var(--ease-out) 420ms backwards; }
+@keyframes auth-saved { from { opacity: 0; } }
 
 .auth__title {
   margin-top: 18px;
@@ -107,5 +103,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fx .auth > * { animation: none; }
+  .fx .auth > *, .fx .auth__saved { animation: none; }
 }

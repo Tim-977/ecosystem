@@ -6,8 +6,11 @@
    reads as chapters rather than "1 of 17".
    ========================================================================== */
 
-:root { --tour-scrim: #05050a; }
-:root[data-theme='light'] { --tour-scrim: #1a1a22; }
+/* On the near-black dark theme a dark scrim barely registers, so it goes
+   deeper there and the cut-out gets a faint rim; the app stays readable
+   underneath. Light mode already reads clearly. */
+:root { --tour-scrim: #000; --tour-scrim-opacity: 0.76; }
+:root[data-theme='light'] { --tour-scrim: #1a1a22; --tour-scrim-opacity: 0.62; }
 
 /* ---------- the spotlight ---------- */
 .driver-overlay, .driver-overlay * { transition: none; }
@@ -16,8 +19,10 @@
   border-radius: 16px;
 }
 /* the cut-out gets a rim so the highlight reads as deliberate, not a hole */
-.driver-active-element::after {
-  content: none;
+:root:not([data-theme='light']) .driver-active-element {
+  outline: 1.5px solid rgba(255, 255, 255, 0.34) !important;
+  outline-offset: 7px;
+  transition: outline-color 200ms var(--ease-out);
 }
 
 /* ---------- popover ---------- */

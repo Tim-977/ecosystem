@@ -30,19 +30,13 @@
 
     if (answered) {
       const name = typeof answers.name === 'string' ? answers.name.trim().slice(0, 24) : '';
-      const title = $('[data-su-title]'), sub = $('[data-su-sub]'), from = $('[data-su-from]');
-      if (name) {
-        title.innerHTML = `Almost there,<em> ${Eco.esc(name)}.</em>`;
-        sub.textContent = 'Create the account and today becomes the first day you log.';
-      } else {
-        sub.textContent = 'Last step. Your answers come with you.';
-      }
-      from.innerHTML = `${Eco.icon('circle-check', 'icon icon--sm')}Your setup is saved`;
-      from.hidden = false;
+      const title = $('[data-su-title]'), sub = $('[data-su-sub]');
+      if (name) title.innerHTML = `Almost there,<em> ${Eco.esc(name)}.</em>`;
+      // a quiet reassurance inside the line that's already there, not a badge of its own
+      sub.innerHTML = `<span class="auth__saved">${Eco.icon('circle-check', 'icon')}Your setup is saved.</span> Create the account and today becomes the first day you log.`;
 
-      // the cluster keeps showing the rating style they picked a screen ago
-      const score = answers.rating && answers.rating.mood;
-      if (orb && score) orb.mood(score, answers.scale === 'words');
+      // the cluster keeps showing the format they picked a screen ago
+      if (orb && answers.scale) orb.mood(8, answers.scale === 'words');
     }
 
     /* ---------- the line fills as the four fields come good ---------- */
@@ -60,7 +54,7 @@
     };
     form.addEventListener('input', update);
     update();
-    // the browser copy is cleared on the welcome page, not here — a rejected
+    // the browser copy is cleared once signed in, not here — a rejected
     // signup comes back to this form and still needs the answers.
   });
 })();

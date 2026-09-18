@@ -8,13 +8,6 @@
    Ecosystem answers with takes their place before the next question arrives.
    ========================================================================== */
 
-.dot-live {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--green);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 60%, transparent);
-  animation: ob-live 2.6s var(--ease-out) infinite;
-}
-@keyframes ob-live { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
-
 /* ==========================================================================
    The step machine
    ========================================================================== */
@@ -99,13 +92,26 @@
 }
 .ob-name__input:focus + .ob-name__rule::after,
 .ob-name__input:not(:placeholder-shown) + .ob-name__rule::after { transform: none; }
+.ob-name__hint {
+  margin-top: 14px; font-size: 13.5px; line-height: 1.5; color: var(--fg-4);
+  transition: color 360ms var(--ease-out), transform 460ms var(--ease-out);
+}
+/* asked to continue without a name: a small nudge, a warmer line, a clearer hint */
+.ob-name.is-wanting .ob-name__input { animation: ob-nudge 420ms var(--ease-out); }
+.ob-name.is-wanting .ob-name__rule::after { transform: none; background: linear-gradient(90deg, transparent, var(--amber) 30%, var(--amber) 70%, transparent); }
+.ob-name.is-wanting .ob-name__hint { color: var(--fg-2); transform: translateY(2px); }
+.ob-name.is-wanting .ob-name__input::placeholder { color: var(--fg-3); }
+@keyframes ob-nudge { 20% { transform: translateX(-7px); } 45% { transform: translateX(6px); } 70% { transform: translateX(-3px); } 100% { transform: none; } }
 
 /* ==========================================================================
-   2 · rating style — two cards that morph into the control you picked
+   2 · tracking format — two cards; the one you pick opens into a preview
    ========================================================================== */
 .ob-swap { position: relative; display: grid; }
 .ob-swap > [data-swap-face] { grid-area: 1 / 1; transition: opacity 420ms var(--ease-out), transform 520ms var(--ease-out), filter 420ms var(--ease-out); }
-.ob-swap > [data-swap-face][hidden] { display: grid; opacity: 0; pointer-events: none; transform: scale(0.97); filter: blur(6px); }
+/* the face that isn't showing leaves the flow, so the area is exactly as tall as what you see */
+.ob-swap > [data-swap-face][hidden] { display: grid; position: absolute; top: 0; left: 0; right: 0; opacity: 0; pointer-events: none; transform: scale(0.97); filter: blur(6px); }
+/* while the preview grows out of the card, the clip does the moving */
+.ob-swap > .ob-try.is-morphing { transition: none; }
 
 .ob-cards {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
@@ -138,15 +144,29 @@
 .ob-card__demo--word em { font-style: normal; font-size: 12px; padding: 5px 10px; border-radius: var(--r-pill); color: var(--fg-3); background: var(--bg-3); }
 .ob-card__demo--word em.is-on { color: var(--inverse-fg); background: var(--inverse-bg); }
 
-/* the control itself, once a style is chosen */
-.ob-try { justify-items: center; gap: 18px; width: min(560px, 100%); margin-inline: auto; }
-.ob-try__ask { font-size: 14px; color: var(--fg-3); }
-.ob-scale { display: flex; align-items: center; gap: 24px; width: 100%; }
-.ob-scale__out b {
-  font-size: clamp(40px, 3.6vw, 56px); font-weight: 560; letter-spacing: -0.045em; line-height: 1;
-  font-variant-numeric: tabular-nums; transition: color var(--t-2);
+/* the preview: the picked card, opened up */
+.ob-try {
+  position: relative; display: grid; gap: 18px; align-content: start;
+  width: min(560px, 100%); margin-inline: auto; padding: 20px 22px 22px;
+  text-align: left;
+  border-radius: 20px; border: 1px solid color-mix(in srgb, var(--indigo) 55%, transparent);
+  background: color-mix(in srgb, var(--indigo) 9%, color-mix(in srgb, var(--bg-1) 86%, transparent));
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 9%, transparent), 0 30px 60px -36px rgba(var(--l-glow), 0.8);
 }
-.ob-scale__range { -webkit-appearance: none; appearance: none; flex: 1; height: 30px; background: none; cursor: grab; }
+.ob-try__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ob-try__picked { display: inline-flex; align-items: center; gap: 8px; font-size: clamp(18px, 1.4vw, 21px); font-weight: 560; letter-spacing: -0.025em; }
+.ob-try__picked .icon { width: 16px; height: 16px; padding: 3px; box-sizing: content-box; border-radius: 50%; color: var(--inverse-fg); background: var(--indigo); }
+.ob-try__note { font-size: 12.5px; color: var(--fg-3); }
+.ob-try__rows { display: grid; gap: 14px; }
+.ob-try__rows[hidden] { display: none; }
+.ob-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 30px; align-items: center; gap: 14px; }
+.ob-row__label { font-size: 13.5px; font-weight: 520; color: var(--fg-2); }
+.ob-row__out { font-size: 22px; font-weight: 560; letter-spacing: -0.03em; text-align: right; transition: color var(--t-2); }
+.ob-row--words { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+.ob-try__rows:has(.ob-row--words) { gap: 16px; }
+
+.ob-scale__range { -webkit-appearance: none; appearance: none; width: 100%; height: 30px; background: none; cursor: grab; }
 .ob-scale__range:active { cursor: grabbing; }
 .ob-scale__range::-webkit-slider-runnable-track {
   height: 8px; border-radius: 4px;
@@ -156,52 +176,57 @@
 .ob-scale__range::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--track-c, var(--indigo)); }
 .ob-scale__range::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 26px; height: 26px; margin-top: -9px; border-radius: 50%;
+  width: 24px; height: 24px; margin-top: -8px; border-radius: 50%;
   background: var(--fg-1); border: 3px solid var(--bg);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   transition: transform var(--t-1) var(--ease-out);
 }
-.ob-scale__range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--bg); background: var(--fg-1); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
+.ob-scale__range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--bg); background: var(--fg-1); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
 .ob-scale__range:active::-webkit-slider-thumb { transform: scale(1.16); }
 :root[data-theme='light'] .ob-scale__range::-webkit-slider-thumb { box-shadow: 0 3px 10px rgba(20, 20, 40, 0.22); }
 :root[data-theme='light'] .ob-scale__range::-moz-range-thumb { box-shadow: 0 3px 10px rgba(20, 20, 40, 0.22); }
 
-.ob-words { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; }
+.ob-words { display: flex; flex-wrap: wrap; gap: 6px; }
 .ob-word {
-  height: 50px; padding: 0 24px; font-size: 16px; font-weight: 500; color: var(--fg-2);
+  height: 36px; padding: 0 13px; font-size: 13.5px; font-weight: 500; color: var(--fg-2); white-space: nowrap;
   background: color-mix(in srgb, var(--bg-1) 70%, transparent); border: 1px solid var(--line-2); border-radius: var(--r-pill);
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   transition: color var(--t-1), background-color var(--t-1), border-color var(--t-1), transform 380ms var(--ease-out);
 }
-.ob-word:hover { color: var(--fg-1); border-color: var(--line-3); transform: translateY(-2px); }
+.ob-word:hover { color: var(--fg-1); border-color: var(--line-3); transform: translateY(-1px); }
 .ob-word[aria-checked='true'] { color: var(--inverse-fg); background: var(--inverse-bg); border-color: transparent; }
 
-.ob-try__undo {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: none; border: 0; cursor: pointer;
-  font-size: 12.5px; color: var(--fg-4);
-  transition: color var(--t-1);
+/* the other format, one step away — visible, but quieter than Continue */
+.ob-switch {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; margin-top: 16px; padding: 0 15px 0 12px;
+  font-size: 13.5px; font-weight: 500; color: var(--fg-2);
+  background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+  border: 1px solid var(--line-2); border-radius: var(--r-pill); cursor: pointer;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  transition: color var(--t-1), border-color var(--t-1), background-color var(--t-1), transform 380ms var(--ease-out);
 }
-.ob-try__undo:hover { color: var(--fg-2); }
-.ob-try__undo .icon { width: 13px; height: 13px; }
+.ob-switch .icon { color: var(--indigo); transition: transform 520ms var(--ease-out); }
+.ob-switch:hover { color: var(--fg-1); border-color: var(--line-3); background: var(--bg-3); }
+.ob-switch:hover .icon { transform: rotate(180deg); }
+.ob-switch[hidden] { display: inline-flex; visibility: hidden; }
 
 /* ==========================================================================
    3 · chips
    ========================================================================== */
 .ob-chips {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
-  width: min(660px, 100%); margin-inline: auto;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  width: min(720px, 100%); margin-inline: auto;
 }
 .ob-chip {
-  display: inline-flex; align-items: center; gap: 10px;
-  height: 52px; padding: 0 22px;
-  font-size: clamp(14.5px, 1.1vw, 16px); font-weight: 500; color: var(--fg-2);
-  border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  display: flex; align-items: center; gap: 12px;
+  min-height: 60px; padding: 12px 18px; text-align: left;
+  font-size: clamp(14.5px, 1.1vw, 15.5px); font-weight: 500; line-height: 1.35; color: var(--fg-2); text-wrap: pretty;
+  border: 1px solid var(--line-2); border-radius: 16px;
   background: color-mix(in srgb, var(--bg-1) 70%, transparent);
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   transition: color var(--t-2), border-color var(--t-2), background-color var(--t-2), transform 380ms var(--ease-out), box-shadow var(--t-2), opacity var(--t-2);
 }
-.ob-chip .icon { width: 17px; height: 17px; color: var(--fg-4); transition: color var(--t-2), transform 380ms var(--ease-out); }
+.ob-chip .icon { flex: none; width: 17px; height: 17px; color: var(--fg-4); transition: color var(--t-2), transform 380ms var(--ease-out); }
 .ob-chip:hover { color: var(--fg-1); border-color: var(--line-3); transform: translateY(-2px); }
 .ob-chip[aria-pressed='true'] {
   color: var(--fg-1);
@@ -288,7 +313,9 @@
    The moment — a beat between the questions
    ========================================================================== */
 .ob-step--moment .ob-step__q { margin-top: 16px; }
-.ob-moment__art { width: clamp(180px, 20vw, 230px); margin-bottom: 4px; }
+.ob-step--moment .ob-step__sub { margin-top: 22px; }
+.ob-step--moment .ob-step__foot { margin-top: clamp(30px, 4.6vh, 52px); }
+.ob-moment__art { width: clamp(200px, 22vw, 260px); margin-bottom: 10px; }
 .ob-moment__art svg { width: 100%; height: auto; overflow: visible; }
 .ob-moment__bars rect { fill: color-mix(in srgb, var(--indigo) 26%, var(--bg-2)); transform-box: fill-box; transform-origin: bottom; }
 .ob-moment__bars rect:nth-child(3) { fill: color-mix(in srgb, var(--indigo) 44%, var(--bg-2)); }
@@ -306,13 +333,6 @@
 .ob-step--moment.is-active .ob-moment__tip { animation: ob-fade 500ms var(--ease-out) 1100ms backwards; }
 @keyframes ob-draw { from { stroke-dashoffset: 260; } to { stroke-dashoffset: 0; } }
 @keyframes ob-fade { from { opacity: 0; } }
-
-.ob-figures {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 4vw, 52px);
-  margin-top: clamp(26px, 3.6vh, 40px);
-}
-.ob-figures span { display: grid; gap: 4px; font-size: 12.5px; color: var(--fg-4); }
-.ob-figures b { font-size: clamp(26px, 2.6vw, 36px); font-weight: 560; letter-spacing: -0.04em; color: var(--fg-1); line-height: 1; }
 
 /* ==========================================================================
    The finale — the answers arrive as a composition, not a list
@@ -373,16 +393,19 @@
 
 @media (max-width: 620px) {
   .ob-cards { grid-template-columns: 1fr; gap: 12px; }
-  .ob-chip { height: 46px; padding: 0 17px; }
-  .ob-scale { gap: 16px; }
+  .ob-chips { grid-template-columns: 1fr; }
+  .ob-chip { min-height: 52px; padding: 10px 16px; }
+  .ob-try { padding: 18px; }
+  .ob-row { grid-template-columns: minmax(0, 1fr) 30px; gap: 6px 12px; }
+  .ob-row__label { grid-column: 1 / -1; }
   .ob-step__foot .btn { flex: 1 1 auto; justify-content: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ob-step, .ob-step > *, .ob-echo, .ob-pick, .ob-swap > [data-swap-face] { transition-duration: 1ms !important; }
+  .ob-step, .ob-step > *, .ob-echo, .ob-pick, .ob-swap > [data-swap-face], .ob-name__hint { transition-duration: 1ms !important; }
+  .ob-name.is-wanting .ob-name__input { animation: none; }
   .ob-step--final.is-active .ob-fan__card,
   .ob-step--moment.is-active .ob-moment__bars rect,
   .ob-step--moment.is-active .ob-moment__line,
   .ob-step--moment.is-active .ob-moment__tip { animation: none; }
-  .dot-live { animation: none; }
 }

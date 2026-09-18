@@ -1,5 +1,5 @@
 {% extends "mainpage/base.html" %}
-{% load static %}
+{% load static ecosystem_extras %}
 {% block title %}Get started{% endblock %}
 {% block head %}
   <meta name="robots" content="noindex">
@@ -59,7 +59,6 @@
 
     {# ====================== opening ====================== #}
     <section class="ob-step scene__center is-active" data-step="intro" data-untracked>
-      <p class="ob-step__eyebrow"><span class="dot-live" aria-hidden="true"></span>Before you sign up</p>
       <h1 class="ob-step__q ob-step__q--hero">Let's shape it<em> around you.</em></h1>
       <p class="ob-step__sub">Five questions, about a minute. Everything you pick here is how Ecosystem opens on day one.</p>
       <div class="ob-step__foot">
@@ -73,59 +72,77 @@
       <p class="ob-step__eyebrow">Question 1 of 5</p>
       <h2 class="ob-step__q">What should we<em> call you?</em></h2>
       <div class="ob-step__body">
-        <div class="ob-name">
+        <div class="ob-name" data-ob-name-field>
           <input class="ob-name__input" type="text" id="obName" maxlength="24" autocomplete="given-name"
-                 placeholder="Type your name" spellcheck="false" data-ob-name aria-label="Your name">
+                 placeholder="Type your name" spellcheck="false" data-ob-name aria-label="Your name"
+                 aria-describedby="obNameHint">
           <span class="ob-name__rule" aria-hidden="true"></span>
+          <p class="ob-name__hint" id="obNameHint" aria-live="polite">A first name is plenty — it’s how Ecosystem will greet you.</p>
         </div>
       </div>
       <div class="ob-step__foot">
         <button type="button" class="btn btn--primary btn--hero" data-ob-next>Continue<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-        <button type="button" class="btn btn--ghost btn--hero" data-ob-next data-ob-clear="name">Skip this</button>
       </div>
     </section>
 
-    {# ====================== 2 · rating style ====================== #}
+    {# ====================== 2 · rating format ====================== #}
+    {% rating_scales as scales %}
     <section class="ob-step scene__center" data-step="scale" data-chapter="1">
       <p class="ob-step__eyebrow">Question 2 of 5</p>
-      <h2 class="ob-step__q">How do you want<em> to rate a day?</em></h2>
+      <h2 class="ob-step__q">How do you want to track<em> mood and productivity?</em></h2>
+      <p class="ob-step__sub">Pick the format you’ll log them in each day and read them back in. You’re not rating today — and you can switch later in Settings.</p>
       <div class="ob-step__body">
         <div class="ob-swap" data-ob-swap>
-          <div class="ob-cards" role="radiogroup" aria-label="Rating style" data-ob-opts="scale" data-swap-face="pick">
+          <div class="ob-cards" role="radiogroup" aria-label="Tracking format" data-ob-opts="scale" data-swap-face="pick">
             <button type="button" class="ob-card glow" data-glow role="radio" aria-checked="false" data-value="numbers">
               <span class="ob-card__title">Numbers</span>
-              <span class="ob-card__note">A 1–10 slider</span>
-              <span class="ob-card__demo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>7</b><i></i><i></i></span>
+              <span class="ob-card__note">A 1–10 scale for each</span>
+              <span class="ob-card__demo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b>8</b><i></i><i></i></span>
             </button>
             <button type="button" class="ob-card glow" data-glow role="radio" aria-checked="false" data-value="words">
               <span class="ob-card__title">Words</span>
-              <span class="ob-card__note">Rough → Great</span>
-              <span class="ob-card__demo ob-card__demo--word" aria-hidden="true"><em>Rough</em><em>Okay</em><em class="is-on">Good</em><em>Great</em></span>
+              <span class="ob-card__note">From “{{ scales.mood.0.word }}” to “{{ scales.mood.4.word }}”</span>
+              <span class="ob-card__demo ob-card__demo--word" aria-hidden="true"><em>{{ scales.mood.1.word }}</em><em>{{ scales.mood.2.word }}</em><em class="is-on">{{ scales.mood.3.word }}</em><em>{{ scales.mood.4.word }}</em></span>
             </button>
           </div>
 
+          {# the card you pick opens up into a preview of that format #}
           <div class="ob-try" data-ob-try data-swap-face="try" hidden>
-            <p class="ob-try__ask" data-ob-try-ask>So — how's today?</p>
-            <div class="ob-try__numbers" data-ob-try-numbers hidden>
-              <div class="ob-scale">
-                <output class="ob-scale__out" data-ob-scale-out aria-live="polite"><b>7</b></output>
-                <input class="ob-scale__range" type="range" min="1" max="10" step="1" value="7"
-                       aria-label="How today is going, 1 to 10" data-ob-range>
+            <div class="ob-try__head">
+              <span class="ob-try__picked"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg><span data-ob-try-title>Numbers</span></span>
+              <span class="ob-try__note">How each day’s check-in will look</span>
+            </div>
+            <div class="ob-try__rows" data-ob-try-numbers hidden>
+              <div class="ob-row">
+                <span class="ob-row__label">Mood</span>
+                <input class="ob-scale__range" type="range" min="1" max="10" step="1" value="8" data-ob-range="mood" aria-label="Mood, example">
+                <output class="ob-row__out num" data-ob-out="mood">8</output>
+              </div>
+              <div class="ob-row">
+                <span class="ob-row__label">Productivity</span>
+                <input class="ob-scale__range" type="range" min="1" max="10" step="1" value="6" data-ob-range="productivity" aria-label="Productivity, example">
+                <output class="ob-row__out num" data-ob-out="productivity">6</output>
               </div>
             </div>
-            <div class="ob-try__words" data-ob-try-words hidden>
-              <div class="ob-words" role="radiogroup" aria-label="How today is going" data-ob-words>
-                <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="3">Rough</button>
-                <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="5">Okay</button>
-                <button type="button" class="ob-word" role="radio" aria-checked="true" data-score="7">Good</button>
-                <button type="button" class="ob-word" role="radio" aria-checked="false" data-score="9">Great</button>
+            <div class="ob-try__rows" data-ob-try-words hidden>
+              <div class="ob-row ob-row--words">
+                <span class="ob-row__label" id="obMoodWords">Mood</span>
+                <div class="ob-words" role="radiogroup" aria-labelledby="obMoodWords" data-ob-words="mood">
+                  {% for o in scales.mood %}<button type="button" class="ob-word" role="radio" aria-checked="{% if o.value == 8 %}true{% else %}false{% endif %}" data-score="{{ o.value }}">{{ o.word }}</button>{% endfor %}
+                </div>
+              </div>
+              <div class="ob-row ob-row--words">
+                <span class="ob-row__label" id="obProdWords">Productivity</span>
+                <div class="ob-words" role="radiogroup" aria-labelledby="obProdWords" data-ob-words="productivity">
+                  {% for o in scales.productivity %}<button type="button" class="ob-word" role="radio" aria-checked="{% if o.value == 6 %}true{% else %}false{% endif %}" data-score="{{ o.value }}">{{ o.word }}</button>{% endfor %}
+                </div>
               </div>
             </div>
-            <button type="button" class="ob-try__undo" data-ob-reset="scale">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-rotate-ccw"/></svg>Use the other one
-            </button>
           </div>
         </div>
+        <button type="button" class="ob-switch" data-ob-switch hidden>
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-repeat"/></svg><span data-ob-switch-label>Choose words instead</span>
+        </button>
         <p class="ob-echo ob-echo--line" data-ob-echo aria-live="polite"></p>
       </div>
       <div class="ob-step__foot">
@@ -140,12 +157,12 @@
       <p class="ob-step__sub">Pick up to three. This is the part we build around.</p>
       <div class="ob-step__body">
         <div class="ob-chips" role="group" aria-label="Where days slip" data-ob-opts="slip" data-multi data-max="3">
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="alarms"><svg class="icon" aria-hidden="true"><use href="#i-alarm-clock"/></svg>The alarm wins</button>
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="deadlines"><svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg>Deadlines sneak up</button>
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="hours"><svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg>Hours vanish</button>
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="unfinished"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg>I start, I don't finish</button>
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="consistency"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg>A week, then nothing</button>
-          <button type="button" class="ob-chip" aria-pressed="false" data-value="blur"><svg class="icon" aria-hidden="true"><use href="#i-circle-dashed"/></svg>The week's a blur</button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="alarms"><svg class="icon" aria-hidden="true"><use href="#i-alarm-clock"/></svg><span>Snoozing alarms drains my mornings</span></button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="deadlines"><svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>Deadlines sneak up on me</span></button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="hours"><svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg><span>I lose track of where my hours go</span></button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="unfinished"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg><span>I start things but struggle to follow through</span></button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="consistency"><svg class="icon" aria-hidden="true"><use href="#i-repeat"/></svg><span>I run on motivation for a week, then it disappears</span></button>
+          <button type="button" class="ob-chip" aria-pressed="false" data-value="blur"><svg class="icon" aria-hidden="true"><use href="#i-circle-dashed"/></svg><span>My weeks pass in a blur</span></button>
         </div>
         <p class="ob-echo ob-echo--line" data-ob-echo aria-live="polite"></p>
       </div>
@@ -173,11 +190,6 @@
       <p class="ob-step__eyebrow">A moment, before the rest</p>
       <h2 class="ob-step__q ob-step__q--hero" data-ob-moment-title>You're not disorganised.<em> You're undocumented.</em></h2>
       <p class="ob-step__sub" data-ob-moment-sub>Nothing here asks you to change your life. It asks you to write it down — a few taps a day — and hands the pattern back to you.</p>
-      <p class="ob-figures">
-        <span><b class="num" data-count="94" data-suffix="%">94%</b>come back the next day</span>
-        <span><b class="num" data-count="38" data-suffix="s">38s</b>a day, on average</span>
-        <span><b class="num" data-count="6" data-suffix=" wks">6 wks</b>median streak</span>
-      </p>
       <div class="ob-step__foot">
         <button type="button" class="btn btn--primary btn--hero" data-ob-next>Keep going<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
       </div>
@@ -200,15 +212,16 @@
       <p class="ob-step__fine">There's no right answer. Just yours.</p>
     </section>
 
-    {# ====================== 5 · missed days ====================== #}
-    <section class="ob-step scene__center" data-step="streak" data-chapter="2">
+    {# ====================== 5 · what to see ====================== #}
+    <section class="ob-step scene__center" data-step="focus" data-chapter="2">
       <p class="ob-step__eyebrow">Question 5 of 5</p>
-      <h2 class="ob-step__q">You miss a day.<em> Then what?</em></h2>
+      <h2 class="ob-step__q">What do you most want<em> to see clearly?</em></h2>
       <div class="ob-step__body">
-        <div class="ob-picks ob-picks--wide" role="radiogroup" aria-label="Missed days" data-ob-opts="streak" data-commit>
-          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="protect">Show me the streak I broke<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="gentle">Nothing dramatic<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="depends">Depends on the day<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        <div class="ob-picks ob-picks--wide" role="radiogroup" aria-label="What you want to see" data-ob-opts="focus" data-commit>
+          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="time">Where my time actually goes<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="mood">What lifts or drains my mood<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="habits">Whether my habits are sticking<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="ob-pick glow" data-glow role="radio" aria-checked="false" data-value="story">How my months add up<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
         </div>
         <p class="ob-echo" data-ob-echo aria-live="polite"></p>
       </div>
@@ -217,7 +230,6 @@
 
     {# ====================== the finale ====================== #}
     <section class="ob-step ob-step--final scene__center" data-step="preview" data-untracked>
-      <p class="ob-step__eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Built from your answers</p>
       <h2 class="ob-step__q ob-step__q--hero" data-ob-preview-title>Here's yours.</h2>
       <div class="ob-fan" data-ob-fan role="list"></div>
       <div class="ob-step__foot">
@@ -229,10 +241,7 @@
 
   </main>
 
-  <footer class="scene__foot">
-    <p class="scene__foot-l">Made for the way your days actually go.</p>
-    <p class="mono" data-ob-hint><kbd>Enter</kbd>to continue</p>
-  </footer>
+  <div class="scene__foot" aria-hidden="true"></div>
 </div>
 {% endblock %}
 

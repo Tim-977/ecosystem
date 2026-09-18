@@ -23,12 +23,9 @@
   /* ---------------- what Ecosystem says back: one line, never a lecture ---------------- */
   const REACT = {
     scale: {
-      numbers: 'Slider it is — straight onto your charts.',
+      numbers: 'Numbers it is — precise, and straight onto your charts.',
       words: 'Words it is. The numbers stay behind the scenes.',
     },
-    rating: (n) => (n >= 8 ? 'A good one. Worth knowing why.'
-      : n >= 5 ? 'Middling days vanish from memory first.'
-        : 'Rough one. The pattern shows up over weeks.'),
     slip: {
       alarms: 'That\'s a sleep pattern. It gets tracked here.',
       deadlines: 'Tasks sort themselves by what\'s due.',
@@ -44,10 +41,11 @@
       curious: 'Start with a sentence about today.',
       no: 'Then it stays folded away until you want it.',
     },
-    streak: {
-      protect: 'Streaks front and centre. They\'re addictive.',
-      gentle: 'No red marks. The month just carries on.',
-      depends: 'There when you want it, quiet when you don\'t.',
+    focus: {
+      time: 'Then the timeline and the activity map do the talking.',
+      mood: 'Mood beside sleep and weekdays — it shows up fast.',
+      habits: 'Streaks and perfect days, counted for you.',
+      story: 'Month and year views. Give it a few weeks.',
     },
   };
 
@@ -78,10 +76,11 @@
     curious: 'Starts at <b>one sentence</b> about today',
     no: '<b>Folded away</b> until you want it',
   };
-  const STREAK_CARD = {
-    protect: 'Streaks and perfect days, <b>kept visible</b>',
-    gentle: 'Missed days pass <b>without comment</b>',
-    depends: 'Counted <b>quietly</b> in the background',
+  const FOCUS_CARD = {
+    time: ['clock', 'Where it goes', 'Every hour of the month <b>on one map</b>'],
+    mood: ['activity', 'What moves you', 'Mood beside <b>sleep and weekdays</b>'],
+    habits: ['flame', 'Habits', 'Ten a month, <b>streaks counted for you</b>'],
+    story: ['calendar-days', 'Your year', '<b>One square a day</b>, twelve months at once'],
   };
 
   /* which widgets lean in, per step */
@@ -90,9 +89,9 @@
     name: [],
     scale: ['scale'],
     slip: null, // follows their picks
-    moment: ['stat'],
+    moment: null,
     diary: ['diary'],
-    streak: ['consistency'],
+    focus: [],
     preview: [],
   };
 
@@ -106,7 +105,6 @@
     const chapters = $$('.chapter', root);
     const orbit = $('[data-orbit]', root);
     const spot = $('[data-spot]', root);
-    const hint = $('[data-ob-hint]', root);
 
     let at = 0;
     let moved = false;
@@ -115,18 +113,19 @@
     const cancel = () => { timers.forEach(clearTimeout); timers = []; };
 
     /* ---------------- state ---------------- */
-    const state = { name: '', scale: '', rating: {}, slip: [], diary: '', streak: '' };
+    const state = { name: '', scale: '', slip: [], diary: '', focus: '' };
     try {
       const seeded = JSON.parse(document.getElementById('obSaved').textContent || '{}');
       const local = JSON.parse(localStorage.getItem(STORE) || '{}');
       Object.assign(state, seeded, local);
     } catch (e) { /* first visit, or storage unavailable */ }
     if (!Array.isArray(state.slip)) state.slip = [];
-    if (!state.rating || typeof state.rating !== 'object') state.rating = {};
+    if (typeof state.name !== 'string') state.name = '';
+    state.name = state.name.trim().slice(0, 24);
 
     const payload = (extra) => Object.assign({
-      name: state.name || '', scale: state.scale || '', rating: state.rating,
-      slip: state.slip, diary: state.diary || '', streak: state.streak || '',
+      name: state.name || '', scale: state.scale || '',
+      slip: state.slip, diary: state.diary || '', focus: state.focus || '',
     }, extra || {});
 
     let saveTimer = 0;
@@ -208,7 +207,6 @@
         if (!coarse()) later(() => nameInput.focus(), 340);
       }
       const cta = $('[data-ob-next]:not([data-ob-clear]), [data-ob-finish]', step);
-      if (hint) hint.hidden = !cta || cta.disabled;
       if (cta && key !== 'name' && moved && !coarse()) {
         later(() => { try { cta.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }, 360);
       }
@@ -234,77 +232,112 @@
     const unlock = (step, on) => {
       const btn = $('[data-ob-next]:not([data-ob-clear])', step);
       if (btn) btn.disabled = !on;
-      if (steps[at] === step && hint) hint.hidden = !on;
     };
 
-    /* ---------------- 1 · name ---------------- */
+    /* ---------------- 1 · name — required, asked for gently ---------------- */
     const nameStep = $('[data-step="name"]', stage);
     const nameInput = $('[data-ob-name]', nameStep);
+    const nameField = $('[data-ob-name-field]', nameStep);
     nameInput.addEventListener('input', () => {
       state.name = nameInput.value.trim().slice(0, 24);
+      if (state.name) { nameField.classList.remove('is-wanting'); nameInput.removeAttribute('aria-invalid'); }
       persist();
     });
+    /* an empty name doesn't move on: the line warms, the hint steps forward */
+    const nameReady = () => {
+      if (state.name) return true;
+      nameInput.value = '';
+      nameInput.setAttribute('aria-invalid', 'true');
+      nameField.classList.remove('is-wanting');
+      void nameField.offsetWidth; // replay the nudge on every attempt
+      nameField.classList.add('is-wanting');
+      nameInput.focus();
+      return false;
+    };
 
-    /* ---------------- 2 · rating style, and the control it becomes ---------------- */
+    /* ---------------- 2 · tracking format, and the preview it opens into ---------------- */
     const scaleStep = $('[data-step="scale"]', stage);
+    const swap = $('[data-ob-swap]', scaleStep);
     const cards = $('[data-ob-opts="scale"]', scaleStep);
     const tryBox = $('[data-ob-try]', scaleStep);
-    const tryNumbers = $('[data-ob-try-numbers]', scaleStep);
-    const tryWords = $('[data-ob-try-words]', scaleStep);
-    const range = $('[data-ob-range]', scaleStep);
-    const rangeOut = $('[data-ob-scale-out]', scaleStep);
+    const tryTitle = $('[data-ob-try-title]', scaleStep);
+    const rows = { numbers: $('[data-ob-try-numbers]', scaleStep), words: $('[data-ob-try-words]', scaleStep) };
+    const switchBtn = $('[data-ob-switch]', scaleStep);
+    const switchLabel = $('[data-ob-switch-label]', scaleStep);
+    const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    const tone = Eco.moodTone;
+    const sample = { mood: 8, productivity: 6 };
 
-    const WORDS = Eco.moodWords, tone = Eco.moodTone;
-    const paintMood = () => orb.mood(state.rating.mood || 7, state.scale === 'words');
-
-    const paintRange = (n) => {
+    const paintMood = () => orb.mood(sample.mood, state.scale === 'words');
+    const paintRange = (range) => {
+      const n = +range.value;
+      const kind = range.dataset.obRange;
       range.style.setProperty('--p', `${((n - 1) / 9) * 100}%`);
       range.style.setProperty('--track-c', tone(n));
-      const b = rangeOut.querySelector('b');
-      b.textContent = n;
-      b.style.color = tone(n);
+      const out = $(`[data-ob-out="${kind}"]`, scaleStep);
+      out.textContent = n;
+      out.style.color = tone(n);
     };
-    const markWords = (n) => {
-      const near = WORDS.reduce((a, b) => (Math.abs(b[0] - n) < Math.abs(a[0] - n) ? b : a))[0];
-      $$('[data-ob-words] .ob-word', scaleStep).forEach((w) => w.setAttribute('aria-checked', +w.dataset.score === near));
-    };
-    const setScore = (n) => {
-      state.rating = { mood: n };
-      paintRange(n);
-      markWords(n);
-      paintMood();
-      echo(scaleStep, REACT.rating(n));
-      unlock(scaleStep, true);
-      persist();
-    };
-    /* the two cards dissolve and the control you picked takes their place */
-    const showTry = (style) => {
-      cards.hidden = true;
-      tryBox.hidden = false;
-      tryNumbers.hidden = style !== 'numbers';
-      tryWords.hidden = style !== 'words';
-      const current = state.rating.mood || 7;
-      range.value = current;
-      paintRange(current);
-      markWords(current);
-      paintMood();
-    };
-    const showCards = () => {
-      cards.hidden = false;
-      tryBox.hidden = true;
-      state.scale = '';
-      state.rating = {};
-      $$('[data-value]', cards).forEach((o) => o.setAttribute('aria-checked', 'false'));
-      echo(scaleStep, '');
-      unlock(scaleStep, false);
-      persist();
-    };
-
-    range.addEventListener('input', () => setScore(+range.value));
-    $$('[data-ob-words] .ob-word', scaleStep).forEach((w) => {
-      w.addEventListener('click', () => { range.value = w.dataset.score; setScore(+w.dataset.score); });
+    $$('[data-ob-range]', scaleStep).forEach((r) => {
+      paintRange(r);
+      r.addEventListener('input', () => { paintRange(r); sample[r.dataset.obRange] = +r.value; if (r.dataset.obRange === 'mood') paintMood(); });
     });
-    $('[data-ob-reset="scale"]', scaleStep).addEventListener('click', showCards);
+    $$('[data-ob-words]', scaleStep).forEach((group) => {
+      group.addEventListener('click', (e) => {
+        const w = e.target.closest('.ob-word');
+        if (!w) return;
+        $$('.ob-word', group).forEach((x) => x.setAttribute('aria-checked', x === w));
+        sample[group.dataset.obWords] = +w.dataset.score;
+        if (group.dataset.obWords === 'mood') paintMood();
+      });
+    });
+
+    /* grow or shrink the swap area over the same beat as whatever changes inside it */
+    const settleHeight = (change) => {
+      const h0 = swap.offsetHeight;
+      change();
+      const h1 = swap.offsetHeight;
+      if (reduced() || !swap.animate || Math.abs(h1 - h0) < 1) return;
+      swap.animate([{ height: `${h0}px` }, { height: `${h1}px` }], { duration: 560, easing: EASE });
+    };
+    const showFormat = (style) => {
+      state.scale = style;
+      $$('[data-value]', cards).forEach((o) => o.setAttribute('aria-checked', o.dataset.value === style));
+      tryTitle.textContent = style === 'words' ? 'Words' : 'Numbers';
+      rows.numbers.hidden = style !== 'numbers';
+      rows.words.hidden = style !== 'words';
+      switchLabel.textContent = style === 'words' ? 'Choose numbers instead' : 'Choose words instead';
+      switchBtn.hidden = false;
+      paintMood();
+      echo(scaleStep, REACT.scale[style]);
+      unlock(scaleStep, true);
+    };
+    /* the chosen card opens up into the preview: the panel starts clipped to
+       the card's own outline and grows out to its full size */
+    const expand = (card, style) => {
+      const from = card.getBoundingClientRect();
+      tryBox.classList.add('is-morphing');
+      settleHeight(() => { cards.hidden = true; tryBox.hidden = false; showFormat(style); });
+      const to = tryBox.getBoundingClientRect();
+      if (reduced() || !tryBox.animate) { tryBox.classList.remove('is-morphing'); return; }
+      const clip = `inset(${from.top - to.top}px ${to.right - from.right}px ${to.bottom - from.bottom}px ${from.left - to.left}px round 20px)`;
+      const grow = tryBox.animate([{ clipPath: clip }, { clipPath: 'inset(0px 0px 0px 0px round 20px)' }], { duration: 620, easing: EASE });
+      $$('.ob-try__head, .ob-try__rows:not([hidden])', tryBox).forEach((el, i) => el.animate(
+        [{ opacity: 0, transform: 'translate3d(0, 8px, 0)' }, { opacity: 1, transform: 'none' }],
+        { duration: 460, delay: 170 + i * 70, easing: EASE, fill: 'backwards' }));
+      switchBtn.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, delay: 360, easing: EASE, fill: 'backwards' });
+      grow.onfinish = grow.oncancel = () => tryBox.classList.remove('is-morphing');
+    };
+    /* the other format, straight from the preview */
+    switchBtn.addEventListener('click', () => {
+      const style = state.scale === 'words' ? 'numbers' : 'words';
+      settleHeight(() => showFormat(style));
+      if (!reduced() && rows[style].animate) {
+        rows[style].animate([{ opacity: 0, transform: 'translate3d(0, 6px, 0)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: EASE });
+        tryTitle.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: EASE });
+      }
+      persist();
+    });
 
     /* ---------------- option groups ---------------- */
     $$('[data-ob-opts]', stage).forEach((group) => {
@@ -350,8 +383,8 @@
           opts.forEach((o) => o.setAttribute('aria-checked', o === opt));
           const table = REACT[key];
           const line = table ? table[value] : '';
-          if (key === 'scale') { showTry(value); paintMood(); }
-          if (commits) { commit(opt, line); } else { echo(step, line); unlock(step, true); }
+          if (key === 'scale') { if (tryBox.hidden) expand(opt, value); else showFormat(value); }
+          else if (commits) { commit(opt, line); } else { echo(step, line); unlock(step, true); }
         }
         persist();
       };
@@ -368,11 +401,7 @@
         const opt = opts.find((o) => o.dataset.value === state[key]);
         if (opt) {
           opts.forEach((o) => o.setAttribute('aria-checked', o === opt));
-          if (key === 'scale') {
-            showTry(state[key]);
-            echo(step, state.rating.mood ? REACT.rating(state.rating.mood) : REACT.scale[state[key]]);
-            unlock(step, true);
-          }
+          if (key === 'scale') { cards.hidden = true; tryBox.hidden = false; showFormat(state[key]); }
         }
       }
     });
@@ -386,7 +415,6 @@
       const first = state.slip[0];
       const line = (first && MOMENT[first]) || MOMENT_DEFAULT;
       momentTitle.innerHTML = `${Eco.esc(line[0])}<em>${Eco.esc(line[1])}</em>`;
-      if (Eco.countUp) Eco.countUp($$('.ob-figures .num', momentStep));
       momentSub.textContent = state.name
         ? `Nothing here asks you to change your life, ${state.name}. It asks you to write it down — a few taps a day — and hands the pattern back to you.`
         : 'Nothing here asks you to change your life. It asks you to write it down — a few taps a day — and hands the pattern back to you.';
@@ -407,11 +435,14 @@
       if (state.scale) {
         cardsOut.push(['smile', 'Your day', state.scale === 'words'
           ? 'Mood and productivity <b>in words</b>, not numbers'
-          : 'Mood and productivity on a <b>1–10 slider</b>']);
+          : 'Mood and productivity on a <b>1–10 scale</b>']);
       }
       state.slip.slice(0, 2).forEach((s) => { if (SLIP_CARD[s]) cardsOut.push(SLIP_CARD[s]); });
       if (state.diary && cardsOut.length < 4) cardsOut.push(['pen-line', 'Journal', DIARY_CARD[state.diary]]);
-      if (state.streak && cardsOut.length < 4) cardsOut.push(['repeat', 'Streaks', STREAK_CARD[state.streak]]);
+      if (state.focus && FOCUS_CARD[state.focus] && !cardsOut.some((c) => c[1] === FOCUS_CARD[state.focus][1])) {
+        if (cardsOut.length >= 4) cardsOut.pop();
+        cardsOut.push(FOCUS_CARD[state.focus]);
+      }
       if (!cardsOut.length) {
         cardsOut.push(
           ['palette', 'Timeline', 'A 24-hour day <b>painted in your colours</b>'],
@@ -432,7 +463,7 @@
     $$('[data-ob-next]', root).forEach((btn) => {
       btn.addEventListener('click', () => {
         const clear = btn.dataset.obClear;
-        if (clear === 'name') { state.name = ''; nameInput.value = ''; persist(); }
+        if (btn.closest('.ob-step') === nameStep && !nameReady()) return;
         if (clear === 'slip') {
           state.slip = [];
           const step = btn.closest('.ob-step');

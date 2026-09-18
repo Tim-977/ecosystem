@@ -133,7 +133,6 @@
         const what = hours[h] == null ? 'Unlogged' : act ? act.name : 'Unknown activity';
         c.dataset.tip = `${hh(h)}–${hh(h + 1)} · ${what}`;
         c.setAttribute('aria-label', `${hh(h)} to ${hh(h + 1)}: ${what}`);
-        c.setAttribute('aria-selected', sel && h >= Math.min(sel.a, sel.b) && h <= Math.max(sel.a, sel.b) ? 'true' : 'false');
       });
 
       // totals
@@ -160,6 +159,7 @@
     }
 
     function renderSelection() {
+      cells.forEach((c, h) => c.setAttribute('aria-selected', sel && h >= Math.min(sel.a, sel.b) && h <= Math.max(sel.a, sel.b) ? 'true' : 'false'));
       if (!sel) { selEl.hidden = true; return; }
       const a = Math.min(sel.a, sel.b), b = Math.max(sel.a, sel.b);
       selEl.hidden = false;
@@ -238,7 +238,15 @@
         }
       });
       const close = () => { Eco.closePopover(); };
-      Eco.popover(selEl, wrap, { placement: 'bottom-start', focus: false, onClose: () => { sel = null; renderSelection(); cells[focusHour].focus({ preventScroll: true }); } });
+      Eco.popover(selEl, wrap, {
+        placement: 'bottom-start', focus: false,
+        onClose: () => {
+          // a new drag closes this menu on its way in; it owns the selection now
+          if (dragging) return;
+          sel = null; renderSelection();
+          if (list.contains(document.activeElement)) cells[focusHour].focus({ preventScroll: true });
+        },
+      });
       const first = list.querySelector('.menu__item, a');
       first && first.focus({ preventScroll: true });
     }
@@ -252,10 +260,14 @@
     track.addEventListener('pointerdown', (e) => {
       if (e.button !== 0 || !e.target.closest('.canvas__cell')) return;
       e.preventDefault();
-      Eco.closePopover();
       dragging = true;
+      Eco.closePopover();
       track.setPointerCapture(e.pointerId);
       const h = hourAt(e.clientX);
+      // nothing from the last selection may linger: not its focus ring, not its range
+      if (track.contains(document.activeElement)) document.activeElement.blur();
+      cells.forEach((c, k) => { c.tabIndex = k === h ? 0 : -1; });
+      canvas.classList.add('is-dragging');
       focusHour = h;
       sel = { a: h, b: h };
       if (brush !== null) assign(h, h, brush === 'erase' ? null : brush);
@@ -272,11 +284,12 @@
     const endDrag = () => {
       if (!dragging) return;
       dragging = false;
+      canvas.classList.remove('is-dragging');
       if (brush !== null) { sel = null; render(); return; }
       openAssignMenu();
     };
     track.addEventListener('pointerup', endDrag);
-    track.addEventListener('pointercancel', () => { dragging = false; sel = null; renderSelection(); });
+    track.addEventListener('pointercancel', () => { dragging = false; canvas.classList.remove('is-dragging'); sel = null; renderSelection(); });
 
     // keyboard
     track.addEventListener('keydown', (e) => {
@@ -498,21 +511,25 @@
     render();
   }
 
-  /* ---------------- autosave ---------------- */
+  /* ---------------- autosave ----------------
+     The dock only ever says "Saving…" or "Saved": pending edits count as
+     saving, since they're on their way. A failed save keeps saying "Saving…",
+     explains itself in a toast and retries on its own. */
   function initAutosave(form) {
     const status = $('#saveStatus');
     const dot = $('.status-dot', status);
     const text = $('.dock__status-text', status);
     // version counts edits; a save only reports "Saved" if nothing changed while it was in flight
-    let state = 'saved', timer = null, inflight = null, again = false, lastSaved = null, version = 0;
+    let state = 'saved', timer = null, retry = null, inflight = null, again = false, version = 0;
 
-    const setState = (s, msg) => {
+    const setState = (s) => {
       state = s;
-      dot.dataset.state = s;
-      text.textContent = msg || { saved: lastSaved ? 'Saved' : 'All changes saved', dirty: 'Unsaved changes', saving: 'Saving…', error: 'Couldn’t save' }[s];
+      dot.dataset.state = s === 'saved' ? 'saved' : s === 'error' ? 'error' : 'saving';
+      const label = s === 'saved' ? 'Saved' : 'Saving…';
+      if (text.textContent !== label) text.textContent = label;
     };
     const inTasks = (el) => el.closest('[data-tasks-compact]');
-    const schedule = (ms) => { version++; if (state !== 'saving') setState('dirty'); clearTimeout(timer); timer = setTimeout(save, ms); };
+    const schedule = (ms) => { version++; clearTimeout(retry); if (state !== 'saving') setState('dirty'); clearTimeout(timer); timer = setTimeout(save, ms); };
 
     form.addEventListener('input', (e) => { if (!inTasks(e.target)) schedule(e.target.matches('textarea') ? 1200 : 700); });
     form.addEventListener('change', (e) => { if (!inTasks(e.target) && e.target.type === 'checkbox') schedule(250); });
@@ -522,6 +539,7 @@
 
     async function save() {
       clearTimeout(timer);
+      clearTimeout(retry);
       if (inflight) { again = true; return inflight; }
       setState('saving');
       const sent = version;
@@ -536,12 +554,12 @@
           const errors = $$('[data-flash]', doc).filter((m) => /error/.test(m.dataset.flash));
           $$('[data-flash]', doc).forEach((m) => Eco.toast(m.textContent.trim(), { type: /error/.test(m.dataset.flash) ? 'error' : 'info' }));
           if (errors.length) throw new Error(null);
-          lastSaved = new Date();
           if (version !== sent) { setState('dirty'); again = true; }
-          else setState('saved', `Saved ${pad(lastSaved.getHours())}:${pad(lastSaved.getMinutes())}`);
+          else setState('saved');
         } catch (err) {
           setState('error');
           if (err.message && err.message !== 'null') Eco.toast(err.message.startsWith('Failed to fetch') ? 'You appear to be offline. Changes are kept on this page.' : err.message, { type: 'error', action: { label: 'Retry', onClick: save } });
+          retry = setTimeout(save, 8000);
         } finally {
           inflight = null;
           if (again && state !== 'error') { again = false; clearTimeout(timer); save(); }
