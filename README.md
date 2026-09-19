@@ -44,8 +44,11 @@ sudo apt install python3 python3-venv python3-pip g++ cmake make postgresql
    ```
 2. **Install Python packages**
    ```bash
-   pip install django gunicorn whitenoise psycopg2-binary python-dotenv
+   pip install django gunicorn whitenoise psycopg2-binary python-dotenv \
+       "djangorestframework==3.18.1" "djangorestframework-simplejwt==5.5.1"
    ```
+   The last two power the mobile API (`/api/v1/`); run `python manage.py migrate`
+   afterwards to create SimpleJWT's token blacklist tables.
 3. **Set the Django secret key**
    `ecosystem/settings.py` reads `DJANGO_SECRET_KEY` from the environment
    (via a `.env` file next to `manage.py`, loaded automatically). Create one:
@@ -73,6 +76,20 @@ sudo apt install python3 python3-venv python3-pip g++ cmake make postgresql
 The site should now be accessible and the C++ server will handle rendering
 requests on port `9090`.
 
+
+## Mobile API (iPhone app)
+
+`api/` serves the iPhone app (`../ecosystem-mobile/app`) under `/api/v1/` with
+JWT authentication; the website keeps its session login. Business rules shared
+by both live in `mainpage/services.py` and `authapp/services.py`.
+For development on a phone in the same Wi-Fi, run the server with the dev
+settings, which allow the laptop's LAN address:
+
+```bash
+../ecosystem-mobile/scripts/start-django-dev.sh   # 0.0.0.0:8000, ecosystem.settings_dev
+```
+
+API reference and app docs: `../ecosystem-mobile/docs/`.
 
 ## Security Demo
 

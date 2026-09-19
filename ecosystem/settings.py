@@ -53,6 +53,10 @@ INSTALLED_APPS = [
     'mainpage',  # Main page app
     'tracker',
     'landing',  # Public homepage
+    # Mobile API (/api/v1/): DRF with JWT auth; the website keeps session auth
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'api',
 ]
 
 LOGIN_URL = '/auth/login/'
@@ -170,3 +174,45 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ---------------------------------------------------------------------------
+# Mobile API (/api/v1/)
+#
+# Only the API's DRF views use these; the website's views keep Django's
+# session authentication and CSRF. The iPhone app is a native client, not a
+# browser origin, so no CORS headers are sent (django-cors-headers is not used).
+# ---------------------------------------------------------------------------
+from datetime import timedelta  # noqa: E402
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
+    'EXCEPTION_HANDLER': 'api.exceptions.handler',
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': '20/min',        # login, signup, token refresh
+        'sensitive': '10/min',   # export, clear logs, delete account
+    },
+    # Throttles key on the connecting address, not a client-supplied
+    # X-Forwarded-For. Raise this if the API is ever put behind a proxy.
+    'NUM_PROXIES': 0,
+}
+
+SIMPLE_JWT = {
+    # Short-lived access tokens (kept in memory on the phone) and rotating
+    # refresh tokens (kept in the iOS keychain). A used refresh token is
+    # blacklisted as soon as it is exchanged.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_REFRESH_SERIALIZER': 'api.serializers.RefreshSerializer',
+}

@@ -11,8 +11,8 @@
 {% block content %}
 {{ day_summaries|json_script:"daySummaries" }}
 {{ habit_names|json_script:"habitNames" }}
-{{ today_hourly|json_script:"todayHourly" }}
-<div id="overview" data-server-today="{% now 'Y-m-d' %}" data-activities-api="{% url 'get_activities' %}"
+{{ today_hourly_grid|json_script:"todayHourlyGrid" }}
+<div id="overview" data-activities-api="{% url 'get_activities' %}"
      data-name="{{ user.preferred_name|default:user.username }}">
 
   <header class="hero reveal">

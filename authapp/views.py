@@ -1,6 +1,5 @@
 import json
-import re
-from datetime import date, datetime, timedelta
+from datetime import date
 import logging
 
 from django.contrib import messages
@@ -8,12 +7,11 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
-from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
-from mainpage.models import ActivityMapping, DailyData, MonthlyHabits, UserTodo
 
+from . import services
 from .forms import GeneralSettingsForm, PersonalizationForm
-from .models import LoginAttempt, SignupAttempt
+from .services import EnhancedJSONEncoder  # noqa: F401 (kept importable from here)
 from django.db import OperationalError, ProgrammingError
 from .utils.ip_utils import get_client_ip
 
@@ -31,13 +29,6 @@ if not security_logger.handlers:
     security_logger.setLevel(logging.INFO)
 
 User = get_user_model()
-
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
-        return super().default(obj)
 
 
 def collect_onboarding(request):
@@ -78,7 +69,8 @@ def attach_onboarding(user, data):
         user.save(update_fields=changed)
 
     try:
-        OnboardingResponse.objects.filter(session_key=data.get('session_key') or '', user=None).delete()
+        if data.get('session_key'):
+            OnboardingResponse.objects.filter(session_key=data['session_key'], user=None).delete()
         OnboardingResponse.objects.update_or_create(
             user=user,
             defaults={
@@ -111,35 +103,18 @@ def login_page(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        one_hour_ago = timezone.now() - timedelta(hours=1)
-        try:
-            failed_count = LoginAttempt.objects.filter(
-                ip_address=ip,
-                was_success=False,
-                timestamp__gte=one_hour_ago,
-            ).count()
-        except (ProgrammingError, OperationalError):
-            failed_count = 0
-
-        if failed_count >= 10:
+        if services.login_blocked(ip):
             requires_captcha = True
-            security_logger.warning('Excessive failed logins from %s', ip)
-            error_message = 'Too many failed login attempts. Please try again later.'
+            error_message = services.LOGIN_BLOCKED_MESSAGE
         else:
             user = authenticate(request, username=username, password=password)
             if user is not None:
-                try:
-                    LoginAttempt.objects.create(ip_address=ip, was_success=True)
-                except (ProgrammingError, OperationalError):
-                    pass
+                services.record_login_attempt(ip, True)
                 login(request, user)
                 return redirect(next_url)
             else:
-                try:
-                    LoginAttempt.objects.create(ip_address=ip, was_success=False)
-                except (ProgrammingError, OperationalError):
-                    pass
-                error_message = 'Invalid username or password. Please try again.'
+                services.record_login_attempt(ip, False)
+                error_message = services.LOGIN_FAILED_MESSAGE
 
     else:
         next_url = request.GET.get('next', '/')
@@ -169,42 +144,13 @@ def signup_page(request):
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
 
-        one_hour_ago = timezone.now() - timedelta(hours=1)
-        try:
-            recent_count = SignupAttempt.objects.filter(
-                ip_address=ip,
-                timestamp__gte=one_hour_ago,
-            ).count()
-        except (ProgrammingError, OperationalError):
-            recent_count = 0
+        requires_captcha = services.signup_blocked(ip)
+        # passwords match, username rules, username/email free, then the rate limit
+        error_message = services.signup_error(username, email, password, confirm_password, requires_captcha)
 
-        if recent_count >= 3:
-            requires_captcha = True
-            security_logger.warning('Exceeded signup rate from %s', ip)
-            error_message = 'Too many accounts created from this IP. Please try later.'
-
-        # 1) Password match
-        if password != confirm_password:
-            error_message = "Passwords do not match. Please try again."
-        
-        # 2) Letters/digits only + length check
-        elif not re.match(r'^[A-Za-z0-9]{3,12}$', username):
-            error_message = "Username must be 3–12 characters and contain only letters/digits."
-        
-        # 3) Already taken?
-        elif User.objects.filter(username=username).exists():
-            error_message = "Username already taken. Choose another."
-
-        # 4) Email check
-        elif User.objects.filter(email=email).exists():
-            error_message = "An account with this email already exists."
-
-        elif not error_message:
+        if not error_message:
             user = User.objects.create_user(username=username, email=email, password=password)
-            try:
-                SignupAttempt.objects.create(ip_address=ip)
-            except (ProgrammingError, OperationalError):
-                pass
+            services.record_signup(ip)
             onboarding = collect_onboarding(request)
             login(request, user)
             attach_onboarding(user, onboarding)
@@ -270,18 +216,8 @@ def settings_view(request):
 @login_required
 def clear_logs_view(request):
     if request.method == 'POST':
-        # Delete from each model where user = request.user
-        # ActivityMapping uses user_id
-        ActivityMapping.objects.filter(user_id=request.user.id).delete()
-
-        # UserTodo is a OneToOne with 'user'
-        UserTodo.objects.filter(user=request.user).delete()
-
-        # DailyData uses user_id
-        DailyData.objects.filter(user_id=request.user.id).delete()
-
-        # MonthlyHabits uses user_id
-        MonthlyHabits.objects.filter(user_id=request.user.id).delete()
+        # Every day, monthly habit, activity and task; the account stays
+        services.clear_logs(request.user)
 
         messages.success(request, "Your logs have been cleared.")
     return redirect('settings')
@@ -325,16 +261,8 @@ def rating_format_view(request):
 @login_required
 def delete_account_view(request):
     if request.method == 'POST':
-        user = request.user
-
-        # Delete user data from 'mainpage' tables
-        ActivityMapping.objects.filter(user_id=user.id).delete()
-        UserTodo.objects.filter(user=user).delete()
-        DailyData.objects.filter(user_id=user.id).delete()
-        MonthlyHabits.objects.filter(user_id=user.id).delete()
-
-        # Delete the actual user account
-        user.delete()
+        # The account and all of its data
+        services.delete_account(request.user)
 
         # Log the user out, just to be sure
         logout(request)
@@ -347,26 +275,7 @@ def delete_account_view(request):
 
 @login_required
 def download_user_data_view(request):
-    user = request.user
-
-    activity_mappings = ActivityMapping.objects.filter(user_id=user.id).values()
-    user_todo = UserTodo.objects.filter(user=user).values()
-    daily_data = DailyData.objects.filter(user_id=user.id).values()
-    monthly_habits = MonthlyHabits.objects.filter(user_id=user.id).values()
-
-    data = {
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-        },
-        "activity_mappings": list(activity_mappings),
-        "user_todo": list(user_todo),
-        "daily_data": list(daily_data),
-        "monthly_habits": list(monthly_habits),
-    }
-
-    json_data = json.dumps(data, indent=2, cls=EnhancedJSONEncoder)
+    json_data = services.export_json(request.user)
 
     response = HttpResponse(json_data, content_type='application/json')
     response['Content-Disposition'] = 'attachment; filename="user_data.json"'

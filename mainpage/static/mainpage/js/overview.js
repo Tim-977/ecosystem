@@ -38,13 +38,17 @@
     if (!root) return;
     const days = read('daySummaries') || [];
     const habitNames = (read('habitNames') || []).map((h) => h || '');
-    const serverToday = root.dataset.serverToday;
     const today = Eco.today();
     const todayIso = Eco.iso(today);
     const byIso = new Map(days.map((d) => [d.date, d]));
     dayIndex = byIso;
     const todayRow = byIso.get(todayIso);
-    const hourly = serverToday === todayIso ? read('todayHourly') : null;
+    // keyed by ISO date, not a single server-picked day: the server's own
+    // "today" can be a calendar day off from ours (different timezone, or a
+    // request landing right on a midnight boundary), so we look up our own
+    // local date instead of trusting a server/client match.
+    const hourlyGrid = read('todayHourlyGrid') || {};
+    const hourly = hourlyGrid[todayIso] || null;
     const hasHourly = Array.isArray(hourly) && hourly.some((x) => x != null);
 
     /* streaks */

@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
@@ -116,6 +116,30 @@ class PageTests(TestCase):
         response = self.client.get(reverse('main_page'))
         dates = [d["date"] for d in response.context["day_summaries"]]
         self.assertIn("2025-03-04", dates)
+
+    def test_overview_hourly_grid_covers_a_day_either_side_of_today(self):
+        """The ribbon on the overview page must find today's hours even when
+        the browser's local date is a day off from the server's `today` (a
+        different timezone, or a request landing right on a midnight
+        boundary) — see recent_hourly_grid. A day well outside that window
+        stays out, so the payload doesn't grow unbounded."""
+        today = date.today()
+        hours = json.dumps([{"hour": h, "activity": self.act.id if h < 2 else None} for h in range(24)])
+        DailyData.objects.create(user_id=self.user.id, date=today, hourly_activity_logging=hours)
+        DailyData.objects.create(user_id=self.user.id, date=today - timedelta(days=1), hourly_activity_logging=hours)
+        DailyData.objects.create(user_id=self.user.id, date=today - timedelta(days=10), hourly_activity_logging=hours)
+
+        response = self.client.get(reverse('main_page'))
+        grid = response.context["today_hourly_grid"]
+        self.assertIn(today.isoformat(), grid)
+        self.assertIn((today - timedelta(days=1)).isoformat(), grid)
+        self.assertEqual(grid[today.isoformat()][0], self.act.id)
+        self.assertIsNone(grid[today.isoformat()][2])
+        self.assertNotIn((today - timedelta(days=10)).isoformat(), grid)
+
+        # and the template actually renders it as JSON for the page's script to read
+        self.assertContains(response, 'id="todayHourlyGrid"')
+        self.assertNotContains(response, 'id="todayHourly"')
 
     def test_habits_page_exposes_checkoffs(self):
         response = self.client.get(reverse('set_habits', args=[2025, 3]))
