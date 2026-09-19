@@ -18,12 +18,6 @@
   outline: none !important;
   border-radius: 16px;
 }
-/* the cut-out gets a rim so the highlight reads as deliberate, not a hole */
-:root:not([data-theme='light']) .driver-active-element {
-  outline: 1.5px solid rgba(255, 255, 255, 0.34) !important;
-  outline-offset: 7px;
-  transition: outline-color 200ms var(--ease-out);
-}
 
 /* ---------- popover ---------- */
 .driver-popover.eco-tour {
