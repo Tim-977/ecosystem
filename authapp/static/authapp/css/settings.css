@@ -21,6 +21,7 @@
 .settings-section__text { margin-top: 6px; font-size: 13px; line-height: 1.55; color: var(--fg-3); }
 .settings-section__text .tag { margin-top: 6px; }
 
+.settings-section__group { display: grid; gap: 24px; min-width: 0; }
 .settings-card { padding: 22px 24px; transition: opacity var(--t-2); }
 .settings-card.is-muted { opacity: 0.55; }
 .settings-card > .alert { margin-bottom: 18px; }

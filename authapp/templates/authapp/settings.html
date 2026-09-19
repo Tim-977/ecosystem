@@ -136,34 +136,36 @@
         <h2 class="settings-section__title" id="appearanceTitle">Appearance</h2>
         <p class="settings-section__text">Saved in this browser.</p>
       </div>
-      <div class="panel settings-card">
-        <div class="theme-picker" role="radiogroup" aria-label="Theme" id="themePicker">
-          <button type="button" role="radio" class="theme-option" data-value="dark" aria-checked="true">
-            <span class="theme-option__preview theme-option__preview--dark" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="theme-option__label"><span>Dark</span><span class="muted">Near-black, easy at night</span></span>
-          </button>
-          <button type="button" role="radio" class="theme-option" data-value="light" aria-checked="false">
-            <span class="theme-option__preview theme-option__preview--light" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="theme-option__label"><span>Light</span><span class="muted">Warm paper tones</span></span>
-          </button>
-        </div>
-      </div>
-      <div class="panel settings-card settings-list">
-        <div class="settings-row">
-          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></div>
-          <div class="settings-row__body">
-            <p class="settings-row__title">Cursor glow</p>
-            <p class="settings-row__text">A soft light that follows your cursor on the day, overview and month/year views.</p>
+      <div class="settings-section__group">
+        <div class="panel settings-card">
+          <div class="theme-picker" role="radiogroup" aria-label="Theme" id="themePicker">
+            <button type="button" role="radio" class="theme-option" data-value="dark" aria-checked="true">
+              <span class="theme-option__preview theme-option__preview--dark" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="theme-option__label"><span>Dark</span><span class="muted">Near-black, easy at night</span></span>
+            </button>
+            <button type="button" role="radio" class="theme-option" data-value="light" aria-checked="false">
+              <span class="theme-option__preview theme-option__preview--light" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="theme-option__label"><span>Light</span><span class="muted">Warm paper tones</span></span>
+            </button>
           </div>
-          <label class="switch"><input type="checkbox" id="cursorGlowToggle" aria-label="Cursor glow"></label>
         </div>
-        <div class="settings-row">
-          <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
-          <div class="settings-row__body">
-            <p class="settings-row__title">Replay the tour</p>
-            <p class="settings-row__text">The guided walk through your day, tasks, routines, journal and insights. About two minutes.</p>
+        <div class="panel settings-card settings-list">
+          <div class="settings-row">
+            <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg></div>
+            <div class="settings-row__body">
+              <p class="settings-row__title">Cursor glow</p>
+              <p class="settings-row__text">A soft light that follows your cursor on the day, overview and month/year views.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="cursorGlowToggle" aria-label="Cursor glow"></label>
           </div>
-          <button type="button" class="btn btn--sm" data-tour-start>Take the tour</button>
+          <div class="settings-row">
+            <div class="settings-row__icon"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
+            <div class="settings-row__body">
+              <p class="settings-row__title">Replay the tour</p>
+              <p class="settings-row__text">The guided walk through your day, tasks, routines, journal and insights. About two minutes.</p>
+            </div>
+            <button type="button" class="btn btn--sm" data-tour-start>Take the tour</button>
+          </div>
         </div>
       </div>
     </section>
