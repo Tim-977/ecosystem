@@ -58,7 +58,7 @@
     consistency: ['Consistency isn\'t a streak.', ' It\'s a record you can look at.'],
     blur: ['A blurred week', ' is just an unwritten one.'],
   };
-  const MOMENT_DEFAULT = ['You\'re not disorganised.', ' You\'re undocumented.'];
+  const MOMENT_DEFAULT = ['You don\'t need to be more organised.', ' You need something to look back on.'];
 
   /* ---------------- answers → the composition on the last screen ---------------- */
   const SLIP_CARD = {
@@ -306,7 +306,7 @@
       tryTitle.textContent = style === 'words' ? 'Words' : 'Numbers';
       rows.numbers.hidden = style !== 'numbers';
       rows.words.hidden = style !== 'words';
-      switchLabel.textContent = style === 'words' ? 'Choose numbers instead' : 'Choose words instead';
+      switchLabel.textContent = style === 'words' ? 'Use numbers instead' : 'Use words instead';
       switchBtn.hidden = false;
       paintMood();
       echo(scaleStep, REACT.scale[style]);
@@ -416,8 +416,8 @@
       const line = (first && MOMENT[first]) || MOMENT_DEFAULT;
       momentTitle.innerHTML = `${Eco.esc(line[0])}<em>${Eco.esc(line[1])}</em>`;
       momentSub.textContent = state.name
-        ? `Nothing here asks you to change your life, ${state.name}. It asks you to write it down — a few taps a day — and hands the pattern back to you.`
-        : 'Nothing here asks you to change your life. It asks you to write it down — a few taps a day — and hands the pattern back to you.';
+        ? `You don't need to change how you live, ${state.name}. Just log a few things each day and see what starts to show up.`
+        : 'You don\'t need to change how you live. Just log a few things each day and see what starts to show up.';
     }
 
     /* ---------------- the finale ---------------- */
@@ -428,8 +428,8 @@
 
     function buildFinale() {
       previewTitle.innerHTML = state.name
-        ? `Here's yours,<em> ${Eco.esc(state.name)}.</em>`
-        : 'Here\'s<em> yours.</em>';
+        ? `You're ready,<em> ${Eco.esc(state.name)}.</em>`
+        : 'You\'re<em> ready.</em>';
 
       const cardsOut = [];
       if (state.scale) {

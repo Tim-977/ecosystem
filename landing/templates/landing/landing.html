@@ -2,11 +2,11 @@
 {% load static %}
 {% block title %}Your days, in focus{% endblock %}
 {% block head %}
-  <meta name="description" content="Ecosystem is a personal tracker for your hours, sleep, mood, habits, tasks and thoughts — and the months and years they add up to.">
+  <meta name="description" content="Track your time, sleep, mood, habits, tasks and thoughts, and see how they change over time.">
   <meta property="og:title" content="Ecosystem — your days, in focus">
-  <meta property="og:description" content="Log your hours, sleep, mood, habits and thoughts, and see them come together into months and years you can read.">
+  <meta property="og:description" content="Log your days and build a clear picture of your life over time.">
   <meta property="og:type" content="website">
-  <link rel="preload" href="{% static 'landing/images/hero.png' %}" as="image" fetchpriority="high">
+  <link rel="preload" href="{% static 'landing/images/herob.png' %}" as="image" fetchpriority="high">
   <link rel="stylesheet" href="{% static 'landing/css/landing.css' %}">
   <script>document.documentElement.classList.add('fx')</script>
 {% endblock %}
@@ -42,13 +42,13 @@
 {# ============ Hero: halftone reveal ============ #}
 <section class="hero" aria-labelledby="heroTitle" data-hero>
   <div class="hero__media" data-halftone>
-    {# Replaceable: swap landing/images/hero.png for the final artwork. #}
-    <img class="hero__img" src="{% static 'landing/images/hero.png' %}" alt="" fetchpriority="high" decoding="async">
+    <img class="hero__img hero__img--dark" src="{% static 'landing/images/herob.png' %}" alt="" fetchpriority="high" decoding="async">
+    <img class="hero__img hero__img--light" src="{% static 'landing/images/herow.png' %}" alt="" fetchpriority="high" decoding="async">
   </div>
   <div class="hero__scrim" aria-hidden="true"></div>
   <div class="hero__content shell">
     <h1 class="hero__title" id="heroTitle"><span class="hero__line">Your days,</span> <span class="hero__line hero__line--soft">in focus.</span></h1>
-    <p class="hero__sub">Ecosystem is a quiet place to log how you spend your hours, how you slept and felt, what you kept up with — and to watch it all come together into months and years you can actually read.</p>
+    <p class="hero__sub">Ecosystem is a quiet place to log how you spend your hours, how you slept and felt, what you kept up with, and to watch it all come together over time.</p>
     <div class="hero__actions">
       <a class="btn btn--primary btn--xl" href="{% url 'onboarding' %}">Get started<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
       <a class="btn btn--ghost btn--xl" href="#how">See how it works</a>
@@ -59,14 +59,14 @@
 
 {# ============ Manifesto ============ #}
 <section class="manifesto shell" aria-label="Why Ecosystem">
-  <p class="manifesto__text" data-words>Most days leave no trace. You remember the big ones and lose the rest — how you slept, where the hours went, which habits held and which quietly slipped. Ecosystem keeps a light record of every day, so the shape of your life stops being a guess.</p>
+  <p class="manifesto__text" data-words>An hour shapes your day. Your days shape your weeks. Your weeks shape your months. Your months shape your years. And your years shape your life. You don’t need another opinion about how your life is going. You need a record. Ecosystem shows you exactly where the time goes and what keeps shaping your days.</p>
 </section>
 
 {# ============ Story: log → keep → see ============ #}
 <section class="story shell" id="how" aria-labelledby="howTitle">
   <header class="intro fx-focus">
     <p class="eyebrow">How it works</p>
-    <h2 class="intro__title" id="howTitle">A couple of minutes a day.<span>A clear picture over time.</span></h2>
+    <h2 class="intro__title" id="howTitle">A few minutes a day.<span>See the bigger picture over time.</span></h2>
   </header>
 
   <div class="story__grid" data-story>
@@ -74,8 +74,8 @@
       <li class="story-step is-active" data-step="0">
         <div class="story-step__text">
           <span class="story-step__num mono">01</span>
-          <h3 class="story-step__title">Log the day</h3>
-          <p class="story-step__body">Paint your 24 hours with your own activities. Rate mood and productivity, note when you went to bed and when you woke up. Tick off habits, leave a thought if you have one.</p>
+          <h3 class="story-step__title">Log your day</h3>
+          <p class="story-step__body">Paint your 24 hours with your own activities. Rate your mood and productivity, log when you slept, check off habits and anything you want to remember.</p>
           <p class="story-step__try"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-paintbrush"/></svg>Pick an activity, then drag across the hours.</p>
         </div>
         <div class="story-step__visual" data-visual="0">
@@ -103,8 +103,8 @@
       <li class="story-step" data-step="1">
         <div class="story-step__text">
           <span class="story-step__num mono">02</span>
-          <h3 class="story-step__title">Keep your routines</h3>
-          <p class="story-step__body">Each month, choose up to ten habits and one goal. Check them off as the days go by, and let perfect days and streaks build up on their own.</p>
+          <h3 class="story-step__title">Keep up with your routines</h3>
+          <p class="story-step__body">Each month, choose up to ten habits and one goal. Check them off as the days go by and watch your streaks build.</p>
           <p class="story-step__try"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>Click a day to check it off.</p>
         </div>
         <div class="story-step__visual" data-visual="1">
@@ -133,8 +133,8 @@
         <div class="story-step__text">
           <span class="story-step__num mono">03</span>
           <h3 class="story-step__title">See the pattern</h3>
-          <p class="story-step__body">Month and year views turn your entries into charts, calendars and activity maps. Spot what lifts your mood, what costs you sleep, and where the time really goes.</p>
-          <p class="story-step__try"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-sliders-horizontal"/></svg>Switch what the year is colored by.</p>
+          <p class="story-step__body">Turn your entries into charts, calendars and activity maps, then see what actually affects your mood and sleep and where your time actually goes.</p>
+          <p class="story-step__try"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-sliders-horizontal"/></svg>Choose what colors the year.</p>
         </div>
         <div class="story-step__visual" data-visual="2">
           <div class="demo glow" data-glow data-demo-year>
@@ -171,9 +171,9 @@
   <header class="intro intro--split fx-focus">
     <div>
       <p class="eyebrow">Everything in one place</p>
-      <h2 class="intro__title" id="featuresTitle">Built for the whole day,<span>not a single number.</span></h2>
+      <h2 class="intro__title" id="featuresTitle">Built around your<span>whole day.</span></h2>
     </div>
-    <p class="intro__sub">Tasks sit next to your timeline, your journal next to your mood. Nothing to connect, nothing to sync — the pieces already know about each other.</p>
+    <p class="intro__sub">Your tasks, timeline, journal, mood, sleep and habits all live in one place. No extra apps or manual syncing.</p>
   </header>
 
   <div class="bento" data-bento>
@@ -188,7 +188,7 @@
       </div>
       <div class="bento__text">
         <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg>Tasks that sort themselves</h3>
-        <p>One list, ordered by priority and deadline. Overdue things don’t get to hide.</p>
+        <p>One list, sorted by priority and deadline, with overdue tasks kept where you can see them.</p>
       </div>
     </article>
 
@@ -207,7 +207,7 @@
       </div>
       <div class="bento__text">
         <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-book-open"/></svg>A line a day</h3>
-        <p>A short thought for every day, and room for a longer reflection when there’s more to say. Read a month back like a diary.</p>
+        <p>A short thought for every day, with room for a longer reflection when there’s more to say. Read a month back like a diary.</p>
       </div>
     </article>
 
@@ -222,7 +222,7 @@
         <div class="sleep-mini__times mono"><span><svg class="icon icon--xs"><use href="#i-bed-double"/></svg>23:40</span><span><svg class="icon icon--xs"><use href="#i-sunrise"/></svg>07:15</span></div>
       </div>
       <div class="bento__text">
-        <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Sleep, no gadget needed</h3>
+        <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Track sleep without a wearable</h3>
         <p>Bedtime, wake-up and first alarm. Ecosystem does the math.</p>
       </div>
     </article>
@@ -242,7 +242,7 @@
       </div>
       <div class="bento__text">
         <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-layout-grid"/></svg>Today at a glance</h3>
-        <p>A calm home screen: today’s hours, the week so far, and what needs doing next.</p>
+        <p>See today’s timeline, your week so far, and what needs your attention next.</p>
       </div>
     </article>
 
@@ -252,7 +252,7 @@
       </div>
       <div class="bento__text">
         <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg>Your colors</h3>
-        <p>Up to 15 activities a month, each with its own color on the timeline.</p>
+        <p>Create up to 15 activities each month and give each one its own color.</p>
       </div>
     </article>
 
@@ -269,8 +269,8 @@
         </button>
       </div>
       <div class="bento__text">
-        <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg>Light or dark, keys or clicks</h3>
-        <p>Switch the theme to suit the hour — go on, try it. Everyday actions have shortcuts.</p>
+        <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg>Light or dark. Keys or clicks.</h3>
+        <p>Switch between light and dark themes, and use keyboard shortcuts for everyday actions.</p>
       </div>
     </article>
 
@@ -288,7 +288,7 @@
       </div>
       <div class="bento__text">
         <h3 class="bento__title"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>Your data stays yours</h3>
-        <p>Download everything you’ve logged whenever you like. Leave, and it all leaves with you.</p>
+        <p>Download your data whenever you want. If you decide to leave, you can take everything with you.</p>
       </div>
     </article>
   </div>
@@ -299,7 +299,7 @@
   <div class="patterns__copy shell fx-focus">
     <p class="eyebrow">Patterns</p>
     <h2 class="intro__title" id="patternsTitle">Small entries.<span>Things you’d never notice otherwise.</span></h2>
-    <p class="intro__sub">Nobody remembers how they slept three Tuesdays ago. A few weeks of logging is enough to start seeing what actually shapes your days.</p>
+    <p class="intro__sub">You probably don’t remember how you slept three Tuesdays ago. After a few weeks, patterns start showing up on their own.</p>
   </div>
 
   <div class="drift" data-drift role="group" aria-label="Examples of what a few weeks of entries reveal">
@@ -312,26 +312,26 @@
       </div></div>
       <div class="drift__col"><div class="drift__track">
         <div class="tile tile--habit" tabindex="0"><span>Read 20 pages</span><div class="tile-dots" data-tile-dots="1101111011111"></div></div>
-        <div class="tile tile--note" tabindex="0"><p>Sundays score lowest on mood. Now something good goes there.</p><span class="mono">Mood × weekdays</span></div>
+        <div class="tile tile--note" tabindex="0"><p>My mood is usually lowest on Sundays. Maybe that’s worth changing.</p><span class="mono">Mood × weekdays</span></div>
         <div class="tile tile--task" tabindex="0"><span class="task-mini__check" aria-hidden="true"></span><span>Renew passport</span><span class="chip"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-clock"/></svg>By Oct 8</span></div>
         <div class="tile tile--mood" tabindex="0"><span class="eyebrow">Mood</span><b class="num">8<small>/10</small></b><span class="meter"><i style="--w:80%;--c:var(--green)"></i></span></div>
       </div></div>
       <div class="drift__col"><div class="drift__track">
         <div class="tile tile--img" tabindex="0"><img src="{% static 'landing/images/gallery-1.png' %}" alt="" loading="lazy" decoding="async"></div>
         <div class="tile tile--quote" tabindex="0"><span class="eyebrow">Sun, 13 Sep</span><p>“Walked home the long way. Worth it.”</p></div>
-        <div class="tile tile--note" tabindex="0"><p>Work creeps past 19:00 every single Monday.</p><span class="mono">Activity map</span></div>
-        <div class="tile tile--stat" tabindex="0"><b class="num">12</b><span>perfect habit days in August</span></div>
+        <div class="tile tile--note" tabindex="0"><p>I work past 19:00 almost every Monday.</p><span class="mono">Activity map</span></div>
+        <div class="tile tile--stat" tabindex="0"><b class="num">12</b><span>days with every habit completed in August</span></div>
       </div></div>
       <div class="drift__col"><div class="drift__track">
         <div class="tile tile--task" tabindex="0"><span class="task-mini__check" aria-hidden="true"></span><span>Call the bank</span><span class="chip chip--red"><svg class="icon icon--xs" aria-hidden="true"><use href="#i-triangle-alert"/></svg>Overdue</span></div>
-        <div class="tile tile--note" tabindex="0"><p>The best ideas turn up after a walk, not at the desk.</p><span class="mono">Journal</span></div>
+        <div class="tile tile--note" tabindex="0"><p>Most of my best ideas show up after a walk.</p><span class="mono">Journal</span></div>
         <div class="tile tile--ribbon" tabindex="0"><span class="mono">Saturday</span><div class="tile-ribbon" data-tile-ribbon="SSSSSSSSSRRPPFFFFRRTTFSS"></div></div>
         <div class="tile tile--habit" tabindex="0"><span>No phone after 23:00</span><div class="tile-dots" data-tile-dots="0110111101101"></div></div>
       </div></div>
       <div class="drift__col"><div class="drift__track">
         <div class="tile tile--stat" tabindex="0"><b class="num">214</b><span>days logged this year</span></div>
         <div class="tile tile--img" tabindex="0"><img src="{% static 'landing/images/gallery-4.png' %}" alt="" loading="lazy" decoding="async"></div>
-        <div class="tile tile--note" tabindex="0"><p>Focus peaks mid-week, not on Monday.</p><span class="mono">Productivity</span></div>
+        <div class="tile tile--note" tabindex="0"><p>I’m most productive in the middle of the week.</p><span class="mono">Productivity</span></div>
         <div class="tile tile--quote" tabindex="0"><span class="eyebrow">Thu, 3 Sep</span><p>“Slept badly. Coffee after four again.”</p></div>
       </div></div>
     </div>
@@ -345,7 +345,7 @@
     <div class="closing__body">
       <svg class="brand__mark closing__mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="mark-ring" cx="12" cy="12" r="7.25"/><circle class="mark-seed" cx="17.1" cy="6.9" r="2.4"/></svg>
       <h2 class="closing__title" id="closingTitle">Start with today.</h2>
-      <p class="closing__sub">Log one day. Tomorrow, log another. A month from now you’ll be looking at a picture of your life you haven’t seen before.</p>
+      <p class="closing__sub">Log today, then do it again tomorrow. In a month, you’ll have a much clearer picture of how your days actually look.</p>
       <div class="hero__actions closing__actions">
         <a class="btn btn--primary btn--xl closing__btn" href="{% url 'onboarding' %}">Get started<svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         <a class="btn btn--ghost btn--xl closing__btn" href="{% url 'login' %}">I already have an account</a>
@@ -358,7 +358,7 @@
   <div class="lfoot__top">
     <div class="lfoot__brand">
       <a class="brand" href="{% url 'main_page' %}">{% include "mainpage/partials/brand_mark.html" %}<span>Ecosystem</span></a>
-      <p>A personal record of your days, and what they add up to.</p>
+      <p>A record of your days and how they change over time.</p>
     </div>
     <nav class="lfoot__nav" aria-label="Footer">
       <div><p class="eyebrow">Product</p><a href="#how">How it works</a><a href="#features">Features</a><a href="#patterns">Patterns</a></div>

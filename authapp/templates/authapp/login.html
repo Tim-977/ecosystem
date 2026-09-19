@@ -40,7 +40,6 @@
 
   <main class="scene__stage">
     <div class="auth auth--narrow scene__center">
-      <p class="auth__eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-sunrise"/></svg>Welcome back</p>
       <h1 class="auth__title">Your day is<em> where you left it.</em></h1>
 
       <form class="auth__form" method="POST" novalidate data-auth-form>
@@ -73,12 +72,6 @@
         <button type="submit" class="btn btn--primary btn--hero btn--block auth__submit"><span class="spinner"></span>Sign in<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
         <p class="auth__alt">New to Ecosystem? <a class="link" href="{% url 'onboarding' %}">Start here</a></p>
       </form>
-
-      <p class="auth__waiting">
-        <span><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>Today, unlogged</span>
-        <span><svg class="icon" aria-hidden="true"><use href="#i-flame"/></svg>Streaks counting</span>
-        <span><svg class="icon" aria-hidden="true"><use href="#i-book-open"/></svg>The month so far</span>
-      </p>
     </div>
   </main>
 

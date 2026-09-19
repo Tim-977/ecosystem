@@ -435,7 +435,7 @@
     const fx = Eco.fx || {};
     const hero = $('[data-hero]');
     const media = $('[data-halftone]');
-    fx.halftone && fx.halftone(media, { img: $('.hero__img', media), hero });
+    fx.halftone && fx.halftone(media, { img: $('.hero__img--dark', media), imgLight: $('.hero__img--light', media), hero });
     fx.drift && fx.drift($('[data-drift]'));
     fx.ghost && fx.ghost($('[data-ghost]'));
     fx.glow && fx.glow($$('[data-glow]'));

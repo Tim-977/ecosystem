@@ -134,8 +134,10 @@ void main(){
   fragColor = vec4(mix(print, sharp, focus), 1.0);
 }`;
 
-  fx.halftone = function (host, { img, hero, scroll = true, radius = 0.3, density = 92, dot = 1.0, angle = 30, tint = 0.55, contrast = 1.12 } = {}) {
+  fx.halftone = function (host, { img, imgLight, hero, scroll = true, radius = 0.3, density = 92, dot = 1.0, angle = 30, tint = 0.55, contrast = 1.12 } = {}) {
     if (!host || !img) return null;
+    const imgDark = img;
+    const pickImg = () => (document.documentElement.dataset.theme === 'light' && imgLight ? imgLight : imgDark);
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
     if (!gl) return null;
@@ -158,11 +160,15 @@ void main(){
     gl.uniform1f(prog.u('uRadius'), radius);
 
     let loaded = false;
-    const upload = () => {
+    let currentImg = null;
+    const upload = (image) => {
+      const im = image || pickImg();
+      if (!im.complete || !im.naturalWidth) { im.addEventListener('load', () => upload(im), { once: true }); return; }
+      currentImg = im;
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-      gl.uniform2f(prog.u('uImg'), img.naturalWidth, img.naturalHeight);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      gl.uniform2f(prog.u('uImg'), im.naturalWidth, im.naturalHeight);
       loaded = true;
       host.classList.add('is-ready');
       kick();
@@ -173,6 +179,8 @@ void main(){
       gl.uniform1f(prog.u('uStrength'), document.documentElement.dataset.theme === 'light' ? 0.9 : 0.5);
       gl.uniform3fv(prog.u('uInk'), cssColor('--fg-1'));
       gl.uniform3fv(prog.u('uPaper'), cssColor('--bg'));
+      const next = pickImg();
+      if (next !== currentImg) upload(next);
       kick();
     };
 
@@ -269,8 +277,6 @@ void main(){
     theme();
     resize();
     if (scroll) onScroll();
-    if (img.complete && img.naturalWidth) upload();
-    else img.addEventListener('load', upload, { once: true });
     return {
       redraw: kick,
       setClear(v) { m.clearTarget = clamp(v, 0, 1); kick(); },
